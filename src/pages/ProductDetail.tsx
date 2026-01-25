@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
+import { ProductReviews } from '@/components/products/ProductReviews';
 import { Heart, ShoppingBag, Minus, Plus, MessageCircle, Share2, ChevronRight, Truck, Shield, RefreshCw } from 'lucide-react';
 
 export default function ProductDetail() {
@@ -64,8 +65,8 @@ export default function ProductDetail() {
   };
 
   const handleWhatsAppEnquiry = () => {
-    const message = `Hi! I'm interested in the ${product.name} (${formatPrice(product.calculated_price.total)}). Can you please provide more details?`;
-    window.open(`https://wa.me/911234567890?text=${encodeURIComponent(message)}`, '_blank');
+    const message = `Hi KRT Jewels! I'm interested in the ${product.name} (${formatPrice(product.calculated_price.total)}). Can you please provide more details?`;
+    window.open(`https://wa.me/919843010986?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   return (
@@ -268,6 +269,9 @@ export default function ProductDetail() {
                 </div>
               </div>
             )}
+
+            {/* Product Reviews */}
+            <ProductReviews productId={product.id} productName={product.name} />
           </div>
         </div>
 

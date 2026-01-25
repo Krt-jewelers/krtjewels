@@ -7,8 +7,8 @@ interface WhatsAppButtonProps {
 }
 
 export function WhatsAppButton({ 
-  phoneNumber = '911234567890',
-  message = 'Hello! I would like to inquire about your jewellery collection.'
+  phoneNumber = '919843010986',
+  message = 'Hello KRT Jewels! I would like to inquire about your jewellery collection.'
 }: WhatsAppButtonProps) {
   const handleClick = () => {
     const encodedMessage = encodeURIComponent(message);

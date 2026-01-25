@@ -10,7 +10,7 @@ const slides = [
     subtitle: 'Wedding Collection 2025',
     description: 'Discover our exquisite bridal sets, handcrafted with love and tradition for your most special day.',
     image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&h=1080&fit=crop',
-    cta: { text: 'Explore Bridal', href: '/collections/wedding-bridal' },
+    cta: { text: 'Explore Bridal', href: '/collections/wedding-sets' },
   },
   {
     id: 2,
@@ -57,7 +57,7 @@ export function HeroCarousel() {
   const slide = slides[currentSlide];
 
   return (
-    <section className="relative h-[70vh] md:h-[85vh] overflow-hidden">
+    <section className="relative h-[60vh] md:h-[80vh] overflow-hidden">
       {/* Background Images */}
       {slides.map((s, index) => (
         <div
@@ -80,7 +80,7 @@ export function HeroCarousel() {
         <div className="max-w-2xl">
           <span 
             key={`subtitle-${currentSlide}`}
-            className="inline-block text-gold-light text-sm md:text-base uppercase tracking-[0.3em] mb-4 animate-fade-in-up"
+            className="inline-block text-primary text-sm md:text-base uppercase tracking-[0.3em] mb-4 animate-fade-in-up font-medium"
           >
             {slide.subtitle}
           </span>
@@ -95,7 +95,7 @@ export function HeroCarousel() {
           
           <p 
             key={`desc-${currentSlide}`}
-            className="text-ivory/80 text-lg md:text-xl mb-8 max-w-lg animate-fade-in-up"
+            className="text-ivory/80 text-base md:text-xl mb-8 max-w-lg animate-fade-in-up"
             style={{ animationDelay: '200ms' }}
           >
             {slide.description}
@@ -103,18 +103,18 @@ export function HeroCarousel() {
           
           <div 
             key={`cta-${currentSlide}`}
-            className="flex gap-4 animate-fade-in-up"
+            className="flex flex-wrap gap-4 animate-fade-in-up"
             style={{ animationDelay: '300ms' }}
           >
             <Link to={slide.cta.href}>
-              <Button className="btn-premium text-lg px-8 py-6">
+              <Button className="btn-premium text-base md:text-lg px-6 md:px-8 py-5 md:py-6">
                 {slide.cta.text}
               </Button>
             </Link>
             <Link to="/gold-rate">
               <Button 
                 variant="outline" 
-                className="text-lg px-8 py-6 border-2 border-ivory/30 text-ivory hover:bg-ivory/10 hover:border-ivory/50"
+                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 border-2 border-ivory/50 text-ivory bg-transparent hover:bg-ivory/10 hover:border-ivory"
               >
                 Gold Rate
               </Button>
@@ -126,29 +126,29 @@ export function HeroCarousel() {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
+        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
+        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
         aria-label="Next slide"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
       </button>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+      <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               index === currentSlide 
-                ? 'w-12 bg-primary' 
-                : 'w-6 bg-ivory/40 hover:bg-ivory/60'
+                ? 'w-10 md:w-12 bg-primary' 
+                : 'w-5 md:w-6 bg-ivory/40 hover:bg-ivory/60'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -156,10 +156,10 @@ export function HeroCarousel() {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 right-8 hidden md:flex flex-col items-center gap-2 text-ivory/60 text-xs">
+      <div className="absolute bottom-8 right-8 hidden lg:flex flex-col items-center gap-2 text-ivory/60 text-xs">
         <span className="writing-vertical tracking-widest uppercase">Scroll</span>
         <div className="w-px h-12 bg-ivory/30 relative overflow-hidden">
-          <div className="absolute top-0 w-full h-1/2 bg-ivory animate-[pulse_1.5s_ease-in-out_infinite]" />
+          <div className="absolute top-0 w-full h-1/2 bg-ivory animate-pulse" />
         </div>
       </div>
     </section>

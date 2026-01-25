@@ -8,7 +8,7 @@ const collections = [
   { name: 'Earrings', href: '/collections/earrings' },
   { name: 'Rings', href: '/collections/rings' },
   { name: 'Bangles', href: '/collections/bangles' },
-  { name: 'Wedding Sets', href: '/collections/wedding-bridal' },
+  { name: 'Wedding Sets', href: '/collections/wedding-sets' },
   { name: 'Diamond', href: '/collections/diamond-jewellery' },
 ];
 
@@ -17,8 +17,8 @@ const quickLinks = [
   { name: 'Store Locator', href: '/stores' },
   { name: 'Gold Rate', href: '/gold-rate' },
   { name: 'Contact', href: '/contact' },
-  { name: 'My Account', href: '/account' },
-  { name: 'Track Order', href: '/orders' },
+  { name: 'My Wishlist', href: '/wishlist' },
+  { name: 'My Cart', href: '/cart' },
 ];
 
 const policies = [
@@ -60,34 +60,27 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center">
-                  <span className="text-rich-black font-serif font-bold text-xl">J</span>
-                </div>
-                <div>
-                  <h2 className="font-serif text-2xl font-semibold">
-                    <span className="text-gold-gradient">Heritage</span> Jewels
-                  </h2>
-                  <p className="text-xs text-ivory/50 tracking-widest uppercase">Since 1960</p>
-                </div>
-              </div>
+              <h2 className="font-serif text-2xl font-bold">
+                <span className="text-primary">KRT</span> Jewels
+              </h2>
+              <p className="text-xs text-ivory/50 tracking-widest uppercase mt-1">Trusted Since 30+ Years</p>
             </Link>
             <p className="text-ivory/60 mb-6 max-w-sm">
-              Crafting timeless elegance for over six decades. Every piece tells a story of tradition,
-              craftsmanship, and uncompromising quality.
+              Crafting timeless elegance for over three decades. Every piece tells a story of tradition,
+              craftsmanship, and uncompromising quality in 916 BIS Hallmarked gold jewellery.
             </p>
             <div className="space-y-3 text-ivory/60">
-              <a href="tel:+911234567890" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <a href="tel:+919843010986" className="flex items-center gap-3 hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" />
-                <span>+91 123 456 7890</span>
+                <span>+91 98430 10986</span>
               </a>
-              <a href="mailto:info@heritagejewels.com" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <a href="mailto:info@krtjewels.com" className="flex items-center gap-3 hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" />
-                <span>info@heritagejewels.com</span>
+                <span>info@krtjewels.com</span>
               </a>
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                <span>123 Jewellery Lane, T Nagar,<br />Chennai, Tamil Nadu 600017</span>
+                <span>KRT Jewellers,<br />Tamil Nadu, India</span>
               </div>
             </div>
           </div>
@@ -150,7 +143,7 @@ export function Footer() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-ivory/40 text-sm">
-              © {new Date().getFullYear()} Heritage Jewels. All rights reserved.
+              © {new Date().getFullYear()} KRT Jewels. All rights reserved.
             </p>
             
             {/* Social Links */}
@@ -173,7 +166,7 @@ export function Footer() {
             <div className="flex items-center gap-4 text-xs text-ivory/40">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                BIS Hallmarked
+                BIS 916 Hallmarked
               </span>
               <span>|</span>
               <span>100% Certified</span>
