@@ -14,9 +14,11 @@ import WishlistPage from "./pages/Wishlist";
 import StoresPage from "./pages/Stores";
 import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
+import TrackOrderPage from "./pages/TrackOrder";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminGoldRates from "./pages/admin/GoldRates";
 import AdminProducts from "./pages/admin/Products";
+import AdminProductForm from "./pages/admin/ProductForm";
 import AdminMakingCharges from "./pages/admin/MakingCharges";
 import AdminOrders from "./pages/admin/Orders";
 
@@ -39,10 +41,13 @@ const App = () => (
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/track-order" element={<TrackOrderPage />} />
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/gold-rates" element={<AdminGoldRates />} />
           <Route path="/admin/products" element={<AdminProducts />} />
+          <Route path="/admin/products/new" element={<AdminProductForm />} />
+          <Route path="/admin/products/:id" element={<AdminProductForm />} />
           <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="*" element={<NotFound />} />

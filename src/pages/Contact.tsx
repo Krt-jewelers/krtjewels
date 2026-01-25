@@ -84,8 +84,8 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="tel:+911234567890" className="text-lg hover:text-primary transition-colors">
-                    +91 123 456 7890
+                  <a href="tel:+919843010986" className="text-lg hover:text-primary transition-colors">
+                    +91 98430 10986
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">Mon-Sun, 10AM-9PM</p>
                 </CardContent>
@@ -99,8 +99,8 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="mailto:info@heritagejewels.com" className="text-lg hover:text-primary transition-colors">
-                    info@heritagejewels.com
+                  <a href="mailto:info@krtjewels.com" className="text-lg hover:text-primary transition-colors">
+                    info@krtjewels.com
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
                 </CardContent>
@@ -115,8 +115,9 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    123 Jewellery Lane, T Nagar<br />
-                    Chennai, Tamil Nadu 600017
+                    1154, Big Bazaar St, Prakasam,<br />
+                    Town Hall, Coimbatore,<br />
+                    Tamil Nadu 641001
                   </p>
                 </CardContent>
               </Card>
@@ -138,7 +139,7 @@ export default function ContactPage() {
 
               {/* WhatsApp CTA */}
               <Button
-                onClick={() => window.open('https://wa.me/911234567890', '_blank')}
+                onClick={() => window.open('https://wa.me/919843010986', '_blank')}
                 className="w-full py-6 gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white"
               >
                 <MessageCircle className="w-5 h-5" />

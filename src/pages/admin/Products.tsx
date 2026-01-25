@@ -113,7 +113,7 @@ export default function AdminProducts() {
                 Manage your jewellery catalog. {products?.length || 0} products total.
               </p>
             </div>
-            <Button className="btn-premium gap-2">
+            <Button className="btn-premium gap-2" onClick={() => navigate('/admin/products/new')}>
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
@@ -232,7 +232,11 @@ export default function AdminProducts() {
                             >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => navigate(`/admin/products/${product.id}`)}
+                            >
                               <Edit className="w-4 h-4" />
                             </Button>
                           </div>

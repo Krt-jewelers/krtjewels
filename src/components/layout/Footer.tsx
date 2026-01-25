@@ -80,7 +80,7 @@ export function Footer() {
               </a>
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                <span>KRT Jewellers,<br />Tamil Nadu, India</span>
+                <span>1154, Big Bazaar St, Prakasam,<br />Town Hall, Coimbatore,<br />Tamil Nadu 641001</span>
               </div>
             </div>
           </div>
