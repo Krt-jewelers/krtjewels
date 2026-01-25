@@ -9,7 +9,7 @@ export default function AboutPage() {
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=1920&h=800&fit=crop"
-            alt="Heritage Jewels"
+            alt="KRT Jewels"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-rich-black/70" />
@@ -17,11 +17,11 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 relative text-center">
           <span className="text-gold-light text-sm uppercase tracking-[0.3em]">Our Story</span>
           <h1 className="font-serif text-4xl md:text-6xl text-ivory font-semibold mt-2 mb-6">
-            Crafting Elegance Since 1960
+            Crafting Elegance for 30+ Years
           </h1>
           <p className="text-ivory/80 text-lg max-w-3xl mx-auto">
-            For over six decades, Heritage Jewels has been at the forefront of Indian jewellery 
-            craftsmanship, blending traditional artistry with contemporary designs.
+            For over three decades, KRT Jewels has been at the forefront of Indian jewellery 
+            craftsmanship, blending traditional artistry with contemporary designs in 916 BIS Hallmarked gold.
           </p>
         </div>
       </section>
@@ -37,20 +37,20 @@ export default function AboutPage() {
               </h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  What began as a small workshop in Chennai in 1960 has grown into one of India's 
-                  most trusted jewellery brands. Our founder, Shri. Raghunathan, envisioned a jewellery 
+                  What began as a small family workshop has grown into one of Tamil Nadu's 
+                  most trusted jewellery destinations. Our founder envisioned a jewellery 
                   house that would honour traditional craftsmanship while embracing innovation.
                 </p>
                 <p>
-                  Today, under the leadership of the third generation, we continue to uphold the 
-                  values of quality, transparency, and customer trust that have defined our journey. 
-                  Every piece that leaves our workshop carries the legacy of thousands of skilled 
-                  artisans who have contributed to our story.
+                  Today, we continue to uphold the values of quality, transparency, and customer 
+                  trust that have defined our journey. Every piece that leaves our workshop carries 
+                  the legacy of skilled artisans who have contributed to our story.
                 </p>
                 <p>
                   We take pride in being one of the pioneers in offering transparent pricing, 
                   where customers can see exactly how their jewellery is priced based on weight, 
-                  making charges, and current gold rates.
+                  making charges, and current gold rates. Our customers are our family, and many 
+                  have been with us for three generations.
                 </p>
               </div>
             </div>
@@ -63,8 +63,8 @@ export default function AboutPage() {
                 />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-primary text-primary-foreground p-6 rounded-xl shadow-luxury">
-                <p className="font-serif text-4xl font-bold">60+</p>
-                <p className="text-sm">Years of Legacy</p>
+                <p className="font-serif text-4xl font-bold">30+</p>
+                <p className="text-sm">Years of Trust</p>
               </div>
             </div>
           </div>
@@ -86,10 +86,10 @@ export default function AboutPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-gold flex items-center justify-center">
                 <Gem className="w-8 h-8 text-rich-black" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Master Craftsmanship</h3>
+              <h3 className="font-serif text-xl font-semibold mb-3">916 Hallmarked Gold</h3>
               <p className="text-muted-foreground">
-                Every piece is handcrafted by artisans with decades of experience, 
-                using techniques passed down through generations.
+                Every piece is crafted with 916 BIS Hallmarked gold, ensuring 
+                purity and authenticity you can trust.
               </p>
             </div>
 
@@ -97,10 +97,10 @@ export default function AboutPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-gold flex items-center justify-center">
                 <Shield className="w-8 h-8 text-rich-black" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Certified Purity</h3>
+              <h3 className="font-serif text-xl font-semibold mb-3">Best Prices Guaranteed</h3>
               <p className="text-muted-foreground">
-                All our gold jewellery is BIS hallmarked, and our diamonds are GIA/IGI certified 
-                for guaranteed authenticity.
+                Transparent pricing with competitive making charges. See exactly 
+                how your jewellery is priced.
               </p>
             </div>
 
@@ -110,8 +110,8 @@ export default function AboutPage() {
               </div>
               <h3 className="font-serif text-xl font-semibold mb-3">Customer First</h3>
               <p className="text-muted-foreground">
-                We believe in transparent pricing and exceptional service, ensuring every 
-                customer feels valued and informed.
+                We believe in building relationships. Many of our customers 
+                have been with us for three generations.
               </p>
             </div>
 
@@ -119,10 +119,10 @@ export default function AboutPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-gold flex items-center justify-center">
                 <Award className="w-8 h-8 text-rich-black" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Award Winning</h3>
+              <h3 className="font-serif text-xl font-semibold mb-3">Trending Designs</h3>
               <p className="text-muted-foreground">
-                Recognized nationally for design excellence and ethical business practices 
-                in the jewellery industry.
+                Latest trending and light-weight jewellery designs to match 
+                every occasion and style.
               </p>
             </div>
 
@@ -130,10 +130,10 @@ export default function AboutPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-gold flex items-center justify-center">
                 <Users className="w-8 h-8 text-rich-black" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">1 Million+ Customers</h3>
+              <h3 className="font-serif text-xl font-semibold mb-3">286+ 5-Star Reviews</h3>
               <p className="text-muted-foreground">
-                Trusted by over a million families for their precious moments, 
-                from weddings to celebrations.
+                Trusted by hundreds of families across Tamil Nadu with 
+                consistently 5-star Google ratings.
               </p>
             </div>
 
@@ -141,10 +141,10 @@ export default function AboutPage() {
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-gold flex items-center justify-center">
                 <Truck className="w-8 h-8 text-rich-black" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3">Pan India Delivery</h3>
+              <h3 className="font-serif text-xl font-semibold mb-3">Personal Service</h3>
               <p className="text-muted-foreground">
-                Free insured delivery across India with secure packaging and 
-                real-time tracking for peace of mind.
+                Staff who genuinely care about helping you find the 
+                perfect piece for your special moments.
               </p>
             </div>
           </div>
@@ -163,25 +163,25 @@ export default function AboutPage() {
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
                 <span className="font-serif text-2xl font-bold">BIS</span>
               </div>
-              <p className="font-medium">Hallmark Certified</p>
+              <p className="font-medium">916 Hallmark</p>
             </div>
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-                <span className="font-serif text-2xl font-bold">GIA</span>
+                <span className="font-serif text-2xl font-bold">KDM</span>
               </div>
-              <p className="font-medium">Diamond Certified</p>
+              <p className="font-medium">Premium Quality</p>
             </div>
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-                <span className="font-serif text-2xl font-bold">IGI</span>
+                <span className="font-serif text-lg font-bold">5.0★</span>
               </div>
-              <p className="font-medium">Gemstone Certified</p>
+              <p className="font-medium">Google Rated</p>
             </div>
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
-                <span className="font-serif text-2xl font-bold">ISO</span>
+                <span className="font-serif text-2xl font-bold">30+</span>
               </div>
-              <p className="font-medium">Quality Assured</p>
+              <p className="font-medium">Years Trusted</p>
             </div>
           </div>
         </div>

@@ -61,12 +61,12 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-block">
-              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-gold flex items-center justify-center shadow-gold mb-4">
-                <span className="text-rich-black font-serif font-bold text-2xl">J</span>
-              </div>
-              <h1 className="font-serif text-3xl font-semibold">
-                <span className="text-gold-gradient">Heritage</span> Jewels
+              <h1 className="font-serif text-3xl font-bold">
+                <span className="text-primary">KRT</span> Jewels
               </h1>
+              <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">
+                Trusted Since 30+ Years
+              </p>
             </Link>
           </div>
 

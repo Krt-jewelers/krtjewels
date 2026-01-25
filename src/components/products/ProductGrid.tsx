@@ -11,7 +11,7 @@ interface ProductGridProps {
 export function ProductGrid({ products, isLoading, emptyMessage = 'No products found' }: ProductGridProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="bg-card rounded-xl overflow-hidden">
             <Skeleton className="aspect-square w-full" />
@@ -42,7 +42,7 @@ export function ProductGrid({ products, isLoading, emptyMessage = 'No products f
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
