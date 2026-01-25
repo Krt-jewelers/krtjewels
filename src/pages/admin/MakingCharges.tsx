@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { CATEGORY_NAMES, ProductCategory } from '@/lib/types';
@@ -16,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Save, Percent } from 'lucide-react';
+import { Save, Settings } from 'lucide-react';
 
 interface CategoryMakingCharge {
   id: string;
@@ -30,7 +29,6 @@ export default function AdminMakingCharges() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const { data: categoryCharges, isLoading } = useQuery({
     queryKey: ['categoryMakingCharges'],
@@ -118,30 +116,20 @@ export default function AdminMakingCharges() {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/admin')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-2">
-            Making Charges
-          </h1>
+        <div>
+          <h1 className="font-serif text-3xl font-semibold mb-1">Making Charges</h1>
           <p className="text-muted-foreground">
-            Set category-wise making charge percentages. These apply when products don't have individual making charges set.
+            Set category-wise making charge percentages
           </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Percent className="w-5 h-5 text-primary" />
+              <Settings className="w-5 h-5 text-primary" />
               Category Making Charges
             </CardTitle>
           </CardHeader>
@@ -206,6 +194,6 @@ export default function AdminMakingCharges() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 }

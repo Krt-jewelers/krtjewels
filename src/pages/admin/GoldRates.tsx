@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Save, RefreshCw, TrendingUp, History } from 'lucide-react';
+import { Save, RefreshCw, TrendingUp, History } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function AdminGoldRates() {
@@ -31,17 +30,6 @@ export default function AdminGoldRates() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  // Initialize form with current rates when data loads
-  useState(() => {
-    if (currentRate) {
-      setRate22k(currentRate.rate_22k.toString());
-      setRate24k(currentRate.rate_24k.toString());
-      if (currentRate.rate_18k) setRate18k(currentRate.rate_18k.toString());
-      if (currentRate.silver_rate) setSilverRate(currentRate.silver_rate.toString());
-    }
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +53,7 @@ export default function AdminGoldRates() {
         .eq('is_current', true);
 
       // Insert new rate
-      const { error } = await supabase.from('gold_rates').insert({
+      const { error } = await supabase.from('gold_rates').insert([{
         rate_22k: parseFloat(rate22k),
         rate_24k: parseFloat(rate24k),
         rate_18k: rate18k ? parseFloat(rate18k) : null,
@@ -73,7 +61,7 @@ export default function AdminGoldRates() {
         is_current: true,
         source: 'admin_manual',
         effective_date: new Date().toISOString().split('T')[0],
-      });
+      }]);
 
       if (error) throw error;
 
@@ -84,9 +72,16 @@ export default function AdminGoldRates() {
 
       toast({
         title: 'Success!',
-        description: 'Gold rates updated successfully. All product prices have been recalculated.',
+        description: 'Gold rates updated. All product prices recalculated automatically.',
       });
+      
+      // Clear form
+      setRate22k('');
+      setRate24k('');
+      setRate18k('');
+      setSilverRate('');
     } catch (error: any) {
+      console.error('Error updating gold rates:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to update gold rates',
@@ -107,27 +102,17 @@ export default function AdminGoldRates() {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/admin')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-2">
-            Gold Rate Management
-          </h1>
+        <div>
+          <h1 className="font-serif text-3xl font-semibold mb-1">Gold Rate Management</h1>
           <p className="text-muted-foreground">
-            Update the daily gold rate. All product prices will recalculate automatically.
+            Update gold rate once — all product prices update automatically
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Update Form */}
           <Card>
             <CardHeader>
@@ -140,8 +125,8 @@ export default function AdminGoldRates() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Current Rates Display */}
                 {currentRate && (
-                  <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="bg-secondary/50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
                       <p className="text-sm font-medium">Current Rates</p>
                       <Button
                         type="button"
@@ -156,13 +141,13 @@ export default function AdminGoldRates() {
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">22K:</span>
-                        <span className="ml-2 font-semibold">
+                        <span className="ml-2 font-semibold text-primary">
                           {formatPrice(currentRate.rate_22k)}/g
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">24K:</span>
-                        <span className="ml-2 font-semibold">
+                        <span className="ml-2 font-semibold text-primary">
                           {formatPrice(currentRate.rate_24k)}/g
                         </span>
                       </div>
@@ -172,7 +157,7 @@ export default function AdminGoldRates() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rate22k">22K Gold Rate (₹/gram) *</Label>
+                    <Label htmlFor="rate22k">22K Gold (₹/gram) *</Label>
                     <Input
                       id="rate22k"
                       type="number"
@@ -184,7 +169,7 @@ export default function AdminGoldRates() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="rate24k">24K Gold Rate (₹/gram) *</Label>
+                    <Label htmlFor="rate24k">24K Gold (₹/gram) *</Label>
                     <Input
                       id="rate24k"
                       type="number"
@@ -199,7 +184,7 @@ export default function AdminGoldRates() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="rate18k">18K Gold Rate (₹/gram)</Label>
+                    <Label htmlFor="rate18k">18K Gold (₹/gram)</Label>
                     <Input
                       id="rate18k"
                       type="number"
@@ -210,7 +195,7 @@ export default function AdminGoldRates() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="silverRate">Silver Rate (₹/gram)</Label>
+                    <Label htmlFor="silverRate">Silver (₹/gram)</Label>
                     <Input
                       id="silverRate"
                       type="number"
@@ -232,7 +217,7 @@ export default function AdminGoldRates() {
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
-                  * All product prices will be automatically recalculated based on the new rates
+                  * All product prices recalculate automatically based on new rates
                 </p>
               </form>
             </CardContent>
@@ -243,7 +228,7 @@ export default function AdminGoldRates() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <History className="w-5 h-5" />
-                Rate History (Last 30 Days)
+                Rate History (30 Days)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -262,13 +247,13 @@ export default function AdminGoldRates() {
                         .sort((a, b) => new Date(b.effective_date).getTime() - new Date(a.effective_date).getTime())
                         .map((rate) => (
                           <TableRow key={rate.id}>
-                            <TableCell>
+                            <TableCell className="text-sm">
                               {format(new Date(rate.effective_date), 'dd MMM yyyy')}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right text-sm">
                               {formatPrice(rate.rate_22k)}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right text-sm">
                               {formatPrice(rate.rate_24k)}
                             </TableCell>
                           </TableRow>
@@ -285,6 +270,6 @@ export default function AdminGoldRates() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 }

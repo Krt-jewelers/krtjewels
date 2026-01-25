@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import { Link, useNavigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { useProducts } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Search, Plus, Edit, Eye, Package } from 'lucide-react';
+import { Search, Plus, Edit, Eye, Package } from 'lucide-react';
 
 export default function AdminProducts() {
   const { data: products, isLoading } = useProducts();
@@ -92,32 +92,22 @@ export default function AdminProducts() {
   };
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/admin')}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-2">
-                Product Management
-              </h1>
-              <p className="text-muted-foreground">
-                Manage your jewellery catalog. {products?.length || 0} products total.
-              </p>
-            </div>
-            <Button className="btn-premium gap-2" onClick={() => navigate('/admin/products/new')}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl font-semibold mb-1">Products</h1>
+            <p className="text-muted-foreground">
+              Manage your jewellery catalog ({products?.length || 0} products)
+            </p>
+          </div>
+          <Link to="/admin/products/new">
+            <Button className="btn-premium gap-2">
               <Plus className="w-4 h-4" />
               Add Product
             </Button>
-          </div>
+          </Link>
         </div>
 
         {/* Filters */}
@@ -255,6 +245,6 @@ export default function AdminProducts() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 }
