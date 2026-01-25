@@ -23,7 +23,7 @@ const menuCategories = [
 
 const quickLinks = [
   { name: 'Login / Sign Up', href: '/auth', icon: User },
-  { name: 'Track Your Order', href: '/auth', icon: Package },
+  { name: 'Track Your Order', href: '/track-order', icon: Package },
   { name: 'Gold Rates', href: '/gold-rate', icon: Sparkles },
   { name: 'My Wishlist', href: '/wishlist', icon: Heart },
   { name: 'Store Locator', href: '/stores', icon: MapPin },

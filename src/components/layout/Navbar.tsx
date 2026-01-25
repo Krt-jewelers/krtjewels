@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Search, Heart, ShoppingBag, User, ChevronDown } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingBag, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,7 +45,7 @@ export function Navbar() {
               {goldRate ? `${formatPrice(goldRate.rate_22k)}/g` : '—'}
             </span>
           </div>
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="text-gold-light/70">24K Gold:</span>
             <span className="font-semibold text-gold-light">
               {goldRate ? `${formatPrice(goldRate.rate_24k)}/g` : '—'}
@@ -97,13 +97,16 @@ export function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-1 md:gap-2">
-              {/* Search */}
+              {/* Search - Premium Icon */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsSearchOpen(true)}
+                className="relative group"
               >
-                <Search className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-full border border-primary/30 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/5 transition-all">
+                  <Search className="w-4 h-4 text-primary" />
+                </div>
               </Button>
 
               {/* Wishlist */}

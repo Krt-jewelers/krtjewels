@@ -11,8 +11,8 @@ import { CustomerReviews } from '@/components/home/CustomerReviews';
 const Index = () => {
   return (
     <Layout>
-      <HeroCarousel />
       <CategoryCarousel />
+      <HeroCarousel />
       <GoldRateWidget />
       <FeaturedProducts />
       <CategoryShowcase />
