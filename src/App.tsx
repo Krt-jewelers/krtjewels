@@ -15,12 +15,14 @@ import StoresPage from "./pages/Stores";
 import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
+import CheckoutPage from "./pages/Checkout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminGoldRates from "./pages/admin/GoldRates";
 import AdminProducts from "./pages/admin/Products";
 import AdminProductForm from "./pages/admin/ProductForm";
 import AdminMakingCharges from "./pages/admin/MakingCharges";
 import AdminOrders from "./pages/admin/Orders";
+import AdminChitFunds from "./pages/admin/ChitFunds";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,7 @@ const App = () => (
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/gold-rate" element={<GoldRatePage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -50,6 +53,7 @@ const App = () => (
           <Route path="/admin/products/:id" element={<AdminProductForm />} />
           <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

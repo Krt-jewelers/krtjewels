@@ -1,0 +1,361 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { useCart } from '@/hooks/useCart';
+import { useAuth } from '@/hooks/useAuth';
+import { useGoldRate } from '@/hooks/useGoldRate';
+import { supabase } from '@/integrations/supabase/client';
+import { formatPrice } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+import { ShoppingBag, MapPin, CreditCard, Truck, Shield } from 'lucide-react';
+
+interface AddressForm {
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
+export default function CheckoutPage() {
+  const navigate = useNavigate();
+  const { items, subtotal, gstTotal, total, clearCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
+  const { data: goldRate } = useGoldRate();
+  const { toast } = useToast();
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [address, setAddress] = useState<AddressForm>({
+    full_name: '',
+    phone: '',
+    address_line1: '',
+    address_line2: '',
+    city: '',
+    state: 'Tamil Nadu',
+    pincode: '',
+  });
+  const [notes, setNotes] = useState('');
+
+  if (!isAuthenticated) {
+    navigate('/auth?redirect=/checkout');
+    return null;
+  }
+
+  if (items.length === 0) {
+    navigate('/cart');
+    return null;
+  }
+
+  const generateOrderNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `KRT${year}${month}${random}`;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user || !goldRate) return;
+
+    // Validate address
+    if (!address.full_name || !address.phone || !address.address_line1 || !address.city || !address.pincode) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in all required address fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const orderNumber = generateOrderNumber();
+
+      // Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([{
+          order_number: orderNumber,
+          user_id: user.id,
+          status: 'pending' as const,
+          gold_rate_at_order: goldRate.rate_22k,
+          subtotal: subtotal,
+          gst_amount: gstTotal,
+          total_amount: total,
+          shipping_address: address as any,
+          payment_method: paymentMethod,
+          notes: notes || null,
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_image: item.product.images[0] || null,
+        weight_grams: item.product.weight_grams,
+        gold_rate_applied: item.product.calculated_price.gold_rate_applied,
+        making_charges: item.product.calculated_price.making_charges,
+        diamond_cost: item.product.diamond_cost || 0,
+        stone_cost: item.product.stone_cost || 0,
+        quantity: item.quantity,
+        unit_price: item.product.calculated_price.total,
+        total_price: item.product.calculated_price.total * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Clear cart
+      clearCart();
+
+      toast({
+        title: 'Order Placed Successfully!',
+        description: `Your order #${orderNumber} has been confirmed.`,
+      });
+
+      // Navigate to order confirmation
+      navigate(`/track-order?order=${orderNumber}`);
+
+    } catch (error: any) {
+      console.error('Order error:', error);
+      toast({
+        title: 'Failed to place order',
+        description: error.message || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-8">Checkout</h1>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Address & Payment */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Shipping Address */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Shipping Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name *</Label>
+                      <Input
+                        id="full_name"
+                        value={address.full_name}
+                        onChange={(e) => setAddress(prev => ({ ...prev, full_name: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={address.phone}
+                        onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address_line1">Address Line 1 *</Label>
+                    <Input
+                      id="address_line1"
+                      value={address.address_line1}
+                      onChange={(e) => setAddress(prev => ({ ...prev, address_line1: e.target.value }))}
+                      placeholder="House/Flat No., Building, Street"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address_line2">Address Line 2</Label>
+                    <Input
+                      id="address_line2"
+                      value={address.address_line2}
+                      onChange={(e) => setAddress(prev => ({ ...prev, address_line2: e.target.value }))}
+                      placeholder="Landmark, Area (optional)"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        value={address.city}
+                        onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State *</Label>
+                      <Input
+                        id="state"
+                        value={address.state}
+                        onChange={(e) => setAddress(prev => ({ ...prev, state: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pincode">Pincode *</Label>
+                      <Input
+                        id="pincode"
+                        value={address.pincode}
+                        onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Payment Method */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    Payment Method
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-secondary/30">
+                      <RadioGroupItem value="cod" id="cod" />
+                      <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                        <span className="font-medium">Cash on Delivery</span>
+                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-secondary/30 mt-3">
+                      <RadioGroupItem value="online" id="online" />
+                      <Label htmlFor="online" className="flex-1 cursor-pointer">
+                        <span className="font-medium">Pay Online (Razorpay)</span>
+                        <p className="text-sm text-muted-foreground">Cards, UPI, Net Banking, Wallets</p>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
+              {/* Order Notes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Notes (Optional)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any special instructions for your order..."
+                    rows={3}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Order Summary */}
+            <div className="lg:col-span-1">
+              <Card className="sticky top-24">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-primary" />
+                    Order Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Items */}
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex gap-3">
+                        <img
+                          src={item.product.images[0] || '/placeholder.svg'}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-1">{item.product.name}</p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                          <p className="text-sm font-semibold text-primary">
+                            {formatPrice(item.product.calculated_price.total * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal</span>
+                      <span>{formatPrice(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>GST (3%)</span>
+                      <span>{formatPrice(gstTotal)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Shipping</span>
+                      <span className="text-green-600">Free</span>
+                    </div>
+                    <div className="flex justify-between font-serif text-lg font-bold pt-2 border-t">
+                      <span>Total</span>
+                      <span className="text-primary">{formatPrice(total)}</span>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full btn-premium py-6 text-lg"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Processing...' : 'Place Order'}
+                  </Button>
+
+                  {/* Trust badges */}
+                  <div className="grid grid-cols-2 gap-2 text-center pt-4 border-t">
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <Truck className="w-4 h-4" />
+                      <span>Free Shipping</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <Shield className="w-4 h-4" />
+                      <span>Secure Payment</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </form>
+      </div>
+    </Layout>
+  );
+}

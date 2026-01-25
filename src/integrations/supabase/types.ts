@@ -118,6 +118,113 @@ export type Database = {
         }
         Relationships: []
       }
+      chit_funds: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          email: string | null
+          id: string
+          monthly_amount: number
+          months_paid: number
+          next_due_date: string | null
+          notes: string | null
+          phone: string
+          plan_name: string
+          start_date: string
+          status: string
+          total_gold_grams: number | null
+          total_months: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          email?: string | null
+          id?: string
+          monthly_amount: number
+          months_paid?: number
+          next_due_date?: string | null
+          notes?: string | null
+          phone: string
+          plan_name: string
+          start_date?: string
+          status?: string
+          total_gold_grams?: number | null
+          total_months?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          email?: string | null
+          id?: string
+          monthly_amount?: number
+          months_paid?: number
+          next_due_date?: string | null
+          notes?: string | null
+          phone?: string
+          plan_name?: string
+          start_date?: string
+          status?: string
+          total_gold_grams?: number | null
+          total_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chit_payments: {
+        Row: {
+          amount: number
+          chit_fund_id: string
+          created_at: string
+          created_by: string | null
+          gold_grams: number
+          gold_rate_applied: number
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+          receipt_number: string | null
+        }
+        Insert: {
+          amount: number
+          chit_fund_id: string
+          created_at?: string
+          created_by?: string | null
+          gold_grams: number
+          gold_rate_applied: number
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+        }
+        Update: {
+          amount?: number
+          chit_fund_id?: string
+          created_at?: string
+          created_by?: string | null
+          gold_grams?: number
+          gold_rate_applied?: number
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chit_payments_chit_fund_id_fkey"
+            columns: ["chit_fund_id"]
+            isOneToOne: false
+            referencedRelation: "chit_funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enquiries: {
         Row: {
           created_at: string

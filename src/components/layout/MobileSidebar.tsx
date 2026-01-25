@@ -50,7 +50,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       />
 
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-sm bg-background shadow-luxury animate-slide-in-right overflow-y-auto">
+      <div className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-sm bg-background shadow-luxury animate-slide-in-left overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-background z-10 flex items-center justify-between p-4 border-b">
           <Link to="/" onClick={onClose} className="font-serif text-2xl font-bold text-primary">
