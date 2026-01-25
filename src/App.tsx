@@ -5,6 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AuthPage from "./pages/Auth";
+import CollectionPage from "./pages/Collection";
+import ProductDetail from "./pages/ProductDetail";
+import GoldRatePage from "./pages/GoldRate";
+import CartPage from "./pages/Cart";
+import WishlistPage from "./pages/Wishlist";
+import StoresPage from "./pages/Stores";
+import AboutPage from "./pages/About";
+import ContactPage from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -16,7 +25,15 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/collections/:category" element={<CollectionPage />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="/gold-rate" element={<GoldRatePage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/stores" element={<StoresPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
