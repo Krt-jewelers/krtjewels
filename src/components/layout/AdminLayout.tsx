@@ -28,6 +28,7 @@ const menuItems = [
   { name: 'Making Charges', href: '/admin/making-charges', icon: Settings },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Chit Funds', href: '/admin/chit-funds', icon: Wallet },
+  { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

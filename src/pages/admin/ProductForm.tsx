@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { ImageUpload } from '@/components/admin/ImageUpload';
 import {
   Select,
   SelectContent,
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Plus, X } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 
 interface ProductFormData {
   name: string;
@@ -69,8 +70,8 @@ export default function AdminProductForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
-  const [newImageUrl, setNewImageUrl] = useState('');
 
   useEffect(() => {
     if (isEditing) {
@@ -79,6 +80,7 @@ export default function AdminProductForm() {
   }, [id]);
 
   const fetchProduct = async () => {
+    setIsFetching(true);
     try {
       const { data, error } = await supabase
         .from('products')
@@ -115,6 +117,8 @@ export default function AdminProductForm() {
         variant: 'destructive',
       });
       navigate('/admin/products');
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -122,7 +126,7 @@ export default function AdminProductForm() {
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .replace(/(^-|-$)/g, '') + '-krt';
   };
 
   const handleNameChange = (name: string) => {
@@ -130,23 +134,6 @@ export default function AdminProductForm() {
       ...prev,
       name,
       slug: isEditing ? prev.slug : generateSlug(name),
-    }));
-  };
-
-  const addImage = () => {
-    if (newImageUrl.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, newImageUrl.trim()],
-      }));
-      setNewImageUrl('');
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
@@ -208,15 +195,25 @@ export default function AdminProductForm() {
     }
   };
 
+  if (isFetching) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
+    <AdminLayout>
+      <div className="max-w-5xl mx-auto">
         <Button variant="ghost" onClick={() => navigate('/admin/products')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Products
         </Button>
 
-        <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-8">
+        <h1 className="font-serif text-3xl font-semibold mb-6">
           {isEditing ? 'Edit Product' : 'Add New Product'}
         </h1>
 
@@ -235,15 +232,17 @@ export default function AdminProductForm() {
                       id="name"
                       value={formData.name}
                       onChange={(e) => handleNameChange(e.target.value)}
+                      placeholder="e.g. Temple Gold Necklace"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="slug">Slug *</Label>
+                    <Label htmlFor="slug">URL Slug *</Label>
                     <Input
                       id="slug"
                       value={formData.slug}
                       onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
+                      placeholder="temple-gold-necklace-krt"
                       required
                     />
                   </div>
@@ -257,7 +256,7 @@ export default function AdminProductForm() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, short_description: e.target.value }))
                     }
-                    placeholder="Brief one-line description"
+                    placeholder="Brief one-line description for cards"
                   />
                 </div>
 
@@ -269,6 +268,7 @@ export default function AdminProductForm() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, description: e.target.value }))
                     }
+                    placeholder="Detailed product description..."
                     rows={4}
                   />
                 </div>
@@ -330,19 +330,20 @@ export default function AdminProductForm() {
                     id="weight_grams"
                     type="number"
                     step="0.01"
-                    value={formData.weight_grams}
+                    value={formData.weight_grams || ''}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, weight_grams: parseFloat(e.target.value) || 0 }))
                     }
+                    placeholder="0.00"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="making_charge_percent">Making Charge % (leave blank for category default)</Label>
+                  <Label htmlFor="making_charge_percent">Making Charge %</Label>
                   <Input
                     id="making_charge_percent"
                     type="number"
-                    step="0.01"
+                    step="0.1"
                     value={formData.making_charge_percent ?? ''}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -350,17 +351,20 @@ export default function AdminProductForm() {
                         making_charge_percent: e.target.value ? parseFloat(e.target.value) : null,
                       }))
                     }
+                    placeholder="Category default"
                   />
+                  <p className="text-xs text-muted-foreground">Leave blank to use category default</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="diamond_cost">Diamond Cost (₹)</Label>
                   <Input
                     id="diamond_cost"
                     type="number"
-                    value={formData.diamond_cost}
+                    value={formData.diamond_cost || ''}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))
                     }
+                    placeholder="0"
                   />
                 </div>
                 <div className="space-y-2">
@@ -368,10 +372,11 @@ export default function AdminProductForm() {
                   <Input
                     id="stone_cost"
                     type="number"
-                    value={formData.stone_cost}
+                    value={formData.stone_cost || ''}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, stone_cost: parseFloat(e.target.value) || 0 }))
                     }
+                    placeholder="0"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -381,10 +386,11 @@ export default function AdminProductForm() {
                       id="sku"
                       value={formData.sku}
                       onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
+                      placeholder="KRT-001"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="stock_quantity">Stock Qty</Label>
+                    <Label htmlFor="stock_quantity">Stock</Label>
                     <Input
                       id="stock_quantity"
                       type="number"
@@ -404,47 +410,25 @@ export default function AdminProductForm() {
                 <CardTitle>Product Images</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    placeholder="Enter image URL"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                  />
-                  <Button type="button" onClick={addImage} variant="outline">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.images.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Product ${index + 1}`}
-                        className="w-full aspect-square object-cover rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                <ImageUpload
+                  images={formData.images}
+                  onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
+                  maxImages={10}
+                />
               </CardContent>
             </Card>
 
             {/* Flags */}
             <Card>
               <CardHeader>
-                <CardTitle>Display Flags</CardTitle>
+                <CardTitle>Display Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Active (visible on site)</Label>
+                  <div>
+                    <Label>Active</Label>
+                    <p className="text-xs text-muted-foreground">Visible on store</p>
+                  </div>
                   <Switch
                     checked={formData.is_active}
                     onCheckedChange={(checked) =>
@@ -453,7 +437,10 @@ export default function AdminProductForm() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Featured</Label>
+                  <div>
+                    <Label>Featured</Label>
+                    <p className="text-xs text-muted-foreground">Show on homepage</p>
+                  </div>
                   <Switch
                     checked={formData.is_featured}
                     onCheckedChange={(checked) =>
@@ -462,7 +449,10 @@ export default function AdminProductForm() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Bestseller</Label>
+                  <div>
+                    <Label>Bestseller</Label>
+                    <p className="text-xs text-muted-foreground">Mark as popular</p>
+                  </div>
                   <Switch
                     checked={formData.is_bestseller}
                     onCheckedChange={(checked) =>
@@ -471,7 +461,10 @@ export default function AdminProductForm() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>New Arrival</Label>
+                  <div>
+                    <Label>New Arrival</Label>
+                    <p className="text-xs text-muted-foreground">Show new badge</p>
+                  </div>
                   <Switch
                     checked={formData.is_new_arrival}
                     onCheckedChange={(checked) =>
@@ -480,7 +473,10 @@ export default function AdminProductForm() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Bridal Collection</Label>
+                  <div>
+                    <Label>Bridal Collection</Label>
+                    <p className="text-xs text-muted-foreground">Wedding jewellery</p>
+                  </div>
                   <Switch
                     checked={formData.is_bridal}
                     onCheckedChange={(checked) =>
@@ -493,17 +489,26 @@ export default function AdminProductForm() {
           </div>
 
           {/* Submit */}
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
               Cancel
             </Button>
-            <Button type="submit" className="btn-premium gap-2" disabled={isLoading}>
-              <Save className="w-4 h-4" />
-              {isLoading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
+            <Button type="submit" className="btn-premium gap-2 min-w-[140px]" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  {isEditing ? 'Update Product' : 'Create Product'}
+                </>
+              )}
             </Button>
           </div>
         </form>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 }

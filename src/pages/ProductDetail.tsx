@@ -2,29 +2,28 @@ import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProduct, useBestsellerProducts } from '@/hooks/useProducts';
-import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
-import { useGoldRate } from '@/hooks/useGoldRate';
 import { formatPrice, METAL_TYPE_NAMES, CATEGORY_NAMES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductReviews } from '@/components/products/ProductReviews';
-import { Heart, ShoppingBag, Minus, Plus, MessageCircle, Share2, ChevronRight, Truck, Shield, RefreshCw } from 'lucide-react';
+import { ImageLightbox } from '@/components/products/ImageLightbox';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { Heart, Minus, Plus, MessageCircle, ChevronRight, Truck, Shield, RefreshCw, ZoomIn } from 'lucide-react';
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProduct(slug || '');
   const { data: relatedProducts } = useBestsellerProducts();
-  const { data: goldRate } = useGoldRate();
-  const { addToCart, isAdding } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -60,10 +59,6 @@ export default function ProductDetail() {
 
   const inWishlist = isInWishlist(product.id);
 
-  const handleAddToCart = () => {
-    addToCart({ productId: product.id, quantity });
-  };
-
   const handleWhatsAppEnquiry = () => {
     const message = `Hi KRT Jewels! I'm interested in the ${product.name} (${formatPrice(product.calculated_price.total)}). Can you please provide more details?`;
     window.open(`https://wa.me/919843010986?text=${encodeURIComponent(message)}`, '_blank');
@@ -90,21 +85,29 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Images */}
           <div className="space-y-4">
-            <div className="aspect-square rounded-xl overflow-hidden bg-secondary/30">
+            <div 
+              className="relative aspect-square rounded-xl overflow-hidden bg-secondary/30 cursor-zoom-in group"
+              onClick={() => setIsLightboxOpen(true)}
+            >
               <img
                 src={product.images[selectedImage] || '/placeholder.svg'}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
+              <div className="absolute inset-0 bg-rich-black/0 group-hover:bg-rich-black/20 transition-colors flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-3">
+                  <ZoomIn className="w-6 h-6 text-foreground" />
+                </div>
+              </div>
             </div>
             {product.images.length > 1 && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index ? 'border-primary' : 'border-transparent'
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === index ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-primary/50'
                     }`}
                   >
                     <img src={image} alt="" className="w-full h-full object-cover" />
@@ -208,14 +211,11 @@ export default function ProductDetail() {
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              <Button
-                onClick={handleAddToCart}
-                disabled={isAdding || !isAuthenticated}
-                className="btn-premium flex-1 py-6 text-lg gap-2"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {isAuthenticated ? 'Add to Cart' : 'Sign in to Purchase'}
-              </Button>
+              <AddToCartButton
+                productId={product.id}
+                quantity={quantity}
+                className="flex-1 py-6 text-lg"
+              />
               <Button
                 variant="outline"
                 size="icon"
@@ -286,6 +286,14 @@ export default function ProductDetail() {
           </section>
         )}
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={product.images}
+        initialIndex={selectedImage}
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+      />
     </Layout>
   );
 }
