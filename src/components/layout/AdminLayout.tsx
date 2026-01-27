@@ -12,7 +12,9 @@ import {
   LogOut,
   Wallet,
   Menu,
-  X
+  X,
+  Star,
+  Tag
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,8 @@ const menuItems = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Making Charges', href: '/admin/making-charges', icon: Settings },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+  { name: 'Reviews', href: '/admin/reviews', icon: Star },
+  { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Chit Funds', href: '/admin/chit-funds', icon: Wallet },
   { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];
