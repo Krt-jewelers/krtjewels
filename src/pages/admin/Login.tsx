@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,14 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+
+  // Redirect if already authenticated as admin
+  useEffect(() => {
+    if (!loading && isAuthenticated && isAdmin) {
+      navigate('/admin');
+    }
+  }, [loading, isAuthenticated, isAdmin, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +73,15 @@ export default function AdminLogin() {
       setIsLoading(false);
     }
   };
+
+  // Show loading if checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-secondary/30">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div 

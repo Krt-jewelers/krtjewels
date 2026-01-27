@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingBag, MapPin, CreditCard, Truck, Shield } from 'lucide-react';
+import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2 } from 'lucide-react';
 
 interface AddressForm {
   full_name: string;
@@ -27,8 +27,8 @@ interface AddressForm {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, gstTotal, total, clearCart } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { items, subtotal, gstTotal, total, clearCart, isLoading: cartLoading } = useCart();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { data: goldRate } = useGoldRate();
   const { toast } = useToast();
   
@@ -45,14 +45,55 @@ export default function CheckoutPage() {
   });
   const [notes, setNotes] = useState('');
 
+  // Fetch saved addresses
+  useEffect(() => {
+    const fetchDefaultAddress = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .maybeSingle();
+      
+      if (data) {
+        setAddress({
+          full_name: data.full_name,
+          phone: data.phone,
+          address_line1: data.address_line1,
+          address_line2: data.address_line2 || '',
+          city: data.city,
+          state: data.state,
+          pincode: data.pincode,
+        });
+      }
+    };
+    
+    if (user) {
+      fetchDefaultAddress();
+    }
+  }, [user]);
+
+  // Show loading state while auth is loading
+  if (authLoading || cartLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-20 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Redirect to auth AFTER auth loading is complete
   if (!isAuthenticated) {
-    navigate('/auth?redirect=/checkout');
-    return null;
+    return <Navigate to="/auth?redirect=/checkout" replace />;
   }
 
   if (items.length === 0) {
-    navigate('/cart');
-    return null;
+    return <Navigate to="/cart" replace />;
   }
 
   const generateOrderNumber = () => {
@@ -124,6 +165,16 @@ export default function CheckoutPage() {
         .insert(orderItems);
 
       if (itemsError) throw itemsError;
+
+      // Update stock quantities
+      for (const item of items) {
+        if (item.product.stock_quantity !== null) {
+          await supabase
+            .from('products')
+            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+            .eq('id', item.product.id);
+        }
+      }
 
       // Clear cart
       clearCart();
@@ -336,7 +387,14 @@ export default function CheckoutPage() {
                     className="w-full btn-premium py-6 text-lg"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Processing...' : 'Place Order'}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Place Order'
+                    )}
                   </Button>
 
                   {/* Trust badges */}

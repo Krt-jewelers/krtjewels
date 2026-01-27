@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,10 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { signIn, signUp, isAuthenticated, isAdmin, loading } = useAuth();
+  
+  const redirect = searchParams.get('redirect') || '/';
 
   // Sign In form state
   const [signInEmail, setSignInEmail] = useState('');
@@ -25,12 +28,28 @@ export default function AuthPage() {
   const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate(redirect);
+      }
+    }
+  }, [loading, isAuthenticated, isAdmin, navigate, redirect]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signIn(signInEmail, signInPassword);
-      navigate('/');
+      const result = await signIn(signInEmail, signInPassword);
+      // Redirect based on admin status
+      if (result.isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate(redirect);
+      }
     } catch (error) {
       // Error handled in useAuth hook
     } finally {
@@ -46,13 +65,24 @@ export default function AuthPage() {
     setIsLoading(true);
     try {
       await signUp(signUpEmail, signUpPassword, signUpName);
-      navigate('/');
+      navigate(redirect);
     } catch (error) {
       // Error handled in useAuth hook
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
