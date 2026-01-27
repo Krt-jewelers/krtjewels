@@ -16,6 +16,7 @@ import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
 import CheckoutPage from "./pages/Checkout";
+import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminGoldRates from "./pages/admin/GoldRates";
 import AdminProducts from "./pages/admin/Products";
@@ -23,6 +24,7 @@ import AdminProductForm from "./pages/admin/ProductForm";
 import AdminMakingCharges from "./pages/admin/MakingCharges";
 import AdminOrders from "./pages/admin/Orders";
 import AdminChitFunds from "./pages/admin/ChitFunds";
+import AdminUsers from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,7 @@ const App = () => (
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
           {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/gold-rates" element={<AdminGoldRates />} />
           <Route path="/admin/products" element={<AdminProducts />} />
@@ -54,6 +57,7 @@ const App = () => (
           <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

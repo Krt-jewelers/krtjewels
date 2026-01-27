@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Eye } from 'lucide-react';
+import { Heart, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPrice, METAL_TYPE_NAMES } from '@/lib/types';
+import { ProductCardSlider } from './ProductCardSlider';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import type { ProductWithPrice } from '@/lib/types';
 
 interface ProductCardProps {
@@ -13,16 +14,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart, isAdding } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const inWishlist = isInWishlist(product.id);
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addToCart({ productId: product.id });
-  };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,19 +24,17 @@ export function ProductCard({ product }: ProductCardProps) {
     toggleWishlist(product.id);
   };
 
+  const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
+
   return (
     <Link to={`/product/${product.slug}`} className="group">
       <div className="card-luxury bg-card rounded-xl overflow-hidden">
-        {/* Image Container */}
+        {/* Image Container with Slider */}
         <div className="relative aspect-square overflow-hidden bg-secondary/30">
-          <img
-            src={product.images[0] || '/placeholder.svg'}
-            alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-          />
+          <ProductCardSlider images={images} productName={product.name} />
           
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
             {product.is_new_arrival && (
               <Badge className="badge-luxury">New</Badge>
             )}
@@ -55,7 +47,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Quick Actions */}
-          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             <Button
               variant="secondary"
               size="icon"
@@ -70,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* View Details Overlay */}
-          <div className="absolute inset-0 bg-rich-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <div className="absolute inset-0 bg-rich-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-[5]">
             <div className="flex items-center gap-2 text-ivory font-medium">
               <Eye className="w-5 h-5" />
               <span>View Details</span>
@@ -115,15 +107,11 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Add to Cart */}
-            <Button
-              onClick={handleAddToCart}
-              disabled={isAdding || !isAuthenticated}
+            <AddToCartButton
+              productId={product.id}
               size="sm"
-              className="btn-premium gap-1"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span className="hidden sm:inline">Add</span>
-            </Button>
+              showText={false}
+            />
           </div>
         </div>
       </div>
