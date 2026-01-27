@@ -2,13 +2,14 @@ import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
-import { CATEGORY_NAMES, type ProductCategory } from '@/lib/types';
+import { CATEGORY_NAMES, type ProductCategory, formatPrice } from '@/lib/types';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SlidersHorizontal, X } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 const categoryRouteMap: Record<string, ProductCategory> = {
   'necklaces': 'necklaces',
@@ -28,6 +29,7 @@ export default function CollectionPage() {
   const category = categorySlug ? categoryRouteMap[categorySlug] : undefined;
 
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 200]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [sortBy, setSortBy] = useState<string>('newest');
   const [metalFilter, setMetalFilter] = useState<string>('all');
 
@@ -36,6 +38,8 @@ export default function CollectionPage() {
     metalType: metalFilter !== 'all' ? metalFilter as any : undefined,
     minWeight: weightRange[0] > 0 ? weightRange[0] : undefined,
     maxWeight: weightRange[1] < 200 ? weightRange[1] : undefined,
+    minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+    maxPrice: priceRange[1] < 1000000 ? priceRange[1] : undefined,
   });
 
   // Sort products
@@ -55,6 +59,14 @@ export default function CollectionPage() {
   });
 
   const categoryName = category ? CATEGORY_NAMES[category] : 'All Jewellery';
+
+  const hasActiveFilters = metalFilter !== 'all' || weightRange[0] > 0 || weightRange[1] < 200 || priceRange[0] > 0 || priceRange[1] < 1000000;
+
+  const clearAllFilters = () => {
+    setMetalFilter('all');
+    setWeightRange([0, 200]);
+    setPriceRange([0, 1000000]);
+  };
 
   return (
     <Layout>
@@ -121,7 +133,7 @@ export default function CollectionPage() {
                   <div className="mt-6 space-y-6">
                     {/* Metal Type */}
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Metal Type</label>
+                      <Label className="text-sm font-medium mb-2 block">Metal Type</Label>
                       <Select value={metalFilter} onValueChange={setMetalFilter}>
                         <SelectTrigger>
                           <SelectValue placeholder="All metals" />
@@ -137,9 +149,9 @@ export default function CollectionPage() {
 
                     {/* Weight Range */}
                     <div>
-                      <label className="text-sm font-medium mb-4 block">
+                      <Label className="text-sm font-medium mb-4 block">
                         Weight Range: {weightRange[0]}g - {weightRange[1]}g
-                      </label>
+                      </Label>
                       <Slider
                         value={weightRange}
                         onValueChange={(value) => setWeightRange(value as [number, number])}
@@ -150,16 +162,28 @@ export default function CollectionPage() {
                       />
                     </div>
 
+                    {/* Price Range */}
+                    <div>
+                      <Label className="text-sm font-medium mb-4 block">
+                        Price Range: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
+                      </Label>
+                      <Slider
+                        value={priceRange}
+                        onValueChange={(value) => setPriceRange(value as [number, number])}
+                        min={0}
+                        max={1000000}
+                        step={10000}
+                        className="mt-2"
+                      />
+                    </div>
+
                     {/* Clear Filters */}
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => {
-                        setMetalFilter('all');
-                        setWeightRange([0, 200]);
-                      }}
+                      onClick={clearAllFilters}
                     >
-                      Clear Filters
+                      Clear All Filters
                     </Button>
                   </div>
                 </SheetContent>
@@ -168,7 +192,7 @@ export default function CollectionPage() {
           </div>
 
           {/* Active Filters */}
-          {(metalFilter !== 'all' || weightRange[0] > 0 || weightRange[1] < 200) && (
+          {hasActiveFilters && (
             <div className="flex flex-wrap gap-2 mb-6">
               {metalFilter !== 'all' && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
@@ -180,12 +204,26 @@ export default function CollectionPage() {
               )}
               {(weightRange[0] > 0 || weightRange[1] < 200) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
-                  {weightRange[0]}g - {weightRange[1]}g
+                  Weight: {weightRange[0]}g - {weightRange[1]}g
                   <button onClick={() => setWeightRange([0, 200])}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>
               )}
+              {(priceRange[0] > 0 || priceRange[1] < 1000000) && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
+                  Price: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
+                  <button onClick={() => setPriceRange([0, 1000000])}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              <button 
+                onClick={clearAllFilters}
+                className="text-sm text-primary hover:underline"
+              >
+                Clear all
+              </button>
             </div>
           )}
 

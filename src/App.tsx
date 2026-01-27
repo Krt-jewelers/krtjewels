@@ -16,6 +16,13 @@ import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
 import CheckoutPage from "./pages/Checkout";
+// Customer Account Pages
+import AccountDashboard from "./pages/account/Dashboard";
+import AccountOrders from "./pages/account/Orders";
+import AccountProfile from "./pages/account/Profile";
+import AccountAddresses from "./pages/account/Addresses";
+import AccountCoupons from "./pages/account/Coupons";
+// Admin Pages
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminGoldRates from "./pages/admin/GoldRates";
@@ -25,6 +32,8 @@ import AdminMakingCharges from "./pages/admin/MakingCharges";
 import AdminOrders from "./pages/admin/Orders";
 import AdminChitFunds from "./pages/admin/ChitFunds";
 import AdminUsers from "./pages/admin/Users";
+import AdminReviews from "./pages/admin/Reviews";
+import AdminCoupons from "./pages/admin/Coupons";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +44,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/collections/:category" element={<CollectionPage />} />
@@ -47,6 +57,14 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
+          
+          {/* Customer Account Routes */}
+          <Route path="/account" element={<AccountDashboard />} />
+          <Route path="/account/orders" element={<AccountOrders />} />
+          <Route path="/account/profile" element={<AccountProfile />} />
+          <Route path="/account/addresses" element={<AccountAddresses />} />
+          <Route path="/account/coupons" element={<AccountCoupons />} />
+          
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
@@ -58,6 +76,9 @@ const App = () => (
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/reviews" element={<AdminReviews />} />
+          <Route path="/admin/coupons" element={<AdminCoupons />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
