@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
@@ -12,6 +12,16 @@ export function useAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const checkAdminStatus = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', 'admin')
+      .maybeSingle();
+    return !!data;
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -20,16 +30,9 @@ export function useAuth() {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check if user is admin (defer to avoid blocking)
-          setTimeout(async () => {
-            const { data } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .eq('role', 'admin')
-              .maybeSingle();
-            setIsAdmin(!!data);
-          }, 0);
+          // Check admin status immediately (not deferred)
+          const adminStatus = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
         } else {
           setIsAdmin(false);
         }
@@ -39,20 +42,13 @@ export function useAuth() {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'admin')
-          .maybeSingle()
-          .then(({ data }) => {
-            setIsAdmin(!!data);
-          });
+        const adminStatus = await checkAdminStatus(session.user.id);
+        setIsAdmin(adminStatus);
       }
       
       setLoading(false);
@@ -61,7 +57,7 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAdminStatus]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     setLoading(true);
@@ -105,12 +101,17 @@ export function useAuth() {
 
       if (error) throw error;
 
+      // Check if user is admin
+      const adminStatus = await checkAdminStatus(data.user.id);
+      setIsAdmin(adminStatus);
+
       toast({
-        title: 'Welcome back!',
-        description: 'You have been signed in successfully.',
+        title: adminStatus ? 'Welcome Admin!' : 'Welcome back!',
+        description: adminStatus ? 'Redirecting to dashboard...' : 'You have been signed in successfully.',
       });
 
-      return data;
+      // Return with admin status for redirect handling
+      return { ...data, isAdmin: adminStatus };
     } catch (error: any) {
       toast({
         title: 'Sign in failed',
@@ -128,6 +129,8 @@ export function useAuth() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
+      setIsAdmin(false);
+      
       toast({
         title: 'Signed out',
         description: 'You have been signed out successfully.',

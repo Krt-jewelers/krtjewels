@@ -33,6 +33,7 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminChitFunds from "./pages/admin/ChitFunds";
 import AdminUsers from "./pages/admin/Users";
 import AdminReviews from "./pages/admin/Reviews";
+import AdminInventory from "./pages/admin/InventoryAlerts";
 import AdminCoupons from "./pages/admin/Coupons";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/admin/products" element={<AdminProducts />} />
           <Route path="/admin/products/new" element={<AdminProductForm />} />
           <Route path="/admin/products/:id" element={<AdminProductForm />} />
+          <Route path="/admin/inventory" element={<AdminInventory />} />
           <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/chit-funds" element={<AdminChitFunds />} />

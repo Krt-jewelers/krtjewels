@@ -23,10 +23,13 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
+import { AlertTriangle } from 'lucide-react';
+
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Gold Rates', href: '/admin/gold-rates', icon: TrendingUp },
   { name: 'Products', href: '/admin/products', icon: Package },
+  { name: 'Inventory Alerts', href: '/admin/inventory', icon: AlertTriangle },
   { name: 'Making Charges', href: '/admin/making-charges', icon: Settings },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },

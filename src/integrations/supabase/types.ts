@@ -86,6 +86,13 @@ export type Database = {
             foreignKeyName: "cart_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -321,6 +328,13 @@ export type Database = {
             foreignKeyName: "enquiries_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -430,6 +444,13 @@ export type Database = {
             foreignKeyName: "order_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -502,6 +523,7 @@ export type Database = {
           is_bridal: boolean | null
           is_featured: boolean | null
           is_new_arrival: boolean | null
+          low_stock_threshold: number | null
           making_charge_percent: number | null
           metal_type: Database["public"]["Enums"]["metal_type"]
           name: string
@@ -527,6 +549,7 @@ export type Database = {
           is_bridal?: boolean | null
           is_featured?: boolean | null
           is_new_arrival?: boolean | null
+          low_stock_threshold?: number | null
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
           name: string
@@ -552,6 +575,7 @@ export type Database = {
           is_bridal?: boolean | null
           is_featured?: boolean | null
           is_new_arrival?: boolean | null
+          low_stock_threshold?: number | null
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
           name?: string
@@ -638,6 +662,13 @@ export type Database = {
           user_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_product_id_fkey"
             columns: ["product_id"]
@@ -740,6 +771,13 @@ export type Database = {
             foreignKeyName: "wishlist_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wishlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
@@ -747,7 +785,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      low_stock_products: {
+        Row: {
+          category: Database["public"]["Enums"]["product_category"] | null
+          id: string | null
+          is_active: boolean | null
+          low_stock_threshold: number | null
+          name: string | null
+          sku: string | null
+          stock_quantity: number | null
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["product_category"] | null
+          id?: string | null
+          is_active?: boolean | null
+          low_stock_threshold?: number | null
+          name?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["product_category"] | null
+          id?: string | null
+          is_active?: boolean | null
+          low_stock_threshold?: number | null
+          name?: string | null
+          sku?: string | null
+          stock_quantity?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_product_price: {
