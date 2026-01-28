@@ -16,6 +16,7 @@ import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
 import CheckoutPage from "./pages/Checkout";
+import ComparePage from "./pages/Compare";
 // Customer Account Pages
 import AccountDashboard from "./pages/account/Dashboard";
 import AccountOrders from "./pages/account/Orders";
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/compare" element={<ComparePage />} />
           
           {/* Customer Account Routes */}
           <Route path="/account" element={<AccountDashboard />} />

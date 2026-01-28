@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { WhatsAppButton } from '@/components/ui/WhatsAppButton';
+import { ComparisonBar } from '@/components/products/ComparisonBar';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1">{children}</main>
       <Footer />
       <WhatsAppButton />
+      <ComparisonBar />
     </div>
   );
 }
