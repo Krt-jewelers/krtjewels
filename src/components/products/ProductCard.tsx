@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Eye, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
+import { useProductComparison } from '@/hooks/useProductComparison';
 import { formatPrice, METAL_TYPE_NAMES } from '@/lib/types';
 import { ProductCardSlider } from './ProductCardSlider';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { useToast } from '@/hooks/use-toast';
 import type { ProductWithPrice } from '@/lib/types';
 
 interface ProductCardProps {
@@ -15,12 +17,31 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
+  const { addProduct, removeProduct, isInComparison } = useProductComparison();
+  const { toast } = useToast();
   const inWishlist = isInWishlist(product.id);
+  const inComparison = isInComparison(product.id);
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     toggleWishlist(product.id);
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (inComparison) {
+      removeProduct(product.id);
+      toast({ title: 'Removed from comparison' });
+    } else {
+      const added = addProduct(product);
+      if (!added) {
+        toast({ title: 'Limit reached', description: 'You can compare up to 3 products', variant: 'destructive' });
+      } else {
+        toast({ title: 'Added to comparison' });
+      }
+    }
   };
 
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
@@ -65,6 +86,18 @@ export function ProductCard({ product }: ProductCardProps) {
               disabled={!isAuthenticated}
             >
               <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleToggleCompare}
+              className={`w-10 h-10 rounded-full shadow-lg backdrop-blur-md ${
+                inComparison 
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                  : 'bg-white/90 hover:bg-white text-foreground'
+              }`}
+            >
+              <Scale className="w-4 h-4" />
             </Button>
           </div>
 

@@ -15,6 +15,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2 } from 'lucide-react';
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 interface AddressForm {
   full_name: string;
   phone: string;
@@ -44,6 +50,18 @@ export default function CheckoutPage() {
     pincode: '',
   });
   const [notes, setNotes] = useState('');
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   // Fetch saved addresses
   useEffect(() => {
@@ -104,6 +122,148 @@ export default function CheckoutPage() {
     return `KRT${year}${month}${random}`;
   };
 
+  const createOrder = async (orderNumber: string, paymentId?: string) => {
+    if (!user || !goldRate) return null;
+
+    // Create order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert([{
+        order_number: orderNumber,
+        user_id: user.id,
+        status: paymentId ? 'confirmed' : 'pending' as const,
+        gold_rate_at_order: goldRate.rate_22k,
+        subtotal: subtotal,
+        gst_amount: gstTotal,
+        total_amount: total,
+        shipping_address: address as any,
+        payment_method: paymentMethod,
+        payment_id: paymentId || null,
+        notes: notes || null,
+      }])
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    // Create order items
+    const orderItems = items.map((item) => ({
+      order_id: order.id,
+      product_id: item.product.id,
+      product_name: item.product.name,
+      product_image: item.product.images[0] || null,
+      weight_grams: item.product.weight_grams,
+      gold_rate_applied: item.product.calculated_price.gold_rate_applied,
+      making_charges: item.product.calculated_price.making_charges,
+      diamond_cost: item.product.diamond_cost || 0,
+      stone_cost: item.product.stone_cost || 0,
+      quantity: item.quantity,
+      unit_price: item.product.calculated_price.total,
+      total_price: item.product.calculated_price.total * item.quantity,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) throw itemsError;
+
+    // Update stock quantities
+    for (const item of items) {
+      if (item.product.stock_quantity !== null) {
+        await supabase
+          .from('products')
+          .update({ stock_quantity: item.product.stock_quantity - item.quantity })
+          .eq('id', item.product.id);
+      }
+    }
+
+    return order;
+  };
+
+  const handleRazorpayPayment = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const orderNumber = generateOrderNumber();
+
+      // Create Razorpay order via edge function
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: total,
+          currency: 'INR',
+          receipt: orderNumber,
+          notes: { order_number: orderNumber },
+        },
+      });
+
+      if (error) throw new Error(error.message);
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'KRT Jewels',
+        description: `Order #${orderNumber}`,
+        order_id: data.orderId,
+        handler: async (response: any) => {
+          try {
+            // Verify payment
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+            });
+
+            if (verifyError) throw new Error(verifyError.message);
+
+            // Create order in database
+            await createOrder(orderNumber, response.razorpay_payment_id);
+            
+            clearCart();
+            toast({
+              title: 'Payment Successful!',
+              description: `Your order #${orderNumber} has been confirmed.`,
+            });
+            navigate(`/track-order?order=${orderNumber}`);
+          } catch (err: any) {
+            toast({
+              title: 'Payment verification failed',
+              description: err.message,
+              variant: 'destructive',
+            });
+          }
+        },
+        prefill: {
+          name: address.full_name,
+          email: user?.email,
+          contact: address.phone,
+        },
+        theme: {
+          color: '#C9A54D',
+        },
+        modal: {
+          ondismiss: () => {
+            setIsSubmitting(false);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast({
+        title: 'Payment failed',
+        description: error.message || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -119,72 +279,23 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (paymentMethod === 'online') {
+      await handleRazorpayPayment();
+      return;
+    }
+
+    // COD order
     setIsSubmitting(true);
 
     try {
       const orderNumber = generateOrderNumber();
-
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert([{
-          order_number: orderNumber,
-          user_id: user.id,
-          status: 'pending' as const,
-          gold_rate_at_order: goldRate.rate_22k,
-          subtotal: subtotal,
-          gst_amount: gstTotal,
-          total_amount: total,
-          shipping_address: address as any,
-          payment_method: paymentMethod,
-          notes: notes || null,
-        }])
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_image: item.product.images[0] || null,
-        weight_grams: item.product.weight_grams,
-        gold_rate_applied: item.product.calculated_price.gold_rate_applied,
-        making_charges: item.product.calculated_price.making_charges,
-        diamond_cost: item.product.diamond_cost || 0,
-        stone_cost: item.product.stone_cost || 0,
-        quantity: item.quantity,
-        unit_price: item.product.calculated_price.total,
-        total_price: item.product.calculated_price.total * item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      // Update stock quantities
-      for (const item of items) {
-        if (item.product.stock_quantity !== null) {
-          await supabase
-            .from('products')
-            .update({ stock_quantity: item.product.stock_quantity - item.quantity })
-            .eq('id', item.product.id);
-        }
-      }
-
-      // Clear cart
+      await createOrder(orderNumber);
+      
       clearCart();
-
       toast({
         title: 'Order Placed Successfully!',
         description: `Your order #${orderNumber} has been confirmed.`,
       });
-
-      // Navigate to order confirmation
       navigate(`/track-order?order=${orderNumber}`);
 
     } catch (error: any) {
@@ -299,18 +410,25 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-secondary/30">
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'hover:bg-secondary/30'}`}>
                       <RadioGroupItem value="cod" id="cod" />
                       <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Cash on Delivery</span>
-                        <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                        <div className="flex items-center gap-2">
+                          <Truck className="w-5 h-5 text-muted-foreground" />
+                          <span className="font-medium">Cash on Delivery</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">Pay when you receive your order</p>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-secondary/30 mt-3">
+                    <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all mt-3 ${paymentMethod === 'online' ? 'border-primary bg-primary/5' : 'hover:bg-secondary/30'}`}>
                       <RadioGroupItem value="online" id="online" />
                       <Label htmlFor="online" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Pay Online (Razorpay)</span>
-                        <p className="text-sm text-muted-foreground">Cards, UPI, Net Banking, Wallets</p>
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="w-5 h-5 text-muted-foreground" />
+                          <span className="font-medium">Pay Online (Razorpay)</span>
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Secure</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">Cards, UPI, Net Banking, Wallets</p>
                       </Label>
                     </div>
                   </RadioGroup>
@@ -392,6 +510,8 @@ export default function CheckoutPage() {
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Processing...
                       </>
+                    ) : paymentMethod === 'online' ? (
+                      'Pay Now'
                     ) : (
                       'Place Order'
                     )}
