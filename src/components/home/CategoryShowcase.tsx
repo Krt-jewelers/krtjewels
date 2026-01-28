@@ -36,17 +36,21 @@ const categories = [
 
 export function CategoryShowcase() {
   return (
-    <section className="py-20 bg-gradient-premium">
-      <div className="container mx-auto px-4">
+    <section className="py-16 md:py-24 bg-gradient-to-b from-background via-secondary/20 to-background relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 bg-pattern-lines opacity-20" />
+      
+      <div className="container mx-auto px-4 relative">
         {/* Header */}
-        <div className="text-center mb-12">
-          <span className="text-primary text-sm uppercase tracking-[0.3em] font-medium">
+        <div className="text-center mb-14">
+          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium mb-3">
+            <span className="w-8 h-px bg-primary" />
             Explore
+            <span className="w-8 h-px bg-primary" />
           </span>
-          <h2 className="font-serif text-4xl md:text-5xl font-semibold mt-2 mb-4">
+          <h2 className="font-serif text-4xl md:text-5xl font-semibold section-heading">
             Our Collections
           </h2>
-          <div className="divider-gold max-w-xs mx-auto" />
         </div>
 
         {/* Grid */}

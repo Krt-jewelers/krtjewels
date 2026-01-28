@@ -103,16 +103,28 @@ export function CustomerReviews() {
   const totalReviews = 286;
 
   return (
-    <section className="py-16 md:py-24 bg-secondary/30">
+    <section className="py-16 md:py-24 bg-gradient-to-b from-secondary/20 to-secondary/40 relative">
+      {/* Decorative top border */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-4">
+        <div className="text-center mb-14">
+          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium mb-3">
+            <span className="w-8 h-px bg-primary" />
+            Testimonials
+            <span className="w-8 h-px bg-primary" />
+          </span>
+          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-semibold mb-6 section-heading">
             What Our Customers Say
           </h2>
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <StarRating rating={5} />
-            <span className="font-serif text-2xl font-bold">{averageRating}</span>
+          <div className="flex items-center justify-center gap-3 mt-8 mb-2">
+            <div className="flex gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-6 h-6 fill-primary text-primary" />
+              ))}
+            </div>
+            <span className="font-serif text-3xl font-bold text-primary">{averageRating}</span>
           </div>
           <p className="text-muted-foreground">
             Based on {totalReviews} verified Google reviews
