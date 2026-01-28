@@ -23,15 +23,22 @@ export function GoldRateWidget() {
   if (!goldRate) return null;
 
   return (
-    <section className="py-12 bg-gradient-to-r from-rich-black via-charcoal to-rich-black relative overflow-hidden">
+    <section className="py-8 md:py-10 bg-gradient-to-r from-rich-black via-charcoal to-rich-black relative overflow-hidden">
       {/* Decorative Elements */}
-      <div className="absolute inset-0 bg-pattern-dots opacity-10" />
+      <div className="absolute inset-0 bg-pattern-dots opacity-5" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       
       <div className="container mx-auto px-4 relative">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
-            <h3 className="font-serif text-2xl text-ivory mb-1">Today's Gold Rate</h3>
-            <p className="text-ivory/60 text-sm">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
+          {/* Left - Title */}
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-green-400 text-xs font-medium uppercase tracking-wider">Live</span>
+            </div>
+            <h3 className="font-serif text-2xl md:text-3xl text-ivory font-semibold">Today's Gold Rate</h3>
+            <p className="text-ivory/50 text-sm mt-1">
               Updated: {new Date(goldRate.effective_date).toLocaleDateString('en-IN', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -41,32 +48,37 @@ export function GoldRateWidget() {
             </p>
           </div>
 
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <span className="text-gold-light text-sm uppercase tracking-wider">22K Gold</span>
-              <div className="flex items-center gap-2 mt-1">
+          {/* Center - Rates */}
+          <div className="flex items-center gap-6 md:gap-10">
+            {/* 22K Rate */}
+            <div className="text-center px-6 py-4 rounded-2xl bg-ivory/5 backdrop-blur-sm border border-ivory/10">
+              <span className="text-primary text-xs uppercase tracking-[0.2em] font-semibold">22K Gold</span>
+              <div className="flex items-baseline gap-1.5 mt-2">
                 <span className="font-serif text-3xl md:text-4xl text-gold-gradient font-bold">
                   {formatPrice(goldRate.rate_22k)}
                 </span>
-                <span className="text-ivory/60 text-sm">/gram</span>
+                <span className="text-ivory/40 text-sm">/gram</span>
               </div>
             </div>
 
-            <div className="h-12 w-px bg-ivory/20" />
+            {/* Divider */}
+            <div className="h-16 w-px bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
 
-            <div className="text-center">
-              <span className="text-gold-light text-sm uppercase tracking-wider">24K Gold</span>
-              <div className="flex items-center gap-2 mt-1">
+            {/* 24K Rate */}
+            <div className="text-center px-6 py-4 rounded-2xl bg-ivory/5 backdrop-blur-sm border border-ivory/10">
+              <span className="text-primary text-xs uppercase tracking-[0.2em] font-semibold">24K Gold</span>
+              <div className="flex items-baseline gap-1.5 mt-2">
                 <span className="font-serif text-3xl md:text-4xl text-gold-gradient font-bold">
                   {formatPrice(goldRate.rate_24k)}
                 </span>
-                <span className="text-ivory/60 text-sm">/gram</span>
+                <span className="text-ivory/40 text-sm">/gram</span>
               </div>
             </div>
           </div>
 
+          {/* Right - CTA */}
           <Link to="/gold-rate">
-            <Button className="btn-premium">
+            <Button className="btn-premium rounded-full px-8 py-6 shadow-xl">
               View Rate History
             </Button>
           </Link>

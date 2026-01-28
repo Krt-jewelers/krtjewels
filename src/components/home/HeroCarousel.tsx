@@ -57,45 +57,57 @@ export function HeroCarousel() {
   const slide = slides[currentSlide];
 
   return (
-    <section className="relative h-[60vh] md:h-[80vh] overflow-hidden">
+    <section className="relative h-[65vh] md:h-[85vh] overflow-hidden">
       {/* Background Images */}
       {slides.map((s, index) => (
         <div
           key={s.id}
-          className={`absolute inset-0 transition-opacity duration-700 ${
-            index === currentSlide ? 'opacity-100' : 'opacity-0'
+          className={`absolute inset-0 transition-all duration-1000 ${
+            index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
           }`}
         >
           <div 
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${s.image})` }}
+            className="absolute inset-0 bg-cover bg-center transform transition-transform duration-[8000ms] ease-out"
+            style={{ 
+              backgroundImage: `url(${s.image})`,
+              transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
+            }}
           />
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-rich-black/80 via-rich-black/50 to-transparent" />
+          {/* Premium Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-rich-black/90 via-rich-black/60 to-rich-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-rich-black/50 via-transparent to-transparent" />
         </div>
       ))}
+
+      {/* Decorative Elements */}
+      <div className="absolute top-20 right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse hidden lg:block" />
+      <div className="absolute bottom-20 left-10 w-48 h-48 bg-primary/10 rounded-full blur-2xl hidden lg:block" />
 
       {/* Content */}
       <div className="relative h-full container mx-auto px-4 flex items-center">
         <div className="max-w-2xl">
-          <span 
+          {/* Premium Label */}
+          <div 
             key={`subtitle-${currentSlide}`}
-            className="inline-block text-primary text-sm md:text-base uppercase tracking-[0.3em] mb-4 animate-fade-in-up font-medium"
+            className="inline-flex items-center gap-3 mb-6 animate-fade-in-up"
           >
-            {slide.subtitle}
-          </span>
+            <div className="h-px w-8 bg-primary" />
+            <span className="text-primary text-sm md:text-base uppercase tracking-[0.3em] font-medium">
+              {slide.subtitle}
+            </span>
+          </div>
           
           <h1 
             key={`title-${currentSlide}`}
-            className="font-serif text-4xl md:text-6xl lg:text-7xl text-ivory font-semibold mb-6 animate-fade-in-up text-shadow-luxury"
+            className="font-serif text-4xl md:text-6xl lg:text-7xl text-ivory font-semibold mb-6 animate-fade-in-up leading-tight"
             style={{ animationDelay: '100ms' }}
           >
-            {slide.title}
+            <span className="text-glow">{slide.title}</span>
           </h1>
           
           <p 
             key={`desc-${currentSlide}`}
-            className="text-ivory/80 text-base md:text-xl mb-8 max-w-lg animate-fade-in-up"
+            className="text-ivory/80 text-base md:text-xl mb-10 max-w-lg animate-fade-in-up leading-relaxed"
             style={{ animationDelay: '200ms' }}
           >
             {slide.description}
@@ -107,16 +119,16 @@ export function HeroCarousel() {
             style={{ animationDelay: '300ms' }}
           >
             <Link to={slide.cta.href}>
-              <Button className="btn-premium text-base md:text-lg px-6 md:px-8 py-5 md:py-6">
+              <Button className="btn-premium text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-full font-medium shadow-xl hover:shadow-2xl transition-all">
                 {slide.cta.text}
               </Button>
             </Link>
             <Link to="/gold-rate">
               <Button 
                 variant="outline" 
-                className="text-base md:text-lg px-6 md:px-8 py-5 md:py-6 border-2 border-ivory/50 text-ivory bg-transparent hover:bg-ivory/10 hover:border-ivory"
+                className="text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-full border-2 border-ivory/40 text-ivory bg-ivory/5 backdrop-blur-sm hover:bg-ivory/15 hover:border-ivory/70 transition-all"
               >
-                Gold Rate
+                Today's Rate
               </Button>
             </Link>
           </div>
