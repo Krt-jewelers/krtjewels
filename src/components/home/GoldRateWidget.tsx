@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export function GoldRateWidget() {
-  const { data: goldRate, isLoading } = useGoldRate();
+  const { data: goldRate, isLoading, isError } = useGoldRate();
 
   if (isLoading) {
     return (
@@ -20,7 +20,21 @@ export function GoldRateWidget() {
     );
   }
 
-  if (!goldRate) return null;
+  // Show fallback UI when no rate available instead of returning null
+  if (!goldRate || isError) {
+    return (
+      <section className="py-8 md:py-10 bg-gradient-to-r from-rich-black via-charcoal to-rich-black relative overflow-hidden">
+        <div className="container mx-auto px-4 relative">
+          <div className="text-center text-ivory/60">
+            <p className="text-sm">Gold rates temporarily unavailable. Check back soon.</p>
+            <Link to="/gold-rate" className="text-primary underline text-sm mt-2 inline-block">
+              View rate history
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-8 md:py-10 bg-gradient-to-r from-rich-black via-charcoal to-rich-black relative overflow-hidden">

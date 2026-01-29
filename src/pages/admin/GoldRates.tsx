@@ -65,10 +65,11 @@ export default function AdminGoldRates() {
 
       if (error) throw error;
 
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['goldRate'] });
-      queryClient.invalidateQueries({ queryKey: ['goldRateHistory'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Invalidate all relevant queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['goldRate'] });
+      await queryClient.invalidateQueries({ queryKey: ['goldRateHistory'] });
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
 
       toast({
         title: 'Success!',
