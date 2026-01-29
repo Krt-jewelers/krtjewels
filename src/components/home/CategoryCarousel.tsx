@@ -6,20 +6,20 @@ import { Button } from '@/components/ui/button';
 interface Category {
   name: string;
   slug: string;
-  icon: string;
+  image: string;
 }
 
 const categories: Category[] = [
-  { name: 'Rings', slug: 'rings', icon: '💍' },
-  { name: 'Necklaces', slug: 'necklaces', icon: '📿' },
-  { name: 'Earrings', slug: 'earrings', icon: '✨' },
-  { name: 'Bangles', slug: 'bangles', icon: '⭕' },
-  { name: 'Bracelets', slug: 'bracelets', icon: '🔗' },
-  { name: 'Chains', slug: 'chains', icon: '⛓️' },
-  { name: 'Pendants', slug: 'pendants', icon: '💎' },
-  { name: 'Wedding Sets', slug: 'wedding-bridal', icon: '💒' },
-  { name: 'Diamond', slug: 'diamond-jewellery', icon: '💠' },
-  { name: "Men's", slug: 'mens-jewellery', icon: '👔' },
+  { name: 'Rings', slug: 'rings', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=200&h=200&fit=crop' },
+  { name: 'Necklaces', slug: 'necklaces', image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=200&h=200&fit=crop' },
+  { name: 'Earrings', slug: 'earrings', image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=200&h=200&fit=crop' },
+  { name: 'Bangles', slug: 'bangles', image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=200&h=200&fit=crop' },
+  { name: 'Bracelets', slug: 'bracelets', image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=200&h=200&fit=crop' },
+  { name: 'Chains', slug: 'chains', image: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=200&h=200&fit=crop' },
+  { name: 'Pendants', slug: 'pendants', image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&h=200&fit=crop' },
+  { name: 'Wedding Sets', slug: 'wedding-bridal', image: 'https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=200&h=200&fit=crop' },
+  { name: 'Diamond', slug: 'diamond-jewellery', image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=200&h=200&fit=crop' },
+  { name: "Men's", slug: 'mens-jewellery', image: 'https://images.unsplash.com/photo-1611085583191-a3b181a88401?w=200&h=200&fit=crop' },
 ];
 
 export function CategoryCarousel() {
@@ -140,9 +140,14 @@ export function CategoryCarousel() {
                 onClick={handleInteractionStart}
               >
                 <div className="flex flex-col items-center gap-2">
-                  {/* Circular Icon Container */}
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full bg-gradient-to-br from-secondary to-secondary/50 border-2 border-transparent group-hover:border-primary group-hover:from-primary/10 group-hover:to-primary/5 flex items-center justify-center transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
-                    <span className="text-xl sm:text-2xl md:text-2xl lg:text-3xl xl:text-4xl">{category.icon}</span>
+                  {/* Circular Image Container */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 xl:w-24 xl:h-24 rounded-full border-2 border-transparent group-hover:border-primary overflow-hidden transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
+                    <img 
+                      src={category.image} 
+                      alt={category.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
                   {/* Category Name */}
                   <span className="text-[10px] sm:text-xs md:text-sm font-medium text-center whitespace-nowrap group-hover:text-primary transition-colors">

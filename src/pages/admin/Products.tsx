@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
-import { useProducts } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatPrice, CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
+import { useGoldRate } from '@/hooks/useGoldRate';
+import { calculateProductPrice } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,10 +27,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Edit, Eye, Package } from 'lucide-react';
+import { Search, Plus, Edit, Eye, Package, Loader2 } from 'lucide-react';
+
+// Dedicated admin products query - fetches ALL products (active + inactive)
+function useAdminProducts() {
+  const { data: goldRate } = useGoldRate();
+  
+  return useQuery({
+    queryKey: ['adminProducts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map((product) => ({
+        ...product,
+        specifications: (product.specifications as Record<string, any>) || {},
+        calculated_price: calculateProductPrice(product as any, goldRate || null),
+      }));
+    },
+    staleTime: 0, // Always refetch for admin
+  });
+}
 
 export default function AdminProducts() {
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading, isFetching } = useAdminProducts();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const { toast } = useToast();
@@ -52,6 +77,8 @@ export default function AdminProducts() {
 
       if (error) throw error;
 
+      // Invalidate both admin and public product queries
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       
       toast({
@@ -76,6 +103,7 @@ export default function AdminProducts() {
 
       if (error) throw error;
 
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
       
       toast({
@@ -97,7 +125,10 @@ export default function AdminProducts() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl font-semibold mb-1">Products</h1>
+            <h1 className="font-serif text-3xl font-semibold mb-1 flex items-center gap-2">
+              Products
+              {isFetching && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+            </h1>
             <p className="text-muted-foreground">
               Manage your jewellery catalog ({products?.length || 0} products)
             </p>

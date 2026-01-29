@@ -23,6 +23,8 @@ export function useGoldRate() {
     },
     staleTime: 1000 * 60 * 5, // Consider fresh for 5 minutes
     refetchInterval: 1000 * 60 * 5, // Refetch every 5 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }
 

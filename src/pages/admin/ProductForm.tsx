@@ -176,6 +176,7 @@ export default function AdminProductForm() {
         if (error) throw error;
       }
 
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
 
       toast({

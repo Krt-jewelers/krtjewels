@@ -76,10 +76,10 @@ export function calculateProductPrice(
 }
 
 export function useProducts(filters?: ProductFilters) {
-  const { data: goldRate } = useGoldRate();
+  const { data: goldRate, isLoading: goldRateLoading } = useGoldRate();
 
   return useQuery({
-    queryKey: ['products', filters],
+    queryKey: ['products', filters, goldRate?.id],
     queryFn: async (): Promise<ProductWithPrice[]> => {
       let query = supabase
         .from('products')
@@ -124,7 +124,7 @@ export function useProducts(filters?: ProductFilters) {
         throw error;
       }
 
-      // Calculate prices for each product
+      // Calculate prices for each product (use goldRate if available, otherwise show 0)
       const productsWithPrices = (data || []).map((product) => ({
         ...product,
         specifications: (product.specifications as Record<string, any>) || {},
@@ -146,7 +146,10 @@ export function useProducts(filters?: ProductFilters) {
 
       return filteredProducts;
     },
-    enabled: !!goldRate,
+    // Allow query to run even without gold rate - prices will show 0 until rate loads
+    enabled: true,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -154,7 +157,7 @@ export function useProduct(slug: string) {
   const { data: goldRate } = useGoldRate();
 
   return useQuery({
-    queryKey: ['product', slug],
+    queryKey: ['product', slug, goldRate?.id],
     queryFn: async (): Promise<ProductWithPrice | null> => {
       const { data, error } = await supabase
         .from('products')
@@ -176,7 +179,8 @@ export function useProduct(slug: string) {
         calculated_price: calculateProductPrice(data as any, goldRate || null),
       } as ProductWithPrice;
     },
-    enabled: !!goldRate && !!slug,
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 2,
   });
 }
 
