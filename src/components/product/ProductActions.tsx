@@ -101,61 +101,63 @@ export function ProductActions({ product }: ProductActionsProps) {
           </div>
         </div>
 
-        {/* Add to Cart - Full Width Premium */}
-        <Button
-          onClick={handleAddToCart}
-          disabled={isAdding || isOutOfStock}
-          className={cn(
-            'w-full py-7 text-lg font-semibold gap-3 rounded-xl transition-all duration-300',
-            isAdded 
-              ? 'bg-green-600 hover:bg-green-700 text-white' 
-              : 'btn-premium'
-          )}
-        >
-          {isAdded ? (
-            <>
-              <Check className="w-6 h-6" />
-              Added to Cart!
-            </>
-          ) : isOutOfStock ? (
-            'Out of Stock'
-          ) : !isAuthenticated ? (
-            <>
-              <ShoppingBag className="w-6 h-6" />
-              Sign In to Add to Cart
-            </>
-          ) : (
-            <>
-              <ShoppingBag className="w-6 h-6" />
-              Add to Cart – {formatPrice(product.calculated_price.total * quantity)}
-            </>
-          )}
-        </Button>
+        {/* Add to Cart & Wishlist - Side by Side */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          {/* Add to Cart - Takes 3 columns */}
+          <Button
+            onClick={handleAddToCart}
+            disabled={isAdding || isOutOfStock}
+            className={cn(
+              'md:col-span-3 py-7 text-lg font-semibold gap-3 rounded-xl transition-all duration-300',
+              isAdded 
+                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            )}
+          >
+            {isAdded ? (
+              <>
+                <Check className="w-6 h-6" />
+                <span>Added to Cart!</span>
+              </>
+            ) : isOutOfStock ? (
+              <span>Out of Stock</span>
+            ) : !isAuthenticated ? (
+              <>
+                <ShoppingBag className="w-6 h-6" />
+                <span>Sign In to Add</span>
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-6 h-6" />
+                <span>Add to Cart – {formatPrice(product.calculated_price.total * quantity)}</span>
+              </>
+            )}
+          </Button>
 
-        {/* Wishlist - Full Width */}
-        <Button
-          variant="outline"
-          onClick={handleToggleWishlist}
-          disabled={isToggling}
-          className={cn(
-            'w-full py-6 text-lg gap-3 rounded-xl border-2 transition-all duration-300',
-            inWishlist 
-              ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' 
-              : 'hover:border-primary hover:bg-primary/5'
-          )}
-        >
-          <Heart className={cn('w-5 h-5', inWishlist && 'fill-current')} />
-          {inWishlist ? 'Saved to Wishlist' : 'Add to Wishlist'}
-        </Button>
+          {/* Wishlist - Takes 1 column */}
+          <Button
+            variant="outline"
+            onClick={handleToggleWishlist}
+            disabled={isToggling}
+            className={cn(
+              'py-7 rounded-xl border-2 transition-all duration-300',
+              inWishlist 
+                ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' 
+                : 'hover:border-primary hover:bg-primary/5'
+            )}
+          >
+            <Heart className={cn('w-6 h-6', inWishlist && 'fill-current')} />
+          </Button>
+        </div>
 
-        {/* WhatsApp Enquiry */}
+        {/* WhatsApp Enquiry - Full Width */}
         <Button
           variant="outline"
           onClick={handleWhatsAppEnquiry}
-          className="w-full py-6 text-lg gap-3 rounded-xl border-2 border-green-300 text-green-700 hover:bg-green-50"
+          className="w-full py-6 text-lg gap-3 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 font-semibold"
         >
           <MessageCircle className="w-5 h-5" />
-          Enquire on WhatsApp
+          <span>Enquire on WhatsApp</span>
         </Button>
       </div>
 

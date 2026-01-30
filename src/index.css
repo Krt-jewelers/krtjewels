@@ -415,4 +415,29 @@
   .scale-200 {
     transform: scale(2);
   }
+
+  /* Marquee animation */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  /* Footer brand text outline */
+  .text-outline {
+    -webkit-text-stroke: 1px hsl(43 74% 52% / 0.3);
+    -webkit-text-fill-color: transparent;
+    paint-order: stroke fill;
+  }
+
+  .text-outline-hover {
+    -webkit-text-stroke: 1px hsl(43 74% 52% / 0.5);
+  }
 }
