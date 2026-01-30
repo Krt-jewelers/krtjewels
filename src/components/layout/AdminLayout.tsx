@@ -1,6 +1,7 @@
 import { useEffect, ReactNode } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
@@ -14,7 +15,9 @@ import {
   Menu,
   X,
   Star,
-  Tag
+  Tag,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,8 +25,6 @@ import { cn } from '@/lib/utils';
 interface AdminLayoutProps {
   children: ReactNode;
 }
-
-import { AlertTriangle } from 'lucide-react';
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -42,6 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isAuthenticated, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -56,6 +58,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [loading, isAuthenticated, isAdmin, navigate]);
 
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const handleRefreshData = () => {
+    // Invalidate all queries to refresh data
+    queryClient.invalidateQueries();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary/30">
@@ -68,22 +80,47 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return null;
   }
 
+  // Get current page title
+  const currentPage = menuItems.find(item => item.href === location.pathname);
+  const pageTitle = currentPage?.name || 'Admin';
+
   return (
     <div className="min-h-screen flex bg-secondary/20">
-      {/* Mobile Menu Button */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </Button>
+      {/* Mobile Header Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card border-b shadow-sm">
+        <div className="flex items-center justify-between px-4 h-16">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="shrink-0"
+          >
+            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-gold-shimmer flex items-center justify-center">
+              <span className="text-primary-foreground font-serif font-bold text-sm">K</span>
+            </div>
+            <span className="font-serif text-lg font-bold text-primary">{pageTitle}</span>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefreshData}
+            className="shrink-0"
+            title="Refresh Data"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
 
       {/* Sidebar Backdrop (Mobile) */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-rich-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-rich-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -126,8 +163,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       : 'hover:bg-secondary text-foreground'
                   )}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.name}</span>
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className="font-medium truncate">{item.name}</span>
                 </Link>
               );
             })}
@@ -139,7 +176,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <p className="text-xs text-muted-foreground">Logged in as</p>
               <p className="font-medium text-sm truncate">{user?.email}</p>
             </div>
-            <Link to="/">
+            <Button
+              variant="outline"
+              onClick={handleRefreshData}
+              className="w-full justify-start gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Data
+            </Button>
+            <Link to="/" className="block">
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Package className="w-4 h-4" />
                 View Store
@@ -159,8 +204,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 min-h-screen overflow-x-hidden">
-        <div className="p-4 lg:p-8">
-          {children}
+        {/* Add padding for mobile header */}
+        <div className="pt-16 lg:pt-0">
+          <div className="p-4 lg:p-8">
+            {children}
+          </div>
         </div>
       </main>
     </div>

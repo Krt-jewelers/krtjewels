@@ -50,6 +50,17 @@ export function useCart() {
     mutationFn: async ({ productId, quantity = 1 }: { productId: string; quantity?: number }) => {
       if (!user) throw new Error('Please sign in to add items to cart');
 
+      // Check product stock before adding
+      const { data: product } = await supabase
+        .from('products')
+        .select('stock_quantity, name')
+        .eq('id', productId)
+        .single();
+
+      if (!product) throw new Error('Product not found');
+
+      const availableStock = product.stock_quantity ?? 99;
+      
       // Check if item already exists in cart
       const { data: existing } = await supabase
         .from('cart_items')
@@ -57,6 +68,14 @@ export function useCart() {
         .eq('user_id', user.id)
         .eq('product_id', productId)
         .maybeSingle();
+
+      const currentCartQty = existing?.quantity || 0;
+      const totalRequestedQty = currentCartQty + quantity;
+
+      // Block oversell
+      if (totalRequestedQty > availableStock) {
+        throw new Error(`Only ${availableStock} items available. You already have ${currentCartQty} in your cart.`);
+      }
 
       if (existing) {
         // Update quantity
