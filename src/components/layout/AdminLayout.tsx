@@ -17,7 +17,8 @@ import {
   Star,
   Tag,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Truck
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -35,6 +36,7 @@ const menuItems = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
+  { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Chit Funds', href: '/admin/chit-funds', icon: Wallet },
   { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];

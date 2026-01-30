@@ -22,13 +22,9 @@ export function GoogleReviewBadge() {
         </div>
         
         {/* Review Text - Vertical */}
-        <div className="p-3 flex flex-col items-center gap-2">
-          {/* Stars */}
-          <div className="flex gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-            ))}
-          </div>
+        <div className="p-3 flex flex-col items-center gap-3">
+          {/* Single Star - Vertical Position */}
+          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
           
           {/* Vertical Text */}
           <div 

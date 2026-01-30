@@ -86,8 +86,18 @@ export default function AuthPage() {
 
   return (
     <Layout>
-      <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 bg-gradient-premium">
-        <div className="w-full max-w-md">
+      <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 relative overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&h=1080&fit=crop&q=80')`,
+          }}
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-rich-black/90 via-rich-black/80 to-rich-black/70" />
+        
+        <div className="w-full max-w-md relative z-10">
           {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-block">

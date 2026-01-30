@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { X, ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useCart } from '@/hooks/useCart';
+import { useFreeShippingSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/types';
 
 interface FlyingCartProps {
@@ -12,6 +14,7 @@ interface FlyingCartProps {
 
 export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
   const { items, itemCount, total, updateQuantity, removeFromCart } = useCart();
+  const { data: shippingSettings } = useFreeShippingSettings();
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +28,12 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const freeShippingThreshold = shippingSettings?.amount ?? 50000;
+  const freeShippingEnabled = shippingSettings?.enabled ?? true;
+  const amountRemaining = Math.max(0, freeShippingThreshold - total);
+  const progressPercent = Math.min(100, (total / freeShippingThreshold) * 100);
+  const hasFreeShipping = total >= freeShippingThreshold;
 
   return (
     <>
@@ -40,13 +49,32 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-primary" />
-            <span className="font-serif text-lg font-semibold">Your Cart</span>
+            <span className="font-serif text-lg font-semibold">Shopping Cart</span>
             <span className="text-sm text-muted-foreground">({itemCount} items)</span>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>
+
+        {/* Free Shipping Progress */}
+        {freeShippingEnabled && items.length > 0 && (
+          <div className="px-4 py-3 bg-secondary/30 border-b">
+            {hasFreeShipping ? (
+              <div className="flex items-center gap-2 text-green-600">
+                <span className="text-sm font-medium">🎉 You've unlocked free shipping!</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-sm mb-2">
+                  Add <span className="text-primary font-semibold">{formatPrice(amountRemaining)}</span> to get{' '}
+                  <span className="font-semibold text-green-600">free shipping!</span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+              </>
+            )}
+          </div>
+        )}
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -64,6 +92,7 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
                 <img
                   src={item.product.images[0] || '/placeholder.svg'}
                   alt={item.product.name}
+                  loading="lazy"
                   className="w-20 h-20 object-cover rounded-lg"
                 />
                 <div className="flex-1 min-w-0">
@@ -117,7 +146,11 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Shipping & taxes calculated at checkout
+              {hasFreeShipping && freeShippingEnabled ? (
+                <span className="text-green-600 font-medium">✓ Free shipping applied!</span>
+              ) : (
+                'Shipping calculated at checkout'
+              )}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Link to="/cart" onClick={onClose}>

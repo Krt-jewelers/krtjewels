@@ -9,6 +9,7 @@ import { useGoldRate } from '@/hooks/useGoldRate';
 import { formatPrice } from '@/lib/types';
 import { SearchOverlay } from './SearchOverlay';
 import { MobileSidebar } from './MobileSidebar';
+import { FlyingCart } from '@/components/cart/FlyingCart';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ const navLinks = [
 export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { isAuthenticated, user, signOut, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { data: goldRate } = useGoldRate();
@@ -116,17 +118,20 @@ export function Navbar() {
                 </Button>
               </Link>
 
-              {/* Cart */}
-              <Link to="/cart">
-                <Button variant="ghost" size="icon" className="relative">
-                  <ShoppingBag className="w-5 h-5" />
-                  {itemCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs badge-luxury">
-                      {itemCount}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
+              {/* Cart - Opens Sidebar */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs badge-luxury">
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
 
               {/* User Menu */}
               {isAuthenticated ? (
@@ -179,6 +184,9 @@ export function Navbar() {
 
       {/* Mobile Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+      {/* Flying Cart Sidebar */}
+      <FlyingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );
 }

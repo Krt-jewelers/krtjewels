@@ -54,13 +54,31 @@ export default function TrackOrder() {
 
     setIsLoading(true);
     setSearched(true);
+    
+    // Clean and normalize the order number
+    const cleanedOrderNumber = orderNumber.trim().toUpperCase();
 
     try {
-      const { data: orderData, error: orderError } = await supabase
+      // Try exact match first
+      let { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select('*')
-        .eq('order_number', orderNumber.trim().toUpperCase())
+        .eq('order_number', cleanedOrderNumber)
         .maybeSingle();
+      
+      // If no exact match, try partial search (for cases like just entering the number part)
+      if (!orderData && !orderError) {
+        const { data: partialMatch, error: partialError } = await supabase
+          .from('orders')
+          .select('*')
+          .ilike('order_number', `%${cleanedOrderNumber}%`)
+          .limit(1)
+          .maybeSingle();
+        
+        if (!partialError) {
+          orderData = partialMatch;
+        }
+      }
 
       if (orderError) throw orderError;
 

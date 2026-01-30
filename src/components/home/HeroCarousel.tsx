@@ -66,12 +66,13 @@ export function HeroCarousel() {
             index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
           }`}
         >
-          <div 
-            className="absolute inset-0 bg-cover bg-center transform transition-transform duration-[8000ms] ease-out"
-            style={{ 
-              backgroundImage: `url(${s.image})`,
-              transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)'
-            }}
+          <img 
+            src={s.image}
+            alt={s.title}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            className={`absolute inset-0 w-full h-full object-cover transform transition-transform duration-[8000ms] ease-out ${
+              index === currentSlide ? 'scale-105' : 'scale-100'
+            }`}
           />
           {/* Premium Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-rich-black/90 via-rich-black/60 to-rich-black/20" />
