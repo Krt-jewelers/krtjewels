@@ -37,7 +37,19 @@ import AdminReviews from "./pages/admin/Reviews";
 import AdminInventory from "./pages/admin/InventoryAlerts";
 import AdminCoupons from "./pages/admin/Coupons";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Shorter stale time to ensure fresh data
+      staleTime: 1000 * 30, // 30 seconds
+      // Refetch on window focus to get latest data when switching tabs
+      refetchOnWindowFocus: true,
+      // Retry failed queries
+      retry: 2,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

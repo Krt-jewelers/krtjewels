@@ -7,18 +7,30 @@ import { TrustBadges } from '@/components/home/TrustBadges';
 import { GoldRateWidget } from '@/components/home/GoldRateWidget';
 import { BridalBanner } from '@/components/home/BridalBanner';
 import { CustomerReviews } from '@/components/home/CustomerReviews';
+import { CollectionBanner } from '@/components/home/CollectionBanner';
+import { WhyChooseUs } from '@/components/home/WhyChooseUs';
+import { NewsletterSection } from '@/components/home/NewsletterSection';
+import { InstagramFeed } from '@/components/home/InstagramFeed';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 const Index = () => {
+  // Enable realtime sync for products, gold rates, and stock
+  useRealtimeSync();
+  
   return (
     <Layout>
       <CategoryCarousel />
       <HeroCarousel />
       <GoldRateWidget />
       <FeaturedProducts />
+      <CollectionBanner />
       <CategoryShowcase />
+      <WhyChooseUs />
       <CustomerReviews />
-      <TrustBadges />
       <BridalBanner />
+      <TrustBadges />
+      <InstagramFeed />
+      <NewsletterSection />
     </Layout>
   );
 };
