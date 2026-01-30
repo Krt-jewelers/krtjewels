@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 const collections = [
   { name: 'Necklaces', href: '/collections/necklaces' },
@@ -32,28 +30,6 @@ const policies = [
 export function Footer() {
   return (
     <footer className="bg-rich-black text-ivory">
-      {/* Newsletter Section */}
-      <div className="border-b border-charcoal">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <h3 className="font-serif text-3xl mb-2">Stay Connected</h3>
-            <p className="text-ivory/60 mb-6">
-              Subscribe to receive updates on new collections, exclusive offers, and gold rate alerts.
-            </p>
-            <form className="flex gap-3 max-w-md mx-auto">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-charcoal border-charcoal text-ivory placeholder:text-ivory/40 focus:border-primary"
-              />
-              <Button className="btn-premium px-8 whitespace-nowrap">
-                Subscribe
-              </Button>
-            </form>
-          </div>
-        </div>
-      </div>
-
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
@@ -138,6 +114,20 @@ export function Footer() {
         </div>
       </div>
 
+      {/* Large Brand Name - Blufacade Style */}
+      <div className="relative overflow-hidden py-8 border-t border-charcoal/50">
+        <div className="container mx-auto px-4">
+          <h2 
+            className="font-serif text-[8rem] md:text-[12rem] lg:text-[16rem] font-bold leading-none text-center text-outline select-none"
+            style={{ 
+              letterSpacing: '-0.02em',
+            }}
+          >
+            KRT JEWELS
+          </h2>
+        </div>
+      </div>
+
       {/* Bottom Bar */}
       <div className="border-t border-charcoal">
         <div className="container mx-auto px-4 py-6">
@@ -148,30 +138,28 @@ export function Footer() {
             
             {/* Social Links */}
             <div className="flex items-center gap-4">
-              <a href="#" className="text-ivory/40 hover:text-primary transition-colors">
+              <a href="https://facebook.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="#" className="text-ivory/40 hover:text-primary transition-colors">
+              <a href="https://www.instagram.com/krtjewellers/" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-ivory/40 hover:text-primary transition-colors">
+              <a href="https://twitter.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="#" className="text-ivory/40 hover:text-primary transition-colors">
+              <a href="https://youtube.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
                 <Youtube className="w-5 h-5" />
               </a>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex items-center gap-4 text-xs text-ivory/40">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                BIS 916 Hallmarked
-              </span>
-              <span>|</span>
-              <span>100% Certified</span>
-              <span>|</span>
-              <span>Secure Payments</span>
+            {/* Policy Links */}
+            <div className="flex items-center gap-4 text-sm">
+              <Link to="/privacy" className="text-ivory/40 hover:text-primary transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-ivory/40 hover:text-primary transition-colors">
+                Terms & Conditions
+              </Link>
             </div>
           </div>
         </div>

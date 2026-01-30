@@ -9,8 +9,10 @@ import { BridalBanner } from '@/components/home/BridalBanner';
 import { CustomerReviews } from '@/components/home/CustomerReviews';
 import { CollectionBanner } from '@/components/home/CollectionBanner';
 import { WhyChooseUs } from '@/components/home/WhyChooseUs';
-import { NewsletterSection } from '@/components/home/NewsletterSection';
 import { InstagramFeed } from '@/components/home/InstagramFeed';
+import { MarqueeSection } from '@/components/home/MarqueeSection';
+import { RotatingCardsSection } from '@/components/home/RotatingCardsSection';
+import { GoogleReviewBadge } from '@/components/home/GoogleReviewBadge';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 const Index = () => {
@@ -21,16 +23,18 @@ const Index = () => {
     <Layout>
       <CategoryCarousel />
       <HeroCarousel />
+      <MarqueeSection />
       <GoldRateWidget />
       <FeaturedProducts />
       <CollectionBanner />
+      <RotatingCardsSection />
       <CategoryShowcase />
       <WhyChooseUs />
       <CustomerReviews />
       <BridalBanner />
       <TrustBadges />
       <InstagramFeed />
-      <NewsletterSection />
+      <GoogleReviewBadge />
     </Layout>
   );
 };
