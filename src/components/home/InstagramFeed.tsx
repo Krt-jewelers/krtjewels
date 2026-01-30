@@ -75,6 +75,7 @@ export function InstagramFeed() {
               <img
                 src={post.image}
                 alt={post.caption}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-rich-black/0 group-hover:bg-rich-black/60 transition-colors duration-300 flex items-center justify-center">

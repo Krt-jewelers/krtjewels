@@ -146,7 +146,7 @@ export function CategoryCarousel() {
                       src={category.image} 
                       alt={category.name}
                       className="w-full h-full object-cover"
-                      loading="lazy"
+                      loading="eager"
                     />
                   </div>
                   {/* Category Name */}

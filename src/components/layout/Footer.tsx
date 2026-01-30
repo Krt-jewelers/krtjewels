@@ -117,14 +117,34 @@ export function Footer() {
       {/* Large Brand Name - Blufacade Style */}
       <div className="relative overflow-hidden py-8 border-t border-charcoal/50">
         <div className="container mx-auto px-4">
+          {/* Desktop - Single Line */}
           <h2 
-            className="font-serif text-[8rem] md:text-[12rem] lg:text-[16rem] font-bold leading-none text-center text-outline select-none"
+            className="hidden md:block font-serif text-[8rem] md:text-[12rem] lg:text-[16rem] font-bold leading-none text-center text-outline select-none"
             style={{ 
               letterSpacing: '-0.02em',
             }}
           >
             KRT JEWELS
           </h2>
+          {/* Mobile - Stacked */}
+          <div className="md:hidden flex flex-col items-center">
+            <h2 
+              className="font-serif text-[6rem] font-bold leading-none text-center text-outline select-none"
+              style={{ 
+                letterSpacing: '-0.02em',
+              }}
+            >
+              KRT
+            </h2>
+            <h2 
+              className="font-serif text-[4rem] font-bold leading-none text-center text-outline select-none"
+              style={{ 
+                letterSpacing: '-0.02em',
+              }}
+            >
+              JEWELS
+            </h2>
+          </div>
         </div>
       </div>
 

@@ -60,42 +60,50 @@ export function RotatingCardsSection() {
   }, []);
 
   const getCardStyle = (index: number) => {
-    const centerIndex = 2;
+    const totalCards = showcaseItems.length;
+    const centerIndex = Math.floor(totalCards / 2);
     const distanceFromCenter = index - centerIndex;
     
-    // Base rotation based on position
-    const baseRotation = distanceFromCenter * 12;
+    // Calculate horizontal spread that moves with scroll (left to right and back)
+    // scrollProgress goes from 0 to 1, so we make it oscillate between -1 and 1
+    const scrollOffset = (scrollProgress - 0.5) * 2; // -1 to 1
     
-    // Scroll-based rotation modifier
-    const scrollRotation = (scrollProgress - 0.5) * 30;
+    // Base horizontal position from center
+    const baseSpread = distanceFromCenter * 140;
+    
+    // Dynamic horizontal movement based on scroll (moves all cards left/right)
+    const scrollMovement = scrollOffset * 200;
+    
+    // Base rotation based on position
+    const baseRotation = distanceFromCenter * 8;
+    
+    // Scroll-based rotation that changes as you scroll
+    const scrollRotation = scrollOffset * distanceFromCenter * 6;
     
     // Final rotation combines base and scroll
-    const rotation = baseRotation + (scrollRotation * (distanceFromCenter * 0.3));
+    const rotation = baseRotation + scrollRotation;
     
-    // Calculate translateX for spread effect
-    const spread = distanceFromCenter * 120;
+    // Scale based on distance from center - cards further out are slightly smaller
+    const scale = 1 - Math.abs(distanceFromCenter) * 0.05;
     
-    // Scale based on distance from center
-    const scale = 1 - Math.abs(distanceFromCenter) * 0.08;
-    
-    // Z-index for proper stacking
-    const zIndex = 10 - Math.abs(distanceFromCenter);
+    // Z-index for proper stacking - center card on top
+    const zIndex = totalCards - Math.abs(distanceFromCenter);
     
     return {
-      transform: `translateX(${spread}px) rotate(${rotation}deg) scale(${scale})`,
+      transform: `translateX(${baseSpread + scrollMovement}px) rotate(${rotation}deg) scale(${scale})`,
       zIndex,
-      opacity: 1 - Math.abs(distanceFromCenter) * 0.15,
+      opacity: 1 - Math.abs(distanceFromCenter) * 0.1,
     };
   };
 
   return (
     <section 
       ref={containerRef}
-      className="py-20 md:py-32 bg-gradient-to-b from-secondary/20 via-background to-secondary/30 overflow-hidden"
+      className="py-20 md:py-32 bg-gradient-to-b from-secondary/20 via-background to-secondary/30 overflow-hidden w-full"
     >
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 container mx-auto">
           <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium mb-3">
             <span className="w-8 h-px bg-primary" />
             Our Showcase
@@ -109,19 +117,20 @@ export function RotatingCardsSection() {
           </p>
         </div>
 
-        {/* Rotating Cards */}
-        <div className="relative h-[500px] md:h-[600px] flex items-center justify-center">
+        {/* Rotating Cards - Full Width */}
+        <div className="relative h-[500px] md:h-[600px] flex items-center justify-center w-full">
           {showcaseItems.map((item, index) => (
             <div
               key={item.id}
-              className="absolute transition-all duration-300 ease-out cursor-pointer group"
+              className="absolute transition-all duration-500 ease-out cursor-pointer group"
               style={getCardStyle(index)}
             >
-              <div className="w-56 md:w-72 aspect-[3/4] rounded-2xl overflow-hidden shadow-luxury bg-card border border-border/50">
+              <div className="w-48 sm:w-56 md:w-64 lg:w-72 aspect-[3/4] rounded-2xl overflow-hidden shadow-luxury bg-card border border-border/50">
                 <div className="relative h-full">
                   <img
                     src={item.image}
                     alt={item.title}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-rich-black/80 via-transparent to-transparent" />
@@ -129,7 +138,7 @@ export function RotatingCardsSection() {
                     <p className="text-primary text-xs uppercase tracking-wider mb-1">
                       {item.subtitle}
                     </p>
-                    <h3 className="font-serif text-xl font-semibold">
+                    <h3 className="font-serif text-lg md:text-xl font-semibold">
                       {item.title}
                     </h3>
                   </div>

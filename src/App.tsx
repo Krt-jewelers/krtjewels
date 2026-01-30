@@ -36,6 +36,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminReviews from "./pages/admin/Reviews";
 import AdminInventory from "./pages/admin/InventoryAlerts";
 import AdminCoupons from "./pages/admin/Coupons";
+import AdminShippingSettings from "./pages/admin/ShippingSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -94,6 +95,7 @@ const App = () => (
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/reviews" element={<AdminReviews />} />
           <Route path="/admin/coupons" element={<AdminCoupons />} />
+          <Route path="/admin/shipping" element={<AdminShippingSettings />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
