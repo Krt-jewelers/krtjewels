@@ -14,9 +14,9 @@ const quickLinks = [
   { name: 'About Us', href: '/about' },
   { name: 'Store Locator', href: '/stores' },
   { name: 'Gold Rate', href: '/gold-rate' },
+  { name: 'Digital Gold Scheme', href: '/chit-fund' },
   { name: 'Contact', href: '/contact' },
-  { name: 'My Wishlist', href: '/wishlist' },
-  { name: 'My Cart', href: '/cart' },
+  { name: 'Track Order', href: '/track-order' },
 ];
 
 const policies = [

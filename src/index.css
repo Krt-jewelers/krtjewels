@@ -391,8 +391,22 @@
     background-size: 40px 100%;
   }
 
-  /* Cart animation */
-  @keyframes slide-in-right {
+  /* Cart slide-in from right animation */
+  @keyframes cart-slide-in {
+    0% {
+      transform: translateX(100%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-cart-slide-in {
+    animation: cart-slide-in 0.3s ease-out forwards;
+  }
+  
+  /* Add to cart button animation - slides across */
+  @keyframes slide-across {
     0% {
       transform: translateX(-100%);
       opacity: 0;
@@ -407,8 +421,8 @@
     }
   }
 
-  .animate-slide-in-right {
-    animation: slide-in-right 0.6s ease-in-out forwards;
+  .animate-slide-across {
+    animation: slide-across 0.6s ease-in-out forwards;
   }
 
   /* Zoom scale for lightbox */

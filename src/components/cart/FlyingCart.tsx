@@ -39,12 +39,12 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
     <>
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 z-40 bg-rich-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-rich-black/50 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Cart Sidebar */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-background shadow-luxury flex flex-col animate-slide-in-right">
+      {/* Cart Sidebar - Opens from right */}
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-background shadow-luxury flex flex-col animate-cart-slide-in">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
