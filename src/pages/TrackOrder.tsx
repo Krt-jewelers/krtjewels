@@ -57,6 +57,9 @@ export default function TrackOrder() {
     
     // Clean and normalize the order number
     const cleanedOrderNumber = orderNumber.trim().toUpperCase();
+    
+    // Also extract just the numeric part if user enters like "26014071" or "KRT26014071"
+    const numericPart = cleanedOrderNumber.replace(/[^0-9]/g, '');
 
     try {
       // Try exact match first
@@ -66,12 +69,27 @@ export default function TrackOrder() {
         .eq('order_number', cleanedOrderNumber)
         .maybeSingle();
       
-      // If no exact match, try partial search (for cases like just entering the number part)
+      // If no exact match, try with KRT prefix
+      if (!orderData && !orderError && numericPart) {
+        const withPrefix = `KRT${numericPart}`;
+        const { data: prefixMatch, error: prefixError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('order_number', withPrefix)
+          .maybeSingle();
+        
+        if (!prefixError) {
+          orderData = prefixMatch;
+        }
+      }
+      
+      // If still no match, try partial/contains search
       if (!orderData && !orderError) {
+        const searchTerm = numericPart || cleanedOrderNumber;
         const { data: partialMatch, error: partialError } = await supabase
           .from('orders')
           .select('*')
-          .ilike('order_number', `%${cleanedOrderNumber}%`)
+          .ilike('order_number', `%${searchTerm}%`)
           .limit(1)
           .maybeSingle();
         
@@ -86,7 +104,7 @@ export default function TrackOrder() {
         setOrder(null);
         toast({
           title: 'Order not found',
-          description: 'Please check your order number and try again.',
+          description: 'Please check your order number and try again. Try entering the full order number like KRT26014071.',
           variant: 'destructive',
         });
         return;

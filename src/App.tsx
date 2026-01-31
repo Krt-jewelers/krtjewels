@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { SplashScreen } from "@/components/layout/SplashScreen";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/Auth";
@@ -17,6 +20,7 @@ import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
 import CheckoutPage from "./pages/Checkout";
 import ComparePage from "./pages/Compare";
+import ChitFundLookupPage from "./pages/ChitFundLookup";
 // Customer Account Pages
 import AccountDashboard from "./pages/account/Dashboard";
 import AccountOrders from "./pages/account/Orders";
@@ -52,56 +56,76 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/collections/:category" element={<CollectionPage />} />
-          <Route path="/product/:slug" element={<ProductDetail />} />
-          <Route path="/gold-rate" element={<GoldRatePage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/stores" element={<StoresPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/track-order" element={<TrackOrderPage />} />
-          <Route path="/compare" element={<ComparePage />} />
-          
-          {/* Customer Account Routes */}
-          <Route path="/account" element={<AccountDashboard />} />
-          <Route path="/account/orders" element={<AccountOrders />} />
-          <Route path="/account/profile" element={<AccountProfile />} />
-          <Route path="/account/addresses" element={<AccountAddresses />} />
-          <Route path="/account/coupons" element={<AccountCoupons />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/gold-rates" element={<AdminGoldRates />} />
-          <Route path="/admin/products" element={<AdminProducts />} />
-          <Route path="/admin/products/new" element={<AdminProductForm />} />
-          <Route path="/admin/products/:id" element={<AdminProductForm />} />
-          <Route path="/admin/inventory" element={<AdminInventory />} />
-          <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
-          <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/reviews" element={<AdminReviews />} />
-          <Route path="/admin/coupons" element={<AdminCoupons />} />
-          <Route path="/admin/shipping" element={<AdminShippingSettings />} />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [showSplash, setShowSplash] = useState(false);
+  
+  useEffect(() => {
+    // Check if this is first visit
+    const hasVisited = localStorage.getItem('krt_visited');
+    if (!hasVisited) {
+      setShowSplash(true);
+    }
+  }, []);
+  
+  const handleSplashComplete = () => {
+    localStorage.setItem('krt_visited', 'true');
+    setShowSplash(false);
+  };
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/collections/:category" element={<CollectionPage />} />
+            <Route path="/product/:slug" element={<ProductDetail />} />
+            <Route path="/gold-rate" element={<GoldRatePage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/stores" element={<StoresPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/track-order" element={<TrackOrderPage />} />
+            <Route path="/compare" element={<ComparePage />} />
+            <Route path="/chit-fund" element={<ChitFundLookupPage />} />
+            
+            {/* Customer Account Routes */}
+            <Route path="/account" element={<AccountDashboard />} />
+            <Route path="/account/orders" element={<AccountOrders />} />
+            <Route path="/account/profile" element={<AccountProfile />} />
+            <Route path="/account/addresses" element={<AccountAddresses />} />
+            <Route path="/account/coupons" element={<AccountCoupons />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/gold-rates" element={<AdminGoldRates />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/products/new" element={<AdminProductForm />} />
+            <Route path="/admin/products/:id" element={<AdminProductForm />} />
+            <Route path="/admin/inventory" element={<AdminInventory />} />
+            <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/reviews" element={<AdminReviews />} />
+            <Route path="/admin/coupons" element={<AdminCoupons />} />
+            <Route path="/admin/shipping" element={<AdminShippingSettings />} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
