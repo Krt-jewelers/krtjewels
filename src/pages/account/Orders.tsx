@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Package, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Package, ChevronRight, ShoppingBag, FileText } from 'lucide-react';
 import { formatPrice, ORDER_STATUS_NAMES, type OrderStatus } from '@/lib/types';
 import { AccountLayout } from '@/components/account/AccountLayout';
 
@@ -172,12 +172,22 @@ export default function AccountOrders() {
                         </p>
                         <p className="font-semibold">{formatPrice(order.total_amount)}</p>
                       </div>
-                      <Link to={`/track-order?orderId=${order.order_number}`}>
-                        <Button variant="outline" size="sm" className="gap-2">
-                          Track Order
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </Link>
+                      <div className="flex gap-2">
+                        {order.status === 'delivered' && (
+                          <Link to={`/account/orders/${order.order_number}/invoice`}>
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <FileText className="w-4 h-4" />
+                              Invoice
+                            </Button>
+                          </Link>
+                        )}
+                        <Link to={`/track-order?orderId=${order.order_number}`}>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            Track Order
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

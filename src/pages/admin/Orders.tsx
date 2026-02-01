@@ -28,8 +28,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, Eye, Package } from 'lucide-react';
+import { ShoppingCart, Eye, Package, Printer } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const ORDER_STATUSES = [
   { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
@@ -321,6 +322,15 @@ export default function AdminOrders() {
                   <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(selectedOrder.total_amount)}</span>
+                  </div>
+                  {/* Print Invoice Button */}
+                  <div className="pt-4">
+                    <Link to={`/account/orders/${selectedOrder.order_number}/invoice`} target="_blank">
+                      <Button variant="outline" className="w-full gap-2">
+                        <Printer className="w-4 h-4" />
+                        View / Print Invoice
+                      </Button>
+                    </Link>
                   </div>
                 </div>
 

@@ -27,6 +27,7 @@ import AccountOrders from "./pages/account/Orders";
 import AccountProfile from "./pages/account/Profile";
 import AccountAddresses from "./pages/account/Addresses";
 import AccountCoupons from "./pages/account/Coupons";
+import OrderInvoice from "./pages/account/OrderInvoice";
 // Admin Pages
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -100,6 +101,7 @@ const App = () => {
             {/* Customer Account Routes */}
             <Route path="/account" element={<AccountDashboard />} />
             <Route path="/account/orders" element={<AccountOrders />} />
+            <Route path="/account/orders/:orderId/invoice" element={<OrderInvoice />} />
             <Route path="/account/profile" element={<AccountProfile />} />
             <Route path="/account/addresses" element={<AccountAddresses />} />
             <Route path="/account/coupons" element={<AccountCoupons />} />
