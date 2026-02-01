@@ -154,6 +154,15 @@ export function Navbar() {
                         <DropdownMenuSeparator />
                       </>
                     )}
+                    <DropdownMenuItem onClick={() => navigate('/account')}>
+                      My Account
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/account/orders')}>
+                      My Orders
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/chit-fund')}>
+                      Digital Gold Scheme
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/wishlist')}>
                       My Wishlist
                     </DropdownMenuItem>

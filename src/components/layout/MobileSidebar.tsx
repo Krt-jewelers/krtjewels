@@ -19,6 +19,7 @@ const menuCategories = [
   { name: 'Engagement & Wedding', href: '/collections/wedding-sets', icon: '💒' },
   { name: 'Diamond Jewellery', href: '/collections/diamond-jewellery', icon: '💠' },
   { name: "Men's Jewellery", href: '/collections/mens-jewellery', icon: '👔' },
+  { name: 'Digital Gold Scheme', href: '/chit-fund', icon: '🪙' },
 ];
 
 const quickLinks = [
