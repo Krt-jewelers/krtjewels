@@ -18,7 +18,13 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
+      includeAssets: [
+        "apple-touch-icon.png",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-maskable.png",
+        "og-image.png",
+      ],
       manifest: {
         name: "KRT Jewels - Exquisite Gold & Diamond Jewellery",
         short_name: "KRT Jewels",
@@ -51,6 +57,9 @@ export default defineConfig(({ mode }) => ({
         screenshots: [],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg,woff,woff2}"],
         runtimeCaching: [
           {
