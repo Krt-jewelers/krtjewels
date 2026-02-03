@@ -125,11 +125,26 @@ export function useProducts(filters?: ProductFilters) {
       }
 
       // Calculate prices for each product (use goldRate if available, otherwise show 0)
-      const productsWithPrices = (data || []).map((product) => ({
-        ...product,
-        specifications: (product.specifications as Record<string, any>) || {},
-        calculated_price: calculateProductPrice(product as any, goldRate || null),
-      })) as ProductWithPrice[];
+      const productsWithPrices = (data || []).map((product) => {
+        // Ensure all required fields have default values
+        const normalizedProduct = {
+          ...product,
+          diamond_cost: product.diamond_cost ?? 0,
+          stone_cost: product.stone_cost ?? 0,
+          images: product.images || [],
+          tags: product.tags || [],
+          specifications: (product.specifications as Record<string, any>) || {},
+          stock_quantity: product.stock_quantity ?? 0,
+          is_featured: product.is_featured ?? false,
+          is_bestseller: product.is_bestseller ?? false,
+          is_new_arrival: product.is_new_arrival ?? false,
+          is_bridal: product.is_bridal ?? false,
+        };
+        return {
+          ...normalizedProduct,
+          calculated_price: calculateProductPrice(normalizedProduct as any, goldRate || null),
+        };
+      }) as ProductWithPrice[];
 
       // Apply price filters after calculation
       let filteredProducts = productsWithPrices;
@@ -173,10 +188,24 @@ export function useProduct(slug: string) {
 
       if (!data) return null;
 
-      return {
+      // Normalize product data
+      const normalizedProduct = {
         ...data,
+        diamond_cost: data.diamond_cost ?? 0,
+        stone_cost: data.stone_cost ?? 0,
+        images: data.images || [],
+        tags: data.tags || [],
         specifications: (data.specifications as Record<string, any>) || {},
-        calculated_price: calculateProductPrice(data as any, goldRate || null),
+        stock_quantity: data.stock_quantity ?? 0,
+        is_featured: data.is_featured ?? false,
+        is_bestseller: data.is_bestseller ?? false,
+        is_new_arrival: data.is_new_arrival ?? false,
+        is_bridal: data.is_bridal ?? false,
+      };
+
+      return {
+        ...normalizedProduct,
+        calculated_price: calculateProductPrice(normalizedProduct as any, goldRate || null),
       } as ProductWithPrice;
     },
     enabled: !!slug,
