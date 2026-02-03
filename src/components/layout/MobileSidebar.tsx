@@ -23,6 +23,7 @@ const menuCategories = [
 ];
 
 const quickLinks = [
+  { name: 'My Account', href: '/account', icon: User },
   { name: 'Login / Sign Up', href: '/auth', icon: User },
   { name: 'Track Your Order', href: '/track-order', icon: Package },
   { name: 'Gold Rates', href: '/gold-rate', icon: Sparkles },
@@ -96,8 +97,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <nav className="space-y-1">
             {quickLinks.map((item) => {
               const Icon = item.icon;
-              // Skip login link if authenticated
+              // Auth-aware quick links
               if (item.name === 'Login / Sign Up' && isAuthenticated) return null;
+              if (item.name === 'My Account' && !isAuthenticated) return null;
               
               return (
                 <button
