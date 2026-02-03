@@ -51,6 +51,12 @@ export default function ChitFundLookup() {
   const [searched, setSearched] = useState(false);
   const { toast } = useToast();
 
+  // Helper to check if a string is a valid UUID
+  const isValidUUID = (str: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchId.trim()) return;
@@ -59,12 +65,29 @@ export default function ChitFundLookup() {
     setSearched(true);
 
     try {
-      // Search by ID or phone number
-      const { data: chitData, error: chitError } = await supabase
-        .from('chit_funds')
-        .select('*')
-        .or(`id.eq.${searchId.trim()},phone.eq.${searchId.trim()}`)
-        .maybeSingle();
+      const trimmedSearch = searchId.trim();
+      let chitData = null;
+      let chitError = null;
+
+      // Only search by ID if it looks like a valid UUID, otherwise search by phone
+      if (isValidUUID(trimmedSearch)) {
+        const result = await supabase
+          .from('chit_funds')
+          .select('*')
+          .eq('id', trimmedSearch)
+          .maybeSingle();
+        chitData = result.data;
+        chitError = result.error;
+      } else {
+        // Search by phone number
+        const result = await supabase
+          .from('chit_funds')
+          .select('*')
+          .eq('phone', trimmedSearch)
+          .maybeSingle();
+        chitData = result.data;
+        chitError = result.error;
+      }
 
       if (chitError) throw chitError;
 
