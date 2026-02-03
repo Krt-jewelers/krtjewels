@@ -61,7 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link to={`/product/${product.slug}`} className="group block">
         <div className={`card-luxury bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-colors ${isOutOfStock ? 'opacity-75' : ''}`}>
           {/* Image Container with Slider */}
-          <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20">
+          <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20">
             <ProductCardSlider images={images} productName={product.name} />
             
             {/* Out of Stock Overlay */}
