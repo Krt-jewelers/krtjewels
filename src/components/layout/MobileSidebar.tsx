@@ -10,6 +10,7 @@ interface MobileSidebarProps {
 }
 
 const menuCategories = [
+  { name: 'Shop All', href: '/shop', icon: '🛍️' },
   { name: 'Rings', href: '/collections/rings', icon: '💍' },
   { name: 'Earrings', href: '/collections/earrings', icon: '✨' },
   { name: 'Necklaces', href: '/collections/necklaces', icon: '📿' },

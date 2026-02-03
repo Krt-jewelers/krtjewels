@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/Auth";
 import CollectionPage from "./pages/Collection";
+import ShopPage from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import GoldRatePage from "./pages/GoldRate";
 import CartPage from "./pages/Cart";
@@ -86,6 +87,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/collections/:category" element={<CollectionPage />} />
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/gold-rate" element={<GoldRatePage />} />
             <Route path="/cart" element={<CartPage />} />
