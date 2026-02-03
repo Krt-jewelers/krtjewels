@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Search, Heart, ShoppingBag, User } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingBag, User, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useGoldRate } from '@/hooks/useGoldRate';
-import { formatPrice } from '@/lib/types';
+import { formatPrice, CATEGORY_NAMES, type ProductCategory } from '@/lib/types';
 import { SearchOverlay } from './SearchOverlay';
 import { MobileSidebar } from './MobileSidebar';
 import { FlyingCart } from '@/components/cart/FlyingCart';
@@ -17,10 +17,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu';
+import { cn } from '@/lib/utils';
+
+// Category route slugs
+const categoryRoutes: Record<ProductCategory, string> = {
+  necklaces: 'necklaces',
+  earrings: 'earrings',
+  rings: 'rings',
+  bangles: 'bangles',
+  bracelets: 'bracelets',
+  chains: 'chains',
+  pendants: 'pendants',
+  wedding_sets: 'wedding-bridal',
+  diamond_jewellery: 'diamond-jewellery',
+  mens_jewellery: 'mens-jewellery',
+};
+
+// Category images for mega menu
+const categoryImages: Record<ProductCategory, string> = {
+  necklaces: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=200&fit=crop',
+  earrings: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&h=200&fit=crop',
+  rings: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=200&fit=crop',
+  bangles: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=200&fit=crop',
+  bracelets: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=300&h=200&fit=crop',
+  chains: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=300&h=200&fit=crop',
+  pendants: 'https://images.unsplash.com/photo-1599458252573-56ae36120de1?w=300&h=200&fit=crop',
+  wedding_sets: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=200&fit=crop',
+  diamond_jewellery: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=200&fit=crop',
+  mens_jewellery: 'https://images.unsplash.com/photo-1619119069152-a2b331eb392a?w=300&h=200&fit=crop',
+};
 
 const navLinks = [
   { name: 'Shop', href: '/shop' },
-  { name: 'Collections', href: '/collections/necklaces' },
   { name: 'Gold Rate', href: '/gold-rate' },
   { name: 'Stores', href: '/stores' },
   { name: 'About', href: '/about' },
@@ -81,17 +117,93 @@ export function Navbar() {
               </h1>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8">
-              {navLinks.map((link) => (
+            {/* Desktop Navigation with Mega Menu */}
+            <nav className="hidden lg:flex items-center gap-6">
+              {/* Shop Link */}
+              <Link
+                to="/shop"
+                className={cn(
+                  "text-sm font-medium transition-colors link-elegant",
+                  location.pathname === '/shop'
+                    ? 'text-primary'
+                    : 'text-foreground/80 hover:text-foreground'
+                )}
+              >
+                Shop
+              </Link>
+
+              {/* Collections Mega Menu */}
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger 
+                      className={cn(
+                        "text-sm font-medium bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent",
+                        location.pathname.startsWith('/collections')
+                          ? 'text-primary'
+                          : 'text-foreground/80 hover:text-foreground'
+                      )}
+                    >
+                      Collections
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="w-[800px] p-6">
+                        <div className="mb-4">
+                          <h3 className="font-serif text-lg font-semibold text-foreground">Shop by Category</h3>
+                          <p className="text-sm text-muted-foreground">Explore our exquisite collections</p>
+                        </div>
+                        <div className="grid grid-cols-5 gap-3">
+                          {(Object.entries(CATEGORY_NAMES) as [ProductCategory, string][]).map(([category, name]) => (
+                            <Link
+                              key={category}
+                              to={`/collections/${categoryRoutes[category]}`}
+                              className="group block"
+                            >
+                              <div className="relative overflow-hidden rounded-lg aspect-[4/3] mb-2">
+                                <img
+                                  src={categoryImages[category]}
+                                  alt={name}
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                              </div>
+                              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                                {name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                          <Link 
+                            to="/shop" 
+                            className="text-sm text-primary hover:underline font-medium"
+                          >
+                            View All Products →
+                          </Link>
+                          <Link 
+                            to="/collections/wedding-bridal" 
+                            className="text-sm text-primary hover:underline font-medium"
+                          >
+                            Bridal Collection →
+                          </Link>
+                        </div>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+
+              {/* Other Nav Links */}
+              {navLinks.slice(1).map((link) => (
                 <Link
                   key={link.name}
                   to={link.href}
-                  className={`text-sm font-medium transition-colors link-elegant ${
+                  className={cn(
+                    "text-sm font-medium transition-colors link-elegant",
                     location.pathname.startsWith(link.href)
                       ? 'text-primary'
                       : 'text-foreground/80 hover:text-foreground'
-                  }`}
+                  )}
                 >
                   {link.name}
                 </Link>
