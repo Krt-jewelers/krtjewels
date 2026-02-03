@@ -1,8 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+
+// Cache admin status in memory for instant access across components
+const adminCache = new Map<string, boolean>();
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -12,55 +15,71 @@ export function useAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const checkAdminStatus = useCallback(async (userId: string) => {
+  const checkAdminStatus = useCallback(async (userId: string): Promise<boolean> => {
+    // Check cache first for instant response
+    if (adminCache.has(userId)) {
+      return adminCache.get(userId)!;
+    }
+    
     const { data } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
       .eq('role', 'admin')
       .maybeSingle();
-    return !!data;
+    
+    const isAdminUser = !!data;
+    adminCache.set(userId, isAdminUser);
+    return isAdminUser;
   }, []);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Check admin status immediately (not deferred)
-          const adminStatus = await checkAdminStatus(session.user.id);
-          setIsAdmin(adminStatus);
-        } else {
-          setIsAdmin(false);
-        }
-        
-        setLoading(false);
-      }
-    );
+    let mounted = true;
 
-    // THEN check for existing session
+    // Get initial session immediately - don't wait for listener
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        // Check admin status (will be cached for subsequent calls)
         const adminStatus = await checkAdminStatus(session.user.id);
-        setIsAdmin(adminStatus);
+        if (mounted) setIsAdmin(adminStatus);
       }
       
-      setLoading(false);
+      // Set loading false IMMEDIATELY after getting session
+      if (mounted) setLoading(false);
     });
 
+    // Set up auth state listener for changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const adminStatus = await checkAdminStatus(session.user.id);
+          if (mounted) setIsAdmin(adminStatus);
+        } else {
+          setIsAdmin(false);
+          adminCache.clear();
+        }
+        
+        if (mounted) setLoading(false);
+      }
+    );
+
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [checkAdminStatus]);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    setLoading(true);
+  const signUp = useCallback(async (email: string, password: string, fullName: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -86,13 +105,10 @@ export function useAuth() {
         variant: 'destructive',
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const signIn = async (email: string, password: string) => {
-    setLoading(true);
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -101,7 +117,6 @@ export function useAuth() {
 
       if (error) throw error;
 
-      // Check if user is admin
       const adminStatus = await checkAdminStatus(data.user.id);
       setIsAdmin(adminStatus);
 
@@ -110,7 +125,6 @@ export function useAuth() {
         description: adminStatus ? 'Redirecting to dashboard...' : 'You have been signed in successfully.',
       });
 
-      // Return with admin status for redirect handling
       return { ...data, isAdmin: adminStatus };
     } catch (error: any) {
       toast({
@@ -119,17 +133,16 @@ export function useAuth() {
         variant: 'destructive',
       });
       throw error;
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [checkAdminStatus, toast]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
       setIsAdmin(false);
+      adminCache.clear();
       
       toast({
         title: 'Signed out',
@@ -144,9 +157,10 @@ export function useAuth() {
         variant: 'destructive',
       });
     }
-  };
+  }, [navigate, toast]);
 
-  return {
+  // Memoize return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     user,
     session,
     loading,
@@ -155,5 +169,5 @@ export function useAuth() {
     signIn,
     signOut,
     isAuthenticated: !!user,
-  };
+  }), [user, session, loading, isAdmin, signUp, signIn, signOut]);
 }

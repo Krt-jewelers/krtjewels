@@ -386,6 +386,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_queue: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notification_type: string
+          sent_at: string | null
+          target_users: string[] | null
+          title: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notification_type?: string
+          sent_at?: string | null
+          target_users?: string[] | null
+          title: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notification_type?: string
+          sent_at?: string | null
+          target_users?: string[] | null
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           diamond_cost: number | null
@@ -616,6 +652,42 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          order_updates: boolean
+          p256dh: string
+          promo_alerts: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          order_updates?: boolean
+          p256dh: string
+          promo_alerts?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          order_updates?: boolean
+          p256dh?: string
+          promo_alerts?: boolean
           updated_at?: string
           user_id?: string
         }

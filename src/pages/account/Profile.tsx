@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { User, Phone, Mail, Loader2, Check } from 'lucide-react';
 import { AccountLayout } from '@/components/account/AccountLayout';
+import { NotificationSettings } from '@/components/account/NotificationSettings';
 
 interface Profile {
   full_name: string | null;
@@ -186,6 +187,9 @@ export default function AccountProfile() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Push Notification Settings */}
+          <NotificationSettings userId={user?.id} />
         </div>
       </div>
     </AccountLayout>

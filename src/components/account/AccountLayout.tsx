@@ -1,8 +1,9 @@
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   LayoutDashboard, 
   Package, 
@@ -10,7 +11,8 @@ import {
   User, 
   Tag, 
   Heart,
-  Home
+  Home,
+  Bell
 } from 'lucide-react';
 
 interface AccountLayoutProps {
@@ -32,18 +34,48 @@ const mobileNavItems = [
   { icon: User, label: 'Profile', href: '/account/profile' },
 ];
 
+// Lightweight loading skeleton that shows instantly
+function AccountSkeleton() {
+  return (
+    <Layout>
+      <div className="min-h-screen pb-20 md:pb-0">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Desktop Sidebar Skeleton */}
+            <aside className="hidden md:block w-64 flex-shrink-0">
+              <div className="sticky top-24 bg-card rounded-xl border p-4 space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              </div>
+            </aside>
+            {/* Content Skeleton */}
+            <main className="flex-1 min-w-0 space-y-4">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-24" />
+                ))}
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
 export function AccountLayout({ children }: AccountLayoutProps) {
   const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
+  // Show skeleton only for very brief auth check (should be <500ms with caching)
   if (loading) {
-    return (
-      <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      </Layout>
-    );
+    return <AccountSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -59,7 +91,7 @@ export function AccountLayout({ children }: AccountLayoutProps) {
             <aside className="hidden md:block w-64 flex-shrink-0">
               <div className="sticky top-24 bg-card rounded-xl border p-4 space-y-1">
                 <div className="pb-4 mb-4 border-b">
-                  <p className="font-semibold">{user?.email}</p>
+                  <p className="font-semibold truncate">{user?.email}</p>
                   <p className="text-sm text-muted-foreground">Customer Account</p>
                 </div>
                 {navItems.map((item) => {
@@ -86,7 +118,14 @@ export function AccountLayout({ children }: AccountLayoutProps) {
 
             {/* Main Content */}
             <main className="flex-1 min-w-0">
-              {children}
+              <Suspense fallback={
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-64 w-full" />
+                </div>
+              }>
+                {children}
+              </Suspense>
             </main>
           </div>
         </div>

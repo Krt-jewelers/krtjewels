@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +8,27 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Package, Heart, MapPin, User, Tag, ChevronRight, Coins } from 'lucide-react';
 import { formatPrice } from '@/lib/types';
 import { AccountLayout } from '@/components/account/AccountLayout';
+
+// Inline skeleton for stats - renders immediately while data loads
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i}>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-12" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default function AccountDashboard() {
   const { user } = useAuth();
@@ -23,61 +44,42 @@ export default function AccountDashboard() {
   useEffect(() => {
     if (!user) return;
 
+    // Fetch all data in parallel for maximum speed
     const fetchDashboardData = async () => {
-      try {
-        const [ordersRes, wishlistRes, addressesRes] = await Promise.all([
-          supabase
-            .from('orders')
-            .select('id, total_amount, status, order_number, created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(5),
-          supabase
-            .from('wishlist')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id),
-          supabase
-            .from('addresses')
-            .select('id', { count: 'exact' })
-            .eq('user_id', user.id),
-        ]);
+      const [ordersRes, wishlistRes, addressesRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('id, total_amount, status, order_number, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase
+          .from('wishlist')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('addresses')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+      ]);
 
-        const totalSpent = ordersRes.data?.reduce((sum, order) => {
-          return order.status !== 'cancelled' ? sum + (order.total_amount || 0) : sum;
-        }, 0) || 0;
+      const totalSpent = ordersRes.data?.reduce((sum, order) => {
+        return order.status !== 'cancelled' ? sum + (order.total_amount || 0) : sum;
+      }, 0) || 0;
 
-        setStats({
-          orders: ordersRes.data?.length || 0,
-          wishlist: wishlistRes.count || 0,
-          addresses: addressesRes.count || 0,
-          totalSpent,
-        });
+      setStats({
+        orders: ordersRes.data?.length || 0,
+        wishlist: wishlistRes.count || 0,
+        addresses: addressesRes.count || 0,
+        totalSpent,
+      });
 
-        setRecentOrders(ordersRes.data || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
+      setRecentOrders(ordersRes.data || []);
+      setLoading(false);
     };
 
     fetchDashboardData();
   }, [user]);
-
-  if (loading) {
-    return (
-      <AccountLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        </div>
-      </AccountLayout>
-    );
-  }
 
   return (
     <AccountLayout>
@@ -87,64 +89,66 @@ export default function AccountDashboard() {
           <p className="text-muted-foreground">Manage your orders and account settings</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-primary" />
+        {/* Stats Grid - Shows skeleton or data */}
+        {loading ? <StatsSkeleton /> : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold">{stats.orders}</p>
+                    <p className="text-xs text-muted-foreground">Orders</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold">{stats.orders}</p>
-                  <p className="text-xs text-muted-foreground">Orders</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-red-500" />
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <Heart className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold">{stats.wishlist}</p>
+                    <p className="text-xs text-muted-foreground">Wishlist</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold">{stats.wishlist}</p>
-                  <p className="text-xs text-muted-foreground">Wishlist</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-blue-500" />
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-semibold">{stats.addresses}</p>
+                    <p className="text-xs text-muted-foreground">Addresses</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-semibold">{stats.addresses}</p>
-                  <p className="text-xs text-muted-foreground">Addresses</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <Tag className="w-5 h-5 text-green-500" />
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Tag className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold">{formatPrice(stats.totalSpent)}</p>
+                    <p className="text-xs text-muted-foreground">Total Spent</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-lg font-semibold">{formatPrice(stats.totalSpent)}</p>
-                  <p className="text-xs text-muted-foreground">Total Spent</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quick Links */}
         <div className="grid md:grid-cols-2 gap-4">
@@ -153,14 +157,20 @@ export default function AccountDashboard() {
               <CardTitle className="text-lg">Recent Orders</CardTitle>
             </CardHeader>
             <CardContent>
-              {recentOrders.length === 0 ? (
+              {loading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : recentOrders.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No orders yet</p>
               ) : (
                 <div className="space-y-3">
                   {recentOrders.slice(0, 3).map((order) => (
                     <Link
                       key={order.id}
-                      to={`/account/orders/${order.id}`}
+                      to={`/track-order?orderId=${order.order_number}`}
                       className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
                     >
                       <div>
