@@ -222,24 +222,24 @@ export default function OrderInvoice() {
 
           {/* Order Details */}
           <div className="mb-8">
-            <div className="grid grid-cols-3 gap-4 text-sm mb-4 p-3 bg-secondary/30 rounded-lg">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:grid sm:grid-cols-3 gap-3 sm:gap-4 text-sm p-3 bg-secondary/30 rounded-lg">
+              <div className="flex justify-between sm:block">
                 <span className="text-muted-foreground">Gold Rate (22K):</span>
-                <span className="font-medium ml-2">{formatPrice(order.gold_rate_at_order)}/g</span>
+                <span className="font-medium sm:ml-2">{formatPrice(order.gold_rate_at_order)}/g</span>
               </div>
-              <div>
+              <div className="flex justify-between sm:block">
                 <span className="text-muted-foreground">Payment:</span>
-                <span className="font-medium ml-2 capitalize">{order.payment_method || 'Online'}</span>
+                <span className="font-medium sm:ml-2 capitalize">{order.payment_method || 'Online'}</span>
               </div>
-              <div>
+              <div className="flex justify-between sm:block">
                 <span className="text-muted-foreground">Status:</span>
-                <span className="font-medium ml-2">{ORDER_STATUS_NAMES[order.status]}</span>
+                <span className="font-medium sm:ml-2">{ORDER_STATUS_NAMES[order.status]}</span>
               </div>
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="mb-8">
+          {/* Items Table - Desktop */}
+          <div className="mb-8 hidden sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
@@ -264,6 +264,38 @@ export default function OrderInvoice() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Items Cards - Mobile */}
+          <div className="mb-8 sm:hidden space-y-3">
+            <h3 className="font-semibold text-sm text-muted-foreground mb-2">ITEMS</h3>
+            {order.order_items.map((item) => (
+              <div key={item.id} className="border rounded-lg p-3 space-y-2">
+                <p className="font-medium text-sm">{item.product_name}</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Weight:</span>
+                    <span>{item.weight_grams.toFixed(2)}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Qty:</span>
+                    <span>{item.quantity}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Rate:</span>
+                    <span>{formatPrice(item.gold_rate_applied)}/g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Making:</span>
+                    <span>{formatPrice(item.making_charges)}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between pt-2 border-t font-medium">
+                  <span>Amount</span>
+                  <span className="text-primary">{formatPrice(item.total_price)}</span>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Totals */}

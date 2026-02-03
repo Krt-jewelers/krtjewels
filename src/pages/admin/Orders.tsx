@@ -73,10 +73,10 @@ export default function AdminOrders() {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['adminOrders'],
-    queryFn: async (): Promise<Order[]> => {
+    queryFn: async (): Promise<(Order & { user_id: string | null })[]> => {
       const { data, error } = await supabase
         .from('orders')
-        .select('*')
+        .select('*, user_id')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -85,17 +85,37 @@ export default function AdminOrders() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+    mutationFn: async ({ orderId, status, userId, orderNumber }: { orderId: string; status: string; userId: string | null; orderNumber: string }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status: status as any })
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Send push notification to customer if they have notifications enabled
+      if (userId) {
+        const statusLabel = ORDER_STATUSES.find(s => s.value === status)?.label || status;
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              title: `Order ${orderNumber} Updated`,
+              body: `Your order status has been updated to: ${statusLabel}`,
+              url: `/account/orders`,
+              notificationType: 'order_update',
+              userId: userId,
+              orderId: orderId,
+            },
+          });
+        } catch (pushError) {
+          console.error('Failed to send push notification:', pushError);
+          // Don't fail the mutation if push fails
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
-      toast({ title: 'Order status updated!' });
+      toast({ title: 'Order status updated & customer notified!' });
     },
     onError: (error: any) => {
       toast({
@@ -200,7 +220,12 @@ export default function AdminOrders() {
                           <Select
                             value={order.status}
                             onValueChange={(value) => 
-                              updateStatusMutation.mutate({ orderId: order.id, status: value })
+                              updateStatusMutation.mutate({ 
+                                orderId: order.id, 
+                                status: value,
+                                userId: order.user_id,
+                                orderNumber: order.order_number
+                              })
                             }
                           >
                             <SelectTrigger className="w-32 h-8">
