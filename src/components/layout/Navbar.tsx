@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navLinks = [
+  { name: 'Shop', href: '/shop' },
   { name: 'Collections', href: '/collections/necklaces' },
   { name: 'Gold Rate', href: '/gold-rate' },
   { name: 'Stores', href: '/stores' },
