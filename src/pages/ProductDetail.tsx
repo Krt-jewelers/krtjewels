@@ -89,6 +89,7 @@ export default function ProductDetail() {
           <ProductImageGallery
             images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
             productName={product.name}
+            videoUrl={(product as any).video_url}
             badges={{
               isNewArrival: product.is_new_arrival,
               isBestseller: product.is_bestseller,

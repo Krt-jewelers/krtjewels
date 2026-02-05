@@ -546,6 +546,72 @@ export type Database = {
         }
         Relationships: []
       }
+      product_variations: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean | null
+          is_default: boolean | null
+          metal_type: Database["public"]["Enums"]["metal_type"] | null
+          price_adjustment: number | null
+          product_id: string
+          size_label: string | null
+          size_value: string | null
+          sku_suffix: string | null
+          stock_quantity: number | null
+          updated_at: string
+          variation_type: string
+          weight_adjustment: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          is_default?: boolean | null
+          metal_type?: Database["public"]["Enums"]["metal_type"] | null
+          price_adjustment?: number | null
+          product_id: string
+          size_label?: string | null
+          size_value?: string | null
+          sku_suffix?: string | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variation_type: string
+          weight_adjustment?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean | null
+          is_default?: boolean | null
+          metal_type?: Database["public"]["Enums"]["metal_type"] | null
+          price_adjustment?: number | null
+          product_id?: string
+          size_label?: string | null
+          size_value?: string | null
+          sku_suffix?: string | null
+          stock_quantity?: number | null
+          updated_at?: string
+          variation_type?: string
+          weight_adjustment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_variations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: Database["public"]["Enums"]["product_category"]
@@ -571,6 +637,7 @@ export type Database = {
           stone_cost: number | null
           tags: string[] | null
           updated_at: string
+          video_url: string | null
           weight_grams: number
         }
         Insert: {
@@ -597,6 +664,7 @@ export type Database = {
           stone_cost?: number | null
           tags?: string[] | null
           updated_at?: string
+          video_url?: string | null
           weight_grams: number
         }
         Update: {
@@ -623,6 +691,7 @@ export type Database = {
           stone_cost?: number | null
           tags?: string[] | null
           updated_at?: string
+          video_url?: string | null
           weight_grams?: number
         }
         Relationships: []

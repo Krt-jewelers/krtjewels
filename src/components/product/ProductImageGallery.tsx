@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ZoomIn, Play, Pause } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, Play, Pause, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 interface ProductImageGalleryProps {
   images: string[];
   productName: string;
+  videoUrl?: string | null;
   badges?: {
     isNewArrival?: boolean;
     isBestseller?: boolean;
@@ -15,44 +16,126 @@ interface ProductImageGalleryProps {
   onOpenLightbox: (index: number) => void;
 }
 
+// Helper to detect if a URL is a video
+const isVideoUrl = (url: string): boolean => {
+  if (!url) return false;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  const lowercaseUrl = url.toLowerCase();
+  return videoExtensions.some(ext => lowercaseUrl.includes(ext)) || 
+         lowercaseUrl.includes('youtube') || 
+         lowercaseUrl.includes('vimeo');
+};
+
 export function ProductImageGallery({
   images,
   productName,
+  videoUrl,
   badges,
   onOpenLightbox,
 }: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
 
   const handlePrev = () => {
+    setShowVideo(false);
     setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
+    setShowVideo(false);
     setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
+
+  const handleVideoToggle = () => {
+    setShowVideo(true);
+    setIsVideoPlaying(!isVideoPlaying);
+  };
+
+  const currentIsVideo = images[selectedImage] && isVideoUrl(images[selectedImage]);
 
   return (
     <div className="space-y-4">
       {/* Main Image */}
       <div
-        className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 cursor-zoom-in group"
+        className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        onClick={() => onOpenLightbox(selectedImage)}
       >
-        <img
-          src={images[selectedImage] || '/placeholder.svg'}
-          alt={`${productName} - Image ${selectedImage + 1}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-rich-black/0 group-hover:bg-rich-black/10 transition-colors flex items-center justify-center">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-4 shadow-lg">
-            <ZoomIn className="w-6 h-6 text-foreground" />
+        {/* Show video if video tab is selected or current media is video */}
+        {(showVideo && videoUrl) || currentIsVideo ? (
+          <div className="w-full h-full flex items-center justify-center bg-rich-black">
+            <video
+              src={showVideo ? videoUrl! : images[selectedImage]}
+              className="w-full h-full object-contain"
+              controls
+              autoPlay={isVideoPlaying}
+              loop
+              playsInline
+              onPlay={() => setIsVideoPlaying(true)}
+              onPause={() => setIsVideoPlaying(false)}
+            >
+              Your browser does not support the video tag.
+            </video>
           </div>
-        </div>
+        ) : (
+          <>
+            <img
+              src={images[selectedImage] || '/placeholder.svg'}
+              alt={`${productName} - Image ${selectedImage + 1}`}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
+              onClick={() => onOpenLightbox(selectedImage)}
+            />
+
+            {/* Hover Overlay */}
+            <div 
+              className="absolute inset-0 bg-rich-black/0 group-hover:bg-rich-black/10 transition-colors flex items-center justify-center pointer-events-none"
+            >
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-4 shadow-lg">
+                <ZoomIn className="w-6 h-6 text-foreground" />
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Video/360° Button - Only show if videoUrl exists */}
+        {videoUrl && !showVideo && !currentIsVideo && (
+          <div className="absolute top-4 right-4 z-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2 bg-white/90 hover:bg-white shadow-lg"
+              onClick={handleVideoToggle}
+            >
+              <RotateCw className="w-4 h-4" />
+              360° View
+            </Button>
+          </div>
+        )}
+
+        {/* Back to Images button when video is playing */}
+        {(showVideo || currentIsVideo) && (
+          <div className="absolute top-4 right-4 z-10">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2 bg-white/90 hover:bg-white shadow-lg"
+              onClick={() => {
+                setShowVideo(false);
+                setIsVideoPlaying(false);
+                if (currentIsVideo && images.length > 1) {
+                  // Find first non-video image
+                  const firstImageIndex = images.findIndex(img => !isVideoUrl(img));
+                  if (firstImageIndex >= 0) setSelectedImage(firstImageIndex);
+                }
+              }}
+            >
+              <ZoomIn className="w-4 h-4" />
+              View Images
+            </Button>
+          </div>
+        )}
 
         {/* Badges Overlay */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -68,7 +151,7 @@ export function ProductImageGallery({
         </div>
 
         {/* Navigation Arrows */}
-        {images.length > 1 && (
+        {images.length > 1 && !showVideo && (
           <>
             <Button
               variant="ghost"
@@ -96,26 +179,63 @@ export function ProductImageGallery({
         )}
 
         {/* Image Counter */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-          {selectedImage + 1} / {images.length}
-        </div>
+        {!showVideo && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+            {selectedImage + 1} / {images.length}
+            {videoUrl && ' • Video available'}
+          </div>
+        )}
       </div>
 
       {/* Thumbnail Gallery */}
       {images.length > 1 && (
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-luxury">
-          {images.map((image, index) => (
+          {/* Video thumbnail if video exists */}
+          {videoUrl && (
             <button
-              key={index}
-              onClick={() => setSelectedImage(index)}
+              onClick={() => {
+                setShowVideo(true);
+                setIsVideoPlaying(true);
+              }}
               className={cn(
-                'flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300',
-                selectedImage === index
+                'flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 relative',
+                showVideo
                   ? 'border-primary ring-2 ring-primary/30 scale-105'
                   : 'border-transparent hover:border-primary/50'
               )}
             >
-              <img src={image} alt="" className="w-full h-full object-cover" />
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                <div className="bg-primary/90 rounded-full p-2">
+                  <Play className="w-4 h-4 text-primary-foreground fill-current" />
+                </div>
+              </div>
+              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-foreground bg-white/80 px-1.5 rounded">
+                360°
+              </span>
+            </button>
+          )}
+          
+          {images.map((image, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setShowVideo(false);
+                setSelectedImage(index);
+              }}
+              className={cn(
+                'flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 relative',
+                selectedImage === index && !showVideo
+                  ? 'border-primary ring-2 ring-primary/30 scale-105'
+                  : 'border-transparent hover:border-primary/50'
+              )}
+            >
+              {isVideoUrl(image) ? (
+                <div className="w-full h-full bg-gradient-to-br from-secondary to-secondary/50 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-foreground/70" />
+                </div>
+              ) : (
+                <img src={image} alt="" className="w-full h-full object-cover" />
+              )}
             </button>
           ))}
         </div>
