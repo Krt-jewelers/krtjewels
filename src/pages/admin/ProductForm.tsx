@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
 import {
   Select,
   SelectContent,
@@ -19,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 interface ProductFormData {
   name: string;
@@ -219,176 +221,237 @@ export default function AdminProductForm() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Main Info */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Product Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Tabs defaultValue="details" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="details" className="gap-2">
+              <Package className="w-4 h-4" />
+              <span className="hidden sm:inline">Details</span>
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Pricing</span>
+            </TabsTrigger>
+            <TabsTrigger value="images" className="gap-2">
+              <ImageIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Images</span>
+            </TabsTrigger>
+            {isEditing && (
+              <TabsTrigger value="variations" className="gap-2">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">Variations</span>
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Details Tab */}
+          <TabsContent value="details" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Product Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Product Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        placeholder="e.g. Temple Gold Necklace"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">URL Slug *</Label>
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
+                        placeholder="temple-gold-necklace-krt"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="name">Product Name *</Label>
+                    <Label htmlFor="short_description">Short Description</Label>
                     <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder="e.g. Temple Gold Necklace"
-                      required
+                      id="short_description"
+                      value={formData.short_description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, short_description: e.target.value }))
+                      }
+                      placeholder="Brief one-line description for cards"
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="slug">URL Slug *</Label>
-                    <Input
-                      id="slug"
-                      value={formData.slug}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                      placeholder="temple-gold-necklace-krt"
-                      required
+                    <Label htmlFor="description">Full Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, description: e.target.value }))
+                      }
+                      placeholder="Detailed product description..."
+                      rows={4}
                     />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="short_description">Short Description</Label>
-                  <Input
-                    id="short_description"
-                    value={formData.short_description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, short_description: e.target.value }))
-                    }
-                    placeholder="Brief one-line description for cards"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Full Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, description: e.target.value }))
-                    }
-                    placeholder="Detailed product description..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Category *</Label>
-                    <Select
-                      value={formData.category}
-                      onValueChange={(value: ProductCategory) =>
-                        setFormData((prev) => ({ ...prev, category: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
-                          <SelectItem key={key} value={key}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Category *</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(value: ProductCategory) =>
+                          setFormData((prev) => ({ ...prev, category: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
+                            <SelectItem key={key} value={key}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Metal Type *</Label>
+                      <Select
+                        value={formData.metal_type}
+                        onValueChange={(value: MetalType) =>
+                          setFormData((prev) => ({ ...prev, metal_type: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
+                            <SelectItem key={key} value={key}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Metal Type *</Label>
-                    <Select
-                      value={formData.metal_type}
-                      onValueChange={(value: MetalType) =>
-                        setFormData((prev) => ({ ...prev, metal_type: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
-                          <SelectItem key={key} value={key}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Pricing */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Display Settings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Active</Label>
+                      <p className="text-xs text-muted-foreground">Visible on store</p>
+                    </div>
+                    <Switch
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, is_active: checked }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Featured</Label>
+                      <p className="text-xs text-muted-foreground">Show on homepage</p>
+                    </div>
+                    <Switch
+                      checked={formData.is_featured}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, is_featured: checked }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Bestseller</Label>
+                      <p className="text-xs text-muted-foreground">Mark as popular</p>
+                    </div>
+                    <Switch
+                      checked={formData.is_bestseller}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, is_bestseller: checked }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>New Arrival</Label>
+                      <p className="text-xs text-muted-foreground">Show new badge</p>
+                    </div>
+                    <Switch
+                      checked={formData.is_new_arrival}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, is_new_arrival: checked }))
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Bridal Collection</Label>
+                      <p className="text-xs text-muted-foreground">Wedding jewellery</p>
+                    </div>
+                    <Switch
+                      checked={formData.is_bridal}
+                      onCheckedChange={(checked) =>
+                        setFormData((prev) => ({ ...prev, is_bridal: checked }))
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Pricing Tab */}
+          <TabsContent value="pricing" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Stock</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="weight_grams">Weight (grams) *</Label>
-                  <Input
-                    id="weight_grams"
-                    type="number"
-                    step="0.01"
-                    value={formData.weight_grams || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, weight_grams: parseFloat(e.target.value) || 0 }))
-                    }
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="making_charge_percent">Making Charge %</Label>
-                  <Input
-                    id="making_charge_percent"
-                    type="number"
-                    step="0.1"
-                    value={formData.making_charge_percent ?? ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        making_charge_percent: e.target.value ? parseFloat(e.target.value) : null,
-                      }))
-                    }
-                    placeholder="Category default"
-                  />
-                  <p className="text-xs text-muted-foreground">Leave blank to use category default</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="diamond_cost">Diamond Cost (₹)</Label>
-                  <Input
-                    id="diamond_cost"
-                    type="number"
-                    value={formData.diamond_cost || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))
-                    }
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="stone_cost">Stone Cost (₹)</Label>
-                  <Input
-                    id="stone_cost"
-                    type="number"
-                    value={formData.stone_cost || ''}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, stone_cost: parseFloat(e.target.value) || 0 }))
-                    }
-                    placeholder="0"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
+                    <Label htmlFor="weight_grams">Weight (grams) *</Label>
                     <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
-                      placeholder="KRT-001"
+                      id="weight_grams"
+                      type="number"
+                      step="0.01"
+                      value={formData.weight_grams || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, weight_grams: parseFloat(e.target.value) || 0 }))
+                      }
+                      placeholder="0.00"
+                      required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="making_charge_percent">Making Charge %</Label>
+                    <Input
+                      id="making_charge_percent"
+                      type="number"
+                      step="0.1"
+                      value={formData.making_charge_percent ?? ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          making_charge_percent: e.target.value ? parseFloat(e.target.value) : null,
+                        }))
+                      }
+                      placeholder="Category default"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave blank to use category default</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="stock_quantity">Stock</Label>
@@ -402,11 +465,48 @@ export default function AdminProductForm() {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="diamond_cost">Diamond Cost (₹)</Label>
+                    <Input
+                      id="diamond_cost"
+                      type="number"
+                      value={formData.diamond_cost || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="stone_cost">Stone Cost (₹)</Label>
+                    <Input
+                      id="stone_cost"
+                      type="number"
+                      value={formData.stone_cost || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, stone_cost: parseFloat(e.target.value) || 0 }))
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sku">SKU</Label>
+                    <Input
+                      id="sku"
+                      value={formData.sku}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
+                      placeholder="KRT-001"
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Images */}
-            <Card className="lg:col-span-2">
+          {/* Images Tab */}
+          <TabsContent value="images" className="space-y-6">
+            <Card>
               <CardHeader>
                 <CardTitle>Product Images</CardTitle>
               </CardHeader>
@@ -418,98 +518,37 @@ export default function AdminProductForm() {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Flags */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Display Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Active</Label>
-                    <p className="text-xs text-muted-foreground">Visible on store</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, is_active: checked }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Featured</Label>
-                    <p className="text-xs text-muted-foreground">Show on homepage</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_featured}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, is_featured: checked }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Bestseller</Label>
-                    <p className="text-xs text-muted-foreground">Mark as popular</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_bestseller}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, is_bestseller: checked }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>New Arrival</Label>
-                    <p className="text-xs text-muted-foreground">Show new badge</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_new_arrival}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, is_new_arrival: checked }))
-                    }
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Bridal Collection</Label>
-                    <p className="text-xs text-muted-foreground">Wedding jewellery</p>
-                  </div>
-                  <Switch
-                    checked={formData.is_bridal}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, is_bridal: checked }))
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Variations Tab - Only for editing */}
+          {isEditing && id && (
+            <TabsContent value="variations" className="space-y-6">
+              <ProductVariationsForm productId={id} category={formData.category} />
+            </TabsContent>
+          )}
+        </Tabs>
 
-          {/* Submit */}
-          <div className="flex justify-end gap-4 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
-              Cancel
-            </Button>
-            <Button type="submit" className="btn-premium gap-2 min-w-[140px]" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  {isEditing ? 'Update Product' : 'Create Product'}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </AdminLayout>
-  );
+        {/* Submit */}
+        <div className="flex justify-end gap-4 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => navigate('/admin/products')}>
+            Cancel
+          </Button>
+          <Button type="submit" className="btn-premium gap-2 min-w-[140px]" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {isEditing ? 'Update Product' : 'Create Product'}
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  </AdminLayout>
+);
 }
