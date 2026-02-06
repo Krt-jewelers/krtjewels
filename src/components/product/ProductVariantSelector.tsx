@@ -1,31 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { METAL_TYPE_NAMES, type MetalType, type ProductCategory } from '@/lib/types';
+import { 
+  METAL_TYPE_NAMES, 
+  CATEGORY_SIZE_OPTIONS,
+  type MetalType, 
+  type ProductCategory,
+  type ProductVariation,
+} from '@/lib/types';
+import { useProductVariations } from '@/hooks/useProductVariations';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProductVariantSelectorProps {
+  productId: string;
   category: ProductCategory;
-  metalType: MetalType;
-  weightGrams: number;
+  baseMetalType: MetalType;
+  baseWeightGrams: number;
   specifications: Record<string, any> | null;
-  onMetalTypeChange?: (type: MetalType) => void;
-  onSizeChange?: (size: string) => void;
+  onVariationChange?: (variation: { 
+    metalType: MetalType; 
+    size: string | null;
+    priceAdjustment: number;
+    weightAdjustment: number;
+  }) => void;
 }
-
-// Ring sizes
-const RING_SIZES = ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
-
-// Bangle sizes
-const BANGLE_SIZES = ['2.2', '2.4', '2.6', '2.8', '3.0'];
-
-// Chain/Necklace lengths
-const CHAIN_LENGTHS = ['16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"'];
 
 // Metal type options with colors
 const METAL_OPTIONS: { type: MetalType; label: string; color: string }[] = [
@@ -35,81 +38,180 @@ const METAL_OPTIONS: { type: MetalType; label: string; color: string }[] = [
 ];
 
 export function ProductVariantSelector({
+  productId,
   category,
-  metalType,
-  weightGrams,
+  baseMetalType,
+  baseWeightGrams,
   specifications,
-  onMetalTypeChange,
-  onSizeChange,
+  onVariationChange,
 }: ProductVariantSelectorProps) {
-  const [selectedMetal, setSelectedMetal] = useState<MetalType>(metalType);
+  const { data: variations = [], isLoading } = useProductVariations(productId);
+  
+  const [selectedMetal, setSelectedMetal] = useState<MetalType>(baseMetalType);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
-  // Determine which size options to show based on category
-  const getSizeOptions = () => {
-    switch (category) {
-      case 'rings':
-        return RING_SIZES;
-      case 'bangles':
-        return BANGLE_SIZES;
-      case 'necklaces':
-      case 'chains':
-        return CHAIN_LENGTHS;
-      default:
-        return null;
-    }
-  };
+  // Get variations by type
+  const sizeVariations = variations.filter(v => v.variation_type === 'size');
+  const metalVariations = variations.filter(v => v.variation_type === 'metal_type');
 
-  const sizeOptions = getSizeOptions();
-  const sizeLabel = category === 'rings' ? 'Ring Size' : 
-                    category === 'bangles' ? 'Bangle Size' : 
-                    category === 'necklaces' || category === 'chains' ? 'Chain Length' : 'Size';
+  // Determine size options: use database variations or fall back to category defaults
+  const categoryConfig = CATEGORY_SIZE_OPTIONS[category];
+  const hasSizeVariations = sizeVariations.length > 0;
+  const hasMetalVariations = metalVariations.length > 0;
+
+  // Get size options from database or category config
+  const sizeOptions = hasSizeVariations 
+    ? sizeVariations.filter(v => v.is_available).map(v => ({
+        value: v.size_value || '',
+        label: v.size_label || '',
+        priceAdjustment: v.price_adjustment || 0,
+        weightAdjustment: v.weight_adjustment || 0,
+        stock: v.stock_quantity || 0,
+        isDefault: v.is_default,
+      }))
+    : categoryConfig?.sizes.map(s => ({
+        value: s,
+        label: categoryConfig.label,
+        priceAdjustment: 0,
+        weightAdjustment: 0,
+        stock: 1,
+        isDefault: false,
+      })) || [];
+
+  // Get available metal options from database or use defaults
+  const availableMetals = hasMetalVariations
+    ? METAL_OPTIONS.filter(m => 
+        metalVariations.some(v => v.metal_type === m.type && v.is_available)
+      ).map(m => {
+        const variation = metalVariations.find(v => v.metal_type === m.type);
+        return {
+          ...m,
+          priceAdjustment: variation?.price_adjustment || 0,
+          weightAdjustment: variation?.weight_adjustment || 0,
+          isDefault: variation?.is_default || false,
+        };
+      })
+    : METAL_OPTIONS.map(m => ({
+        ...m,
+        priceAdjustment: 0,
+        weightAdjustment: 0,
+        isDefault: m.type === baseMetalType,
+      }));
+
+  const sizeLabel = categoryConfig?.label || 'Size';
+
+  // Set default selections
+  useEffect(() => {
+    if (availableMetals.length > 0) {
+      const defaultMetal = availableMetals.find(m => m.isDefault) || availableMetals[0];
+      if (defaultMetal && selectedMetal !== defaultMetal.type) {
+        setSelectedMetal(defaultMetal.type);
+      }
+    }
+  }, [availableMetals]);
+
+  useEffect(() => {
+    if (sizeOptions.length > 0 && !selectedSize) {
+      const defaultSize = sizeOptions.find(s => s.isDefault) || sizeOptions[0];
+      if (defaultSize) {
+        setSelectedSize(defaultSize.value);
+      }
+    }
+  }, [sizeOptions]);
+
+  // Notify parent of changes
+  useEffect(() => {
+    const selectedMetalOption = availableMetals.find(m => m.type === selectedMetal);
+    const selectedSizeOption = sizeOptions.find(s => s.value === selectedSize);
+
+    const totalPriceAdjustment = 
+      (selectedMetalOption?.priceAdjustment || 0) + 
+      (selectedSizeOption?.priceAdjustment || 0);
+    
+    const totalWeightAdjustment = 
+      (selectedMetalOption?.weightAdjustment || 0) + 
+      (selectedSizeOption?.weightAdjustment || 0);
+
+    onVariationChange?.({
+      metalType: selectedMetal,
+      size: selectedSize || null,
+      priceAdjustment: totalPriceAdjustment,
+      weightAdjustment: totalWeightAdjustment,
+    });
+  }, [selectedMetal, selectedSize]);
 
   const handleMetalChange = (type: MetalType) => {
     setSelectedMetal(type);
-    onMetalTypeChange?.(type);
   };
 
   const handleSizeChange = (size: string) => {
     setSelectedSize(size);
-    onSizeChange?.(size);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex gap-3">
+            <Skeleton className="h-12 w-40" />
+            <Skeleton className="h-12 w-40" />
+            <Skeleton className="h-12 w-40" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24" />
+          <div className="flex gap-2 flex-wrap">
+            {[1, 2, 3, 4, 5].map(i => (
+              <Skeleton key={i} className="h-12 w-12" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Metal Type Selector */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <label className="text-sm font-medium text-foreground">
-            Metal Type: <span className="text-primary">{METAL_TYPE_NAMES[selectedMetal]}</span>
-          </label>
-          <button className="text-xs text-primary hover:underline">Compare</button>
+      {availableMetals.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <label className="text-sm font-medium text-foreground">
+              Metal Type: <span className="text-primary">{METAL_TYPE_NAMES[selectedMetal]}</span>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {availableMetals.map((option) => (
+              <button
+                key={option.type}
+                onClick={() => handleMetalChange(option.type)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-300',
+                  selectedMetal === option.type
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/50'
+                )}
+              >
+                <span className={cn('w-5 h-5 rounded-full border-2 border-foreground/20', option.color)} />
+                <span className="text-sm font-medium">{option.label}</span>
+                {option.priceAdjustment !== 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    ({option.priceAdjustment > 0 ? '+' : ''}₹{option.priceAdjustment.toLocaleString('en-IN')})
+                  </span>
+                )}
+                {selectedMetal === option.type && (
+                  <Check className="w-4 h-4 text-primary ml-1" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {METAL_OPTIONS.map((option) => (
-            <button
-              key={option.type}
-              onClick={() => handleMetalChange(option.type)}
-              className={cn(
-                'flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-300',
-                selectedMetal === option.type
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border hover:border-primary/50'
-              )}
-            >
-              <span className={cn('w-5 h-5 rounded-full border-2 border-foreground/20', option.color)} />
-              <span className="text-sm font-medium">{option.label}</span>
-              {selectedMetal === option.type && (
-                <Check className="w-4 h-4 text-primary ml-1" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Size Selector */}
-      {sizeOptions && (
+      {sizeOptions.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="text-sm font-medium text-foreground">
@@ -126,16 +228,26 @@ export function ProductVariantSelector({
           <div className="flex flex-wrap gap-2">
             {sizeOptions.map((size) => (
               <button
-                key={size}
-                onClick={() => handleSizeChange(size)}
+                key={size.value}
+                onClick={() => handleSizeChange(size.value)}
+                disabled={size.stock <= 0}
                 className={cn(
                   'min-w-[48px] h-12 px-4 rounded-lg border-2 font-medium transition-all duration-200',
-                  selectedSize === size
+                  selectedSize === size.value
                     ? 'border-primary bg-primary text-primary-foreground'
+                    : size.stock <= 0
+                    ? 'border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50'
                     : 'border-border hover:border-primary/50 bg-card'
                 )}
               >
-                {size}
+                <div className="flex flex-col items-center">
+                  <span>{size.value}</span>
+                  {size.priceAdjustment !== 0 && (
+                    <span className="text-[10px] opacity-75">
+                      {size.priceAdjustment > 0 ? '+' : ''}₹{Math.abs(size.priceAdjustment)}
+                    </span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
@@ -167,6 +279,18 @@ export function ProductVariantSelector({
                     </ul>
                   </div>
                 )}
+                {category === 'bracelets' && (
+                  <div>
+                    <p className="font-medium text-foreground mb-2">Bracelet Size Guide</p>
+                    <p>Measure your wrist with a tape measure. Add 0.5" to 1" for comfort depending on how loose you prefer your bracelet.</p>
+                  </div>
+                )}
+                {!['rings', 'bangles', 'necklaces', 'chains', 'bracelets'].includes(category) && (
+                  <div>
+                    <p className="font-medium text-foreground mb-2">Size Information</p>
+                    <p>Contact us for detailed sizing information for this product category.</p>
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -175,8 +299,13 @@ export function ProductVariantSelector({
 
       {/* Weight Display */}
       <div className="flex items-center justify-between py-3 border-t border-border">
-        <span className="text-sm text-muted-foreground">Total Carat Weight</span>
-        <span className="font-semibold">{weightGrams} grams</span>
+        <span className="text-sm text-muted-foreground">Net Weight</span>
+        <span className="font-semibold">
+          {(baseWeightGrams + 
+            (availableMetals.find(m => m.type === selectedMetal)?.weightAdjustment || 0) +
+            (sizeOptions.find(s => s.value === selectedSize)?.weightAdjustment || 0)
+          ).toFixed(2)} grams
+        </span>
       </div>
     </div>
   );

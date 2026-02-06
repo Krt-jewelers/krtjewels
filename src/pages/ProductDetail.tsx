@@ -17,6 +17,8 @@ import { StockBadge } from '@/components/product/StockBadge';
 import { ChevronRight, Truck, Shield, RefreshCw, Award, Clock, Gift } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import type { MetalType } from '@/lib/types';
+
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProduct(slug || '');
@@ -24,6 +26,12 @@ export default function ProductDetail() {
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [variationState, setVariationState] = useState<{
+    metalType: MetalType;
+    size: string | null;
+    priceAdjustment: number;
+    weightAdjustment: number;
+  } | null>(null);
 
   const handleOpenLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -124,18 +132,23 @@ export default function ProductDetail() {
               <StockBadge stockQuantity={product.stock_quantity} showCount />
             </div>
 
-            {/* Pricing */}
+            {/* Pricing - with variation adjustments */}
             <ProductPricing 
-              calculatedPrice={product.calculated_price} 
+              calculatedPrice={{
+                ...product.calculated_price,
+                total: product.calculated_price.total + (variationState?.priceAdjustment || 0),
+              }} 
               quantity={1} 
             />
 
             {/* Variant Selector */}
             <ProductVariantSelector
+              productId={product.id}
               category={product.category}
-              metalType={product.metal_type}
-              weightGrams={product.weight_grams}
+              baseMetalType={product.metal_type}
+              baseWeightGrams={product.weight_grams}
               specifications={product.specifications}
+              onVariationChange={setVariationState}
             />
 
             {/* Product Actions */}

@@ -37,6 +37,23 @@ export interface GoldRate {
   created_by: string | null;
 }
 
+export interface ProductVariation {
+  id: string;
+  product_id: string;
+  variation_type: 'size' | 'metal_type' | string;
+  size_value: string | null;
+  size_label: string | null;
+  metal_type: MetalType | null;
+  price_adjustment: number;
+  weight_adjustment: number;
+  stock_quantity: number;
+  is_available: boolean;
+  is_default: boolean;
+  sku_suffix: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -61,6 +78,8 @@ export interface Product {
   specifications: Record<string, any> | null;
   created_at: string;
   updated_at: string;
+  video_url?: string | null;
+  variations?: ProductVariation[];
 }
 
 export interface ProductWithPrice extends Product {
@@ -231,4 +250,13 @@ export const ORDER_STATUS_NAMES: Record<OrderStatus, string> = {
   shipped: 'Shipped',
   delivered: 'Delivered',
   cancelled: 'Cancelled',
+};
+
+// Category size options for variations
+export const CATEGORY_SIZE_OPTIONS: Record<string, { label: string; sizes: string[] }> = {
+  rings: { label: 'Ring Size', sizes: ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18'] },
+  bangles: { label: 'Bangle Size', sizes: ['2.2', '2.4', '2.6', '2.8', '3.0'] },
+  bracelets: { label: 'Bracelet Length', sizes: ['6"', '6.5"', '7"', '7.5"', '8"', '8.5"'] },
+  necklaces: { label: 'Chain Length', sizes: ['16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"'] },
+  chains: { label: 'Chain Length', sizes: ['16"', '18"', '20"', '22"', '24"', '26"', '28"', '30"'] },
 };
