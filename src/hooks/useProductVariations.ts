@@ -15,6 +15,7 @@ export interface ProductVariation {
   is_available: boolean;
   is_default: boolean;
   sku_suffix: string | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }

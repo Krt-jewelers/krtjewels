@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProduct, useBestsellerProducts } from '@/hooks/useProducts';
-import { formatPrice, METAL_TYPE_NAMES, CATEGORY_NAMES } from '@/lib/types';
+import { CATEGORY_NAMES } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ProductGrid } from '@/components/products/ProductGrid';
@@ -15,7 +15,7 @@ import { ProductTabs } from '@/components/product/ProductTabs';
 import { TrustPromise } from '@/components/product/TrustPromise';
 import { StockBadge } from '@/components/product/StockBadge';
 import { ProductReviews } from '@/components/products/ProductReviews';
-import { ChevronRight, Truck, Shield, RefreshCw, Award } from 'lucide-react';
+import { ChevronRight, Shield, RefreshCw, Truck, Award, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { MetalType } from '@/lib/types';
 
@@ -49,7 +49,6 @@ export default function ProductDetail() {
               <Skeleton className="h-12 w-3/4" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-64 w-full" />
-              <Skeleton className="h-16 w-full" />
             </div>
           </div>
         </div>
@@ -73,7 +72,7 @@ export default function ProductDetail() {
 
   return (
     <Layout>
-      {/* Breadcrumb — clean, minimal like Angara */}
+      {/* Breadcrumb */}
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-3">
           <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -90,9 +89,9 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Main Product Section — Angara two-column layout */}
-      <div className="container mx-auto px-4 py-6 md:py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+      {/* Main Product Section — Angara two-column */}
+      <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           {/* Left — Image Gallery */}
           <ProductImageGallery
             images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
@@ -106,11 +105,11 @@ export default function ProductDetail() {
             onOpenLightbox={handleOpenLightbox}
           />
 
-          {/* Right — Product Info (Angara style: compact, structured) */}
-          <div className="space-y-5">
-            {/* Product Title */}
+          {/* Right — Product Info */}
+          <div className="space-y-4">
+            {/* Title + SKU */}
             <div>
-              <h1 className="font-serif text-xl md:text-2xl lg:text-3xl font-semibold leading-tight mb-2">
+              <h1 className="font-serif text-xl md:text-2xl font-semibold leading-tight mb-1">
                 {product.name}
               </h1>
               <div className="flex items-center gap-3 flex-wrap">
@@ -121,7 +120,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Price — Angara style: prominent with offer */}
+            {/* Price */}
             <ProductPricing
               calculatedPrice={{
                 ...product.calculated_price,
@@ -130,7 +129,7 @@ export default function ProductDetail() {
               quantity={1}
             />
 
-            {/* Variant Selectors — Angara style inline */}
+            {/* Variant Selectors — image-based swatches */}
             <ProductVariantSelector
               productId={product.id}
               category={product.category}
@@ -140,44 +139,50 @@ export default function ProductDetail() {
               onVariationChange={setVariationState}
             />
 
-            {/* Actions (Quantity + Add to Cart + Wishlist + WhatsApp) */}
+            {/* Actions (Wishlist + Price + Add to Bag) */}
             <ProductActions product={product} />
 
-            {/* Trust strip — Angara style horizontal icons */}
-            <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border">
-              {[
-                { icon: Truck, label: 'Free Shipping' },
-                { icon: Shield, label: 'BIS Hallmarked' },
-                { icon: RefreshCw, label: 'Easy Returns' },
-                { icon: Award, label: 'Certified' },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex flex-col items-center gap-1 text-center p-2">
-                  <Icon className="w-4 h-4 text-primary" />
-                  <span className="text-[10px] text-muted-foreground leading-tight">{label}</span>
-                </div>
-              ))}
+            {/* Why Shop With Us — Angara horizontal trust strip */}
+            <div className="border border-border rounded-xl p-4">
+              <h4 className="text-sm font-semibold mb-3">Why Shop With Us</h4>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { icon: Shield, label: 'BIS\nHallmark' },
+                  { icon: RefreshCw, label: 'Exchange &\nBuyback' },
+                  { icon: Truck, label: 'Free 15-day\nReturns' },
+                  { icon: Award, label: 'KRT\nCertified' },
+                  { icon: Star, label: 'Rated\n4.8/5' },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex flex-col items-center text-center gap-1">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground leading-tight whitespace-pre-line">{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Accordion Tabs — Angara style: Product Details, Price Breakdown, Certificate, Manufacturer */}
+            {/* Accordion Tabs */}
             <ProductTabs product={product} />
           </div>
         </div>
       </div>
 
-      {/* Trust Promise Section */}
+      {/* Trust Promise full-width */}
       <TrustPromise />
 
-      {/* Verified Customer Reviews — Full width section like Angara */}
+      {/* Reviews */}
       <section className="py-12 bg-background border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-serif text-2xl md:text-3xl font-semibold">Verified Customer Reviews</h2>
-          </div>
+          <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center mb-8">
+            Verified Customer Reviews
+          </h2>
           <ProductReviews productId={product.id} productName={product.name} />
         </div>
       </section>
 
-      {/* Related Products — Angara "You May Also Like" */}
+      {/* Related Products */}
       {relatedProducts && relatedProducts.length > 0 && (
         <section className="py-12 bg-secondary/20 border-t border-border">
           <div className="container mx-auto px-4">
@@ -192,18 +197,12 @@ export default function ProductDetail() {
                 <TabsTrigger value="same-category" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
                   {CATEGORY_NAMES[product.category]}
                 </TabsTrigger>
-                <TabsTrigger value="bridal" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-                  Bridal
-                </TabsTrigger>
               </TabsList>
               <TabsContent value="bestsellers">
                 <ProductGrid products={relatedProducts.filter(p => p.id !== product.id).slice(0, 5)} isLoading={false} />
               </TabsContent>
               <TabsContent value="same-category">
                 <ProductGrid products={relatedProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 5)} isLoading={false} />
-              </TabsContent>
-              <TabsContent value="bridal">
-                <ProductGrid products={relatedProducts.filter(p => p.id !== product.id && p.is_bridal).slice(0, 5)} isLoading={false} />
               </TabsContent>
             </Tabs>
           </div>
