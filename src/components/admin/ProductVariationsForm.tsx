@@ -29,7 +29,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Edit, Loader2, Sparkles, ImageIcon } from 'lucide-react';
+import { VariationImageUpload } from './VariationImageUpload';
 import {
   useProductVariations,
   useCreateVariation,
@@ -73,6 +74,7 @@ interface VariationFormData {
   is_available: boolean;
   is_default: boolean;
   sku_suffix: string;
+  image_url: string | null;
 }
 
 const defaultFormData: VariationFormData = {
@@ -86,6 +88,7 @@ const defaultFormData: VariationFormData = {
   is_available: true,
   is_default: false,
   sku_suffix: '',
+  image_url: null,
 };
 
 export function ProductVariationsForm({ productId, category }: ProductVariationsFormProps) {
@@ -122,6 +125,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         is_available: variation.is_available ?? true,
         is_default: variation.is_default ?? false,
         sku_suffix: variation.sku_suffix || '',
+        image_url: variation.image_url || null,
       });
     } else {
       setEditingId(null);
@@ -147,6 +151,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         is_available: formData.is_available,
         is_default: formData.is_default,
         sku_suffix: formData.sku_suffix || null,
+        image_url: formData.image_url,
       };
 
       if (editingId) {
@@ -210,6 +215,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         is_available: true,
         is_default: false,
         sku_suffix: `-${size.replace(/"/g, '')}`,
+        image_url: null,
       }));
 
       await bulkCreate.mutateAsync(variationsToCreate);
@@ -246,6 +252,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         is_available: true,
         is_default: metal === 'gold_22k',
         sku_suffix: `-${metal.replace('gold_', '')}`,
+        image_url: null,
       }));
 
       await bulkCreate.mutateAsync(variationsToCreate);
@@ -461,6 +468,16 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                       <Label>Default Selection</Label>
                     </div>
                   </div>
+
+                  {/* Variation Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Variation Image (optional)</Label>
+                    <p className="text-xs text-muted-foreground">Upload an image showing the product in this variation (e.g., different metal color)</p>
+                    <VariationImageUpload
+                      imageUrl={formData.image_url}
+                      onImageChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -492,6 +509,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Price Adj.</TableHead>
@@ -504,6 +522,15 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
             <TableBody>
               {variations.map((variation) => (
                 <TableRow key={variation.id}>
+                  <TableCell>
+                    {variation.image_url ? (
+                      <img src={variation.image_url} alt="" className="w-10 h-10 rounded object-cover border border-border" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-secondary flex items-center justify-center">
+                        <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
                       {variation.variation_type.replace('_', ' ')}

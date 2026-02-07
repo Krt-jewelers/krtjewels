@@ -1,5 +1,5 @@
 import { formatPrice } from '@/lib/types';
-import { Percent, Tag } from 'lucide-react';
+import { Tag, Percent } from 'lucide-react';
 import type { CalculatedPrice } from '@/lib/types';
 
 interface ProductPricingProps {
@@ -12,26 +12,17 @@ export function ProductPricing({ calculatedPrice, quantity }: ProductPricingProp
 
   return (
     <div className="space-y-2">
-      {/* Main Price — Angara style: large, bold */}
+      {/* Main Price — Angara: large bold with MRP */}
       <div className="flex items-baseline gap-3">
         <span className="text-2xl md:text-3xl font-serif font-bold text-foreground">
           {formatPrice(totalPrice)}
         </span>
-        {quantity > 1 && (
-          <span className="text-sm text-muted-foreground">
-            ({formatPrice(calculatedPrice.total)} × {quantity})
-          </span>
-        )}
-      </div>
-
-      {/* MRP + offer tag — Angara style */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">incl. of all taxes</span>
+        <span className="text-xs text-muted-foreground">(incl. of all taxes)</span>
       </div>
 
       {/* Exclusive Offer */}
       <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-        <Tag className="w-3.5 h-3.5 text-primary" />
+        <Tag className="w-3.5 h-3.5 text-primary flex-shrink-0" />
         <span className="text-xs text-foreground">
           Exclusive Offer: Flat ₹1,000 off on first purchase!
         </span>

@@ -550,6 +550,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           is_available: boolean | null
           is_default: boolean | null
           metal_type: Database["public"]["Enums"]["metal_type"] | null
@@ -566,6 +567,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_available?: boolean | null
           is_default?: boolean | null
           metal_type?: Database["public"]["Enums"]["metal_type"] | null
@@ -582,6 +584,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           is_available?: boolean | null
           is_default?: boolean | null
           metal_type?: Database["public"]["Enums"]["metal_type"] | null

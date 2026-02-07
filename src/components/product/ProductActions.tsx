@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Heart, Minus, Plus, ShoppingBag, Check, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
@@ -34,9 +33,7 @@ export function ProductActions({ product }: ProductActionsProps) {
       setShowAuthModal(true);
       return;
     }
-    
     if (isOutOfStock) return;
-    
     addToCart({ productId: product.id, quantity });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
@@ -58,110 +55,113 @@ export function ProductActions({ product }: ProductActionsProps) {
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Stock Status */}
+      <div className="space-y-3">
+        {/* Stock alerts */}
         {isOutOfStock ? (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-center">
-            <p className="text-destructive font-semibold">Out of Stock</p>
-            <p className="text-sm text-muted-foreground mt-1">This item is currently unavailable</p>
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-center">
+            <p className="text-destructive font-semibold text-sm">Out of Stock</p>
           </div>
         ) : (product.stock_quantity ?? 0) <= 5 && (product.stock_quantity ?? 0) > 0 ? (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-            <p className="text-amber-700 font-medium text-sm">
-              Only {product.stock_quantity} left in stock – order soon!
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-center">
+            <p className="text-amber-700 font-medium text-xs">
+              Only {product.stock_quantity} left – order soon!
             </p>
           </div>
         ) : null}
 
-        {/* Quantity Selector - Full Width Premium */}
-        <div className="bg-secondary/50 rounded-xl p-4">
-          <label className="text-sm text-muted-foreground mb-2 block">Quantity</label>
-          <div className="flex items-center justify-between bg-card rounded-lg border border-border">
+        {/* Angara-style: Wishlist + Price + ADD TO BAG inline */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleToggleWishlist}
+            disabled={isToggling}
+            className={cn(
+              'h-12 w-12 rounded-lg border-2 flex-shrink-0 transition-all',
+              inWishlist 
+                ? 'bg-red-50 border-red-300 text-red-600' 
+                : 'hover:border-primary'
+            )}
+          >
+            <Heart className={cn('w-5 h-5', inWishlist && 'fill-current')} />
+          </Button>
+
+          {/* Price display */}
+          <div className="flex-1 bg-secondary/50 rounded-lg px-3 py-2 text-center">
+            <span className="text-lg font-serif font-bold text-foreground">
+              {formatPrice(product.calculated_price.total * quantity)}
+            </span>
+            {quantity > 1 && (
+              <span className="text-xs text-muted-foreground ml-1">
+                ({formatPrice(product.calculated_price.total)} × {quantity})
+              </span>
+            )}
+          </div>
+
+          {/* ADD TO BAG button */}
+          <Button
+            onClick={handleAddToCart}
+            disabled={isAdding || isOutOfStock}
+            className={cn(
+              'h-12 px-6 font-semibold rounded-lg transition-all flex-shrink-0',
+              isAdded 
+                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                : 'bg-foreground hover:bg-foreground/90 text-background'
+            )}
+          >
+            {isAdded ? (
+              <><Check className="w-4 h-4 mr-1" /> Added</>
+            ) : isOutOfStock ? (
+              'Sold Out'
+            ) : (
+              <><ShoppingBag className="w-4 h-4 mr-1" /> ADD TO BAG</>
+            )}
+          </Button>
+        </div>
+
+        {/* Quantity selector — compact inline */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">Qty:</span>
+          <div className="flex items-center border border-border rounded-lg">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1 || isOutOfStock}
-              className="h-14 w-14 rounded-l-lg rounded-r-none hover:bg-secondary"
+              className="h-8 w-8 rounded-l-lg rounded-r-none"
             >
-              <Minus className="w-5 h-5" />
+              <Minus className="w-3 h-3" />
             </Button>
-            <span className="flex-1 text-center text-2xl font-serif font-semibold">
-              {quantity}
-            </span>
+            <span className="w-8 text-center text-sm font-medium">{quantity}</span>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
               disabled={quantity >= maxQuantity || isOutOfStock}
-              className="h-14 w-14 rounded-r-lg rounded-l-none hover:bg-secondary"
+              className="h-8 w-8 rounded-r-lg rounded-l-none"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-3 h-3" />
             </Button>
           </div>
+          <span className="text-xs text-muted-foreground">
+            Order Now for estimated delivery by{' '}
+            <span className="font-semibold text-foreground">
+              {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+          </span>
         </div>
 
-        {/* Add to Cart & Wishlist - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {/* Add to Cart - Takes 3 columns */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={isAdding || isOutOfStock}
-            className={cn(
-              'md:col-span-3 py-7 text-lg font-semibold gap-3 rounded-xl transition-all duration-300',
-              isAdded 
-                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-            )}
-          >
-            {isAdded ? (
-              <>
-                <Check className="w-6 h-6" />
-                <span>Added to Cart!</span>
-              </>
-            ) : isOutOfStock ? (
-              <span>Out of Stock</span>
-            ) : !isAuthenticated ? (
-              <>
-                <ShoppingBag className="w-6 h-6" />
-                <span>Sign In to Add</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-6 h-6" />
-                <span>Add to Cart – {formatPrice(product.calculated_price.total * quantity)}</span>
-              </>
-            )}
-          </Button>
-
-          {/* Wishlist - Takes 1 column */}
-          <Button
-            variant="outline"
-            onClick={handleToggleWishlist}
-            disabled={isToggling}
-            className={cn(
-              'py-7 rounded-xl border-2 transition-all duration-300',
-              inWishlist 
-                ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' 
-                : 'hover:border-primary hover:bg-primary/5'
-            )}
-          >
-            <Heart className={cn('w-6 h-6', inWishlist && 'fill-current')} />
-          </Button>
-        </div>
-
-        {/* WhatsApp Enquiry - Full Width */}
+        {/* WhatsApp Enquiry */}
         <Button
           variant="outline"
           onClick={handleWhatsAppEnquiry}
-          className="w-full py-6 text-lg gap-3 rounded-xl border-2 border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 font-semibold"
+          className="w-full py-5 gap-2 rounded-lg border-2 border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 font-semibold text-sm"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span>Enquire on WhatsApp</span>
+          <MessageCircle className="w-4 h-4" />
+          Enquire on WhatsApp
         </Button>
       </div>
 
-      {/* Auth Prompt Modal */}
       <AuthPromptModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
