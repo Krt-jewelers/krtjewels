@@ -14,9 +14,9 @@ import { ProductActions } from '@/components/product/ProductActions';
 import { ProductTabs } from '@/components/product/ProductTabs';
 import { TrustPromise } from '@/components/product/TrustPromise';
 import { StockBadge } from '@/components/product/StockBadge';
-import { ChevronRight, Truck, Shield, RefreshCw, Award, Clock, Gift } from 'lucide-react';
+import { ProductReviews } from '@/components/products/ProductReviews';
+import { ChevronRight, Truck, Shield, RefreshCw, Award } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
 import type { MetalType } from '@/lib/types';
 
 export default function ProductDetail() {
@@ -73,27 +73,27 @@ export default function ProductDetail() {
 
   return (
     <Layout>
-      {/* Breadcrumb */}
-      <div className="bg-secondary/30 py-3">
-        <div className="container mx-auto px-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
-            <Link to="/" className="hover:text-foreground whitespace-nowrap">Home</Link>
-            <ChevronRight className="w-4 h-4 flex-shrink-0" />
-            <Link to="/shop" className="hover:text-foreground whitespace-nowrap">Shop</Link>
-            <ChevronRight className="w-4 h-4 flex-shrink-0" />
-            <Link to={`/collections/${product.category.replace('_', '-')}`} className="hover:text-foreground whitespace-nowrap">
+      {/* Breadcrumb — clean, minimal like Angara */}
+      <div className="border-b border-border">
+        <div className="container mx-auto px-4 py-3">
+          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Link to="/" className="hover:text-foreground">Home</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link to="/shop" className="hover:text-foreground">Jewellery</Link>
+            <ChevronRight className="w-3 h-3" />
+            <Link to={`/collections/${product.category.replace('_', '-')}`} className="hover:text-foreground">
               {CATEGORY_NAMES[product.category]}
             </Link>
-            <ChevronRight className="w-4 h-4 flex-shrink-0" />
-            <span className="text-foreground line-clamp-1">{product.name}</span>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
           </nav>
         </div>
       </div>
 
-      {/* Main Product Section */}
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
-          {/* Images - Left Column */}
+      {/* Main Product Section — Angara two-column layout */}
+      <div className="container mx-auto px-4 py-6 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+          {/* Left — Image Gallery */}
           <ProductImageGallery
             images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
             productName={product.name}
@@ -106,42 +106,31 @@ export default function ProductDetail() {
             onOpenLightbox={handleOpenLightbox}
           />
 
-          {/* Details - Right Column */}
-          <div className="space-y-6">
-            {/* Header */}
+          {/* Right — Product Info (Angara style: compact, structured) */}
+          <div className="space-y-5">
+            {/* Product Title */}
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-primary font-medium uppercase tracking-wider text-sm">
-                  {METAL_TYPE_NAMES[product.metal_type]}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                <span className="text-muted-foreground text-sm">{product.weight_grams}g</span>
-                {product.sku && (
-                  <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                    <span className="text-muted-foreground text-sm">SKU: {product.sku}</span>
-                  </>
-                )}
-              </div>
-
-              <h1 className="font-serif text-2xl md:text-3xl lg:text-4xl font-semibold mb-3 leading-tight">
+              <h1 className="font-serif text-xl md:text-2xl lg:text-3xl font-semibold leading-tight mb-2">
                 {product.name}
               </h1>
-
-              {/* Stock Badge */}
-              <StockBadge stockQuantity={product.stock_quantity} showCount />
+              <div className="flex items-center gap-3 flex-wrap">
+                <StockBadge stockQuantity={product.stock_quantity} showCount />
+                {product.sku && (
+                  <span className="text-xs text-muted-foreground">SKU: {product.sku}</span>
+                )}
+              </div>
             </div>
 
-            {/* Pricing - with variation adjustments */}
-            <ProductPricing 
+            {/* Price — Angara style: prominent with offer */}
+            <ProductPricing
               calculatedPrice={{
                 ...product.calculated_price,
                 total: product.calculated_price.total + (variationState?.priceAdjustment || 0),
-              }} 
-              quantity={1} 
+              }}
+              quantity={1}
             />
 
-            {/* Variant Selector */}
+            {/* Variant Selectors — Angara style inline */}
             <ProductVariantSelector
               productId={product.id}
               category={product.category}
@@ -151,109 +140,77 @@ export default function ProductDetail() {
               onVariationChange={setVariationState}
             />
 
-            {/* Product Actions */}
+            {/* Actions (Quantity + Add to Cart + Wishlist + WhatsApp) */}
             <ProductActions product={product} />
 
-            {/* Quick Trust Features */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border">
-              <div className="text-center p-3 rounded-xl bg-secondary/30">
-                <Truck className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs text-muted-foreground">Free Shipping</p>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-secondary/30">
-                <Shield className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs text-muted-foreground">BIS Hallmarked</p>
-              </div>
-              <div className="text-center p-3 rounded-xl bg-secondary/30">
-                <RefreshCw className="w-5 h-5 mx-auto mb-1.5 text-primary" />
-                <p className="text-xs text-muted-foreground">Easy Returns</p>
-              </div>
+            {/* Trust strip — Angara style horizontal icons */}
+            <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border">
+              {[
+                { icon: Truck, label: 'Free Shipping' },
+                { icon: Shield, label: 'BIS Hallmarked' },
+                { icon: RefreshCw, label: 'Easy Returns' },
+                { icon: Award, label: 'Certified' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1 text-center p-2">
+                  <Icon className="w-4 h-4 text-primary" />
+                  <span className="text-[10px] text-muted-foreground leading-tight">{label}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Delivery Info */}
-            <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-xl">
-              <Clock className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Delivery Estimate</p>
-                <p className="text-xs text-muted-foreground">
-                  Standard delivery in 5-7 business days
-                </p>
-              </div>
-            </div>
-
-            {/* Gift Option */}
-            <div className="flex items-center gap-3 p-4 border border-primary/30 rounded-xl bg-primary/5">
-              <Gift className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium">Premium Gift Packaging</p>
-                <p className="text-xs text-muted-foreground">
-                  Complimentary luxury gift box with every purchase
-                </p>
-              </div>
-            </div>
+            {/* Accordion Tabs — Angara style: Product Details, Price Breakdown, Certificate, Manufacturer */}
+            <ProductTabs product={product} />
           </div>
         </div>
-
-        {/* Product Tabs - Details, Certificate, Reviews */}
-        <ProductTabs product={product} />
       </div>
 
       {/* Trust Promise Section */}
       <TrustPromise />
 
-      {/* Related Products */}
+      {/* Verified Customer Reviews — Full width section like Angara */}
+      <section className="py-12 bg-background border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-serif text-2xl md:text-3xl font-semibold">Verified Customer Reviews</h2>
+          </div>
+          <ProductReviews productId={product.id} productName={product.name} />
+        </div>
+      </section>
+
+      {/* Related Products — Angara "You May Also Like" */}
       {relatedProducts && relatedProducts.length > 0 && (
-        <section className="py-16 bg-background">
+        <section className="py-12 bg-secondary/20 border-t border-border">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-8">
-              <h2 className="font-serif text-2xl md:text-3xl font-semibold mb-2">
-                You May Also Like
-              </h2>
-              <p className="text-muted-foreground">
-                Discover more pieces from our collection
-              </p>
-            </div>
-            
-            {/* Category Tabs for Related */}
+            <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center mb-8">
+              You May Also Like
+            </h2>
             <Tabs defaultValue="bestsellers" className="w-full">
-              <TabsList className="w-full justify-center mb-8 bg-transparent">
-                <TabsTrigger value="bestsellers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsList className="w-full justify-center mb-6 bg-transparent gap-2">
+                <TabsTrigger value="bestsellers" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
                   Bestsellers
                 </TabsTrigger>
-                <TabsTrigger value="same-category" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <TabsTrigger value="same-category" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
                   {CATEGORY_NAMES[product.category]}
                 </TabsTrigger>
-                <TabsTrigger value="bridal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Bridal Rings
+                <TabsTrigger value="bridal" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
+                  Bridal
                 </TabsTrigger>
               </TabsList>
-              
               <TabsContent value="bestsellers">
-                <ProductGrid 
-                  products={relatedProducts.filter(p => p.id !== product.id).slice(0, 4)} 
-                  isLoading={false}
-                />
+                <ProductGrid products={relatedProducts.filter(p => p.id !== product.id).slice(0, 5)} isLoading={false} />
               </TabsContent>
-              
               <TabsContent value="same-category">
-                <ProductGrid 
-                  products={relatedProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 4)} 
-                  isLoading={false}
-                />
+                <ProductGrid products={relatedProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 5)} isLoading={false} />
               </TabsContent>
-              
               <TabsContent value="bridal">
-                <ProductGrid 
-                  products={relatedProducts.filter(p => p.id !== product.id && p.is_bridal).slice(0, 4)} 
-                  isLoading={false}
-                />
+                <ProductGrid products={relatedProducts.filter(p => p.id !== product.id && p.is_bridal).slice(0, 5)} isLoading={false} />
               </TabsContent>
             </Tabs>
           </div>
         </section>
       )}
 
-      {/* Image Lightbox */}
+      {/* Lightbox */}
       <ImageLightbox
         images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
         initialIndex={lightboxIndex}
