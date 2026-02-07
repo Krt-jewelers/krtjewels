@@ -172,21 +172,32 @@ export default function AdminProductForm() {
           .eq('id', id);
 
         if (error) throw error;
+        
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+
+        toast({
+          title: 'Success',
+          description: 'Product updated successfully',
+        });
+
+        navigate('/admin/products');
       } else {
-        const { error } = await supabase.from('products').insert(productData);
+        const { data, error } = await supabase.from('products').insert(productData).select('id').single();
 
         if (error) throw error;
+
+        queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+
+        toast({
+          title: 'Success',
+          description: 'Product created! You can now add variations.',
+        });
+
+        // Redirect to edit mode so variations tab is available
+        navigate(`/admin/products/${data.id}`);
       }
-
-      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-
-      toast({
-        title: 'Success',
-        description: `Product ${isEditing ? 'updated' : 'created'} successfully`,
-      });
-
-      navigate('/admin/products');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -235,12 +246,10 @@ export default function AdminProductForm() {
               <ImageIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Images</span>
             </TabsTrigger>
-            {isEditing && (
-              <TabsTrigger value="variations" className="gap-2">
-                <Sparkles className="w-4 h-4" />
-                <span className="hidden sm:inline">Variations</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="variations" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Variations</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Details Tab */}
@@ -520,12 +529,22 @@ export default function AdminProductForm() {
             </Card>
           </TabsContent>
 
-          {/* Variations Tab - Only for editing */}
-          {isEditing && id && (
-            <TabsContent value="variations" className="space-y-6">
+          {/* Variations Tab */}
+          <TabsContent value="variations" className="space-y-6">
+            {isEditing && id ? (
               <ProductVariationsForm productId={id} category={formData.category} />
-            </TabsContent>
-          )}
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Sparkles className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-muted-foreground font-medium">Save the product first</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You can add variations after creating the product.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
         </Tabs>
 
         {/* Submit */}
