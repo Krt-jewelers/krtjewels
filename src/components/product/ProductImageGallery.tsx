@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ZoomIn, Play, Pause, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ interface ProductImageGalleryProps {
   images: string[];
   productName: string;
   videoUrl?: string | null;
+  variationImageUrl?: string | null;
   badges?: {
     isNewArrival?: boolean;
     isBestseller?: boolean;
@@ -30,22 +31,34 @@ export function ProductImageGallery({
   images,
   productName,
   videoUrl,
+  variationImageUrl,
   badges,
   onOpenLightbox,
 }: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+
+  // When a variation image is provided, show it as the displayed image
+  const displayImages = variationImageUrl
+    ? [variationImageUrl, ...images.filter(img => img !== variationImageUrl)]
+    : images;
   const [isHovering, setIsHovering] = useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
 
+  // Reset to first image when variation image changes
+  useEffect(() => {
+    setSelectedImage(0);
+    setShowVideo(false);
+  }, [variationImageUrl]);
+
   const handlePrev = () => {
     setShowVideo(false);
-    setSelectedImage((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
     setShowVideo(false);
-    setSelectedImage((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
   };
 
   const handleVideoToggle = () => {
@@ -53,7 +66,7 @@ export function ProductImageGallery({
     setIsVideoPlaying(!isVideoPlaying);
   };
 
-  const currentIsVideo = images[selectedImage] && isVideoUrl(images[selectedImage]);
+  const currentIsVideo = displayImages[selectedImage] && isVideoUrl(displayImages[selectedImage]);
 
   return (
     <div className="space-y-4">
@@ -67,7 +80,7 @@ export function ProductImageGallery({
         {(showVideo && videoUrl) || currentIsVideo ? (
           <div className="w-full h-full flex items-center justify-center bg-rich-black">
             <video
-              src={showVideo ? videoUrl! : images[selectedImage]}
+              src={showVideo ? videoUrl! : displayImages[selectedImage]}
               className="w-full h-full object-contain"
               controls
               autoPlay={isVideoPlaying}
@@ -82,7 +95,7 @@ export function ProductImageGallery({
         ) : (
           <>
             <img
-              src={images[selectedImage] || '/placeholder.svg'}
+              src={displayImages[selectedImage] || '/placeholder.svg'}
               alt={`${productName} - Image ${selectedImage + 1}`}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
               onClick={() => onOpenLightbox(selectedImage)}
@@ -124,9 +137,8 @@ export function ProductImageGallery({
               onClick={() => {
                 setShowVideo(false);
                 setIsVideoPlaying(false);
-                if (currentIsVideo && images.length > 1) {
-                  // Find first non-video image
-                  const firstImageIndex = images.findIndex(img => !isVideoUrl(img));
+                if (currentIsVideo && displayImages.length > 1) {
+                  const firstImageIndex = displayImages.findIndex(img => !isVideoUrl(img));
                   if (firstImageIndex >= 0) setSelectedImage(firstImageIndex);
                 }
               }}
@@ -151,7 +163,7 @@ export function ProductImageGallery({
         </div>
 
         {/* Navigation Arrows */}
-        {images.length > 1 && !showVideo && (
+        {displayImages.length > 1 && !showVideo && (
           <>
             <Button
               variant="ghost"
@@ -181,14 +193,14 @@ export function ProductImageGallery({
         {/* Image Counter */}
         {!showVideo && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-            {selectedImage + 1} / {images.length}
+            {selectedImage + 1} / {displayImages.length}
             {videoUrl && ' • Video available'}
           </div>
         )}
       </div>
 
       {/* Thumbnail Gallery */}
-      {images.length > 1 && (
+      {displayImages.length > 1 && (
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-luxury">
           {/* Video thumbnail if video exists */}
           {videoUrl && (
@@ -215,7 +227,7 @@ export function ProductImageGallery({
             </button>
           )}
           
-          {images.map((image, index) => (
+          {displayImages.map((image, index) => (
             <button
               key={index}
               onClick={() => {
