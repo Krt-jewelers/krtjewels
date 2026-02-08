@@ -35,7 +35,6 @@ export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
   const { isAuthenticated, user, signOut, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { data: goldRate } = useGoldRate();
@@ -144,49 +143,28 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Row 2: Category navigation bar */}
-        <nav className="border-t border-border">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center gap-8 h-11">
-              {categoryNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    'text-xs font-medium tracking-[0.1em] transition-colors whitespace-nowrap',
-                    location.pathname === item.href || location.pathname.startsWith(item.href + '/')
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </nav>
       </header>
 
       {/* ── MOBILE HEADER ── */}
       <header className="lg:hidden sticky top-0 z-40 bg-background border-b border-border">
-        {/* Row 1: Hamburger | Logo (center) | Search + Heart + Cart */}
+        {/* Row 1: Hamburger + Logo (left) | Icons (right) */}
         <div className="flex items-center justify-between h-14 px-4">
-          {/* Left – Menu */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-
-          {/* Center – Logo */}
-          <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-            <h1 className="font-serif text-lg font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
-              KRT JEWELS
-            </h1>
-          </Link>
+          {/* Left – Menu + Logo */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <Link to="/">
+              <h1 className="font-serif text-lg font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
+                KRT JEWELS
+              </h1>
+            </Link>
+          </div>
 
           {/* Right – Icons */}
           <div className="flex items-center gap-0.5">
@@ -194,7 +172,7 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              onClick={() => setMobileSearchVisible(!mobileSearchVisible)}
+              onClick={() => setIsSearchOpen(true)}
             >
               <Search className="w-5 h-5" />
             </Button>
@@ -217,21 +195,16 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Row 2: Mobile search bar (toggle) */}
-        {mobileSearchVisible && (
-          <div className="px-4 pb-3">
-            <button
-              onClick={() => {
-                setMobileSearchVisible(false);
-                setIsSearchOpen(true);
-              }}
-              className="flex items-center gap-2 w-full border border-border rounded px-3 py-2 text-sm text-muted-foreground bg-secondary/30"
-            >
-              <Search className="w-4 h-4" />
-              <span>SEARCH</span>
-            </button>
-          </div>
-        )}
+        {/* Row 2: Search bar always visible */}
+        <div className="px-4 pb-3">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center gap-2 w-full border border-border rounded px-3 py-2 text-sm text-muted-foreground bg-secondary/30"
+          >
+            <Search className="w-4 h-4" />
+            <span>SEARCH</span>
+          </button>
+        </div>
       </header>
 
       {/* Search Overlay */}
