@@ -26,6 +26,7 @@ interface ProductVariantSelectorProps {
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
+    imageUrl: string | null;
   }) => void;
 }
 
@@ -120,16 +121,19 @@ export function ProductVariantSelector({
     }
   }, [sizeOptions]);
 
-  // Notify parent of changes
   useEffect(() => {
     const selectedMetalOption = availableMetals.find(m => m.type === selectedMetal);
     const selectedSizeOption = sizeOptions.find(s => s.value === selectedSize);
+
+    // Prefer metal variation image, then size variation image
+    const imageUrl = selectedMetalOption?.imageUrl || selectedSizeOption?.imageUrl || null;
 
     onVariationChange?.({
       metalType: selectedMetal,
       size: selectedSize || null,
       priceAdjustment: (selectedMetalOption?.priceAdjustment || 0) + (selectedSizeOption?.priceAdjustment || 0),
       weightAdjustment: (selectedMetalOption?.weightAdjustment || 0) + (selectedSizeOption?.weightAdjustment || 0),
+      imageUrl,
     });
   }, [selectedMetal, selectedSize]);
 

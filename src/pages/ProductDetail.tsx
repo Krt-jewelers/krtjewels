@@ -31,6 +31,7 @@ export default function ProductDetail() {
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
+    imageUrl: string | null;
   } | null>(null);
 
   const handleOpenLightbox = (index: number) => {
@@ -97,6 +98,7 @@ export default function ProductDetail() {
             images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
             productName={product.name}
             videoUrl={(product as any).video_url}
+            variationImageUrl={variationState?.imageUrl || null}
             badges={{
               isNewArrival: product.is_new_arrival,
               isBestseller: product.is_bestseller,

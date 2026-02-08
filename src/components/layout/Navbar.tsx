@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Search, Heart, ShoppingBag, User, ChevronDown } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingBag, User, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useGoldRate } from '@/hooks/useGoldRate';
@@ -17,56 +18,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 
-// Category route slugs
-const categoryRoutes: Record<ProductCategory, string> = {
-  necklaces: 'necklaces',
-  earrings: 'earrings',
-  rings: 'rings',
-  bangles: 'bangles',
-  bracelets: 'bracelets',
-  chains: 'chains',
-  pendants: 'pendants',
-  wedding_sets: 'wedding-bridal',
-  diamond_jewellery: 'diamond-jewellery',
-  mens_jewellery: 'mens-jewellery',
-};
-
-// Category images for mega menu
-const categoryImages: Record<ProductCategory, string> = {
-  necklaces: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300&h=200&fit=crop',
-  earrings: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=300&h=200&fit=crop',
-  rings: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300&h=200&fit=crop',
-  bangles: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=300&h=200&fit=crop',
-  bracelets: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=300&h=200&fit=crop',
-  chains: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?w=300&h=200&fit=crop',
-  pendants: 'https://images.unsplash.com/photo-1599458252573-56ae36120de1?w=300&h=200&fit=crop',
-  wedding_sets: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=300&h=200&fit=crop',
-  diamond_jewellery: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?w=300&h=200&fit=crop',
-  mens_jewellery: 'https://images.unsplash.com/photo-1619119069152-a2b331eb392a?w=300&h=200&fit=crop',
-};
-
-const navLinks = [
-  { name: 'Shop', href: '/shop' },
-  { name: 'Gold Rate', href: '/gold-rate' },
-  { name: 'Stores', href: '/stores' },
-  { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
+// Category route slugs for the navigation bar
+const categoryNavItems: { name: string; href: string }[] = [
+  { name: 'RINGS', href: '/collections/rings' },
+  { name: 'EARRINGS', href: '/collections/earrings' },
+  { name: 'NECKLACES', href: '/collections/necklaces' },
+  { name: 'BANGLES & BRACELETS', href: '/collections/bangles' },
+  { name: 'ENGAGEMENT & WEDDING', href: '/collections/wedding-bridal' },
+  { name: 'COLLECTIONS', href: '/shop' },
+  { name: 'GIFTS', href: '/collections/diamond-jewellery' },
 ];
 
 export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
   const { isAuthenticated, user, signOut, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { data: goldRate } = useGoldRate();
@@ -75,182 +44,40 @@ export function Navbar() {
 
   return (
     <>
-      {/* Gold Rate Ticker */}
-      <div className="ticker-gold py-1.5 text-xs md:text-sm">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-4 md:gap-8">
-          <div className="flex items-center gap-2">
-            <span className="text-gold-light/70">22K Gold:</span>
-            <span className="font-semibold text-gold-light">
-              {goldRate ? `${formatPrice(goldRate.rate_22k)}/g` : '—'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-gold-light/70">24K Gold:</span>
-            <span className="font-semibold text-gold-light">
-              {goldRate ? `${formatPrice(goldRate.rate_24k)}/g` : '—'}
-            </span>
-          </div>
-          <Link to="/gold-rate" className="text-gold-light hover:underline hidden md:block">
-            View Today's Rates →
-          </Link>
-        </div>
-      </div>
-
-      {/* Main Navbar */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
+      {/* ── DESKTOP HEADER ── */}
+      <header className="hidden lg:block sticky top-0 z-40 bg-background border-b border-border">
+        {/* Row 1: Phone | Logo (center) | Search + Icons */}
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
+          <div className="flex items-center justify-between h-16">
+            {/* Left – Phone */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-[200px]">
+              <Phone className="w-4 h-4" />
+              <span>+91-900-100-1313</span>
+            </div>
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
-              <h1 className="font-serif text-xl md:text-2xl font-bold text-foreground tracking-wide">
-                <span className="text-primary">KRT</span> Jewels
+            {/* Center – Logo */}
+            <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+              <h1 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
+                KRT JEWELS
               </h1>
             </Link>
 
-            {/* Desktop Navigation with Mega Menu */}
-            <nav className="hidden lg:flex items-center gap-6">
-              {/* Shop Link */}
-              <Link
-                to="/shop"
-                className={cn(
-                  "text-sm font-medium transition-colors link-elegant",
-                  location.pathname === '/shop'
-                    ? 'text-primary'
-                    : 'text-foreground/80 hover:text-foreground'
-                )}
-              >
-                Shop
-              </Link>
-
-              {/* Collections Mega Menu */}
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger 
-                      className={cn(
-                        "text-sm font-medium bg-transparent hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent",
-                        location.pathname.startsWith('/collections')
-                          ? 'text-primary'
-                          : 'text-foreground/80 hover:text-foreground'
-                      )}
-                    >
-                      Collections
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <div className="w-[800px] p-6">
-                        <div className="mb-4">
-                          <h3 className="font-serif text-lg font-semibold text-foreground">Shop by Category</h3>
-                          <p className="text-sm text-muted-foreground">Explore our exquisite collections</p>
-                        </div>
-                        <div className="grid grid-cols-5 gap-3">
-                          {(Object.entries(CATEGORY_NAMES) as [ProductCategory, string][]).map(([category, name]) => (
-                            <Link
-                              key={category}
-                              to={`/collections/${categoryRoutes[category]}`}
-                              className="group block"
-                            >
-                              <div className="relative overflow-hidden rounded-lg aspect-[4/3] mb-2">
-                                <img
-                                  src={categoryImages[category]}
-                                  alt={name}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                              </div>
-                              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                                {name}
-                              </span>
-                            </Link>
-                          ))}
-                        </div>
-                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                          <Link 
-                            to="/shop" 
-                            className="text-sm text-primary hover:underline font-medium"
-                          >
-                            View All Products →
-                          </Link>
-                          <Link 
-                            to="/collections/wedding-bridal" 
-                            className="text-sm text-primary hover:underline font-medium"
-                          >
-                            Bridal Collection →
-                          </Link>
-                        </div>
-                      </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
-
-              {/* Other Nav Links */}
-              {navLinks.slice(1).map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className={cn(
-                    "text-sm font-medium transition-colors link-elegant",
-                    location.pathname.startsWith(link.href)
-                      ? 'text-primary'
-                      : 'text-foreground/80 hover:text-foreground'
-                  )}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Actions */}
-            <div className="flex items-center gap-1 md:gap-2">
-              {/* Search - Premium Icon */}
-              <Button
-                variant="ghost"
-                size="icon"
+            {/* Right – Search bar + icons */}
+            <div className="flex items-center gap-3 min-w-[200px] justify-end">
+              {/* Inline search */}
+              <button
                 onClick={() => setIsSearchOpen(true)}
-                className="relative group"
+                className="flex items-center gap-2 border border-border rounded px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/50 transition-colors w-44"
               >
-                <div className="w-9 h-9 rounded-full border border-primary/30 flex items-center justify-center group-hover:border-primary group-hover:bg-primary/5 transition-all">
-                  <Search className="w-4 h-4 text-primary" />
-                </div>
-              </Button>
+                <Search className="w-4 h-4" />
+                <span>SEARCH</span>
+              </button>
 
-              {/* Wishlist */}
-              <Link to="/wishlist">
-                <Button variant="ghost" size="icon">
-                  <Heart className="w-5 h-5" />
-                </Button>
-              </Link>
-
-              {/* Cart - Opens Sidebar */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="relative"
-                onClick={() => setIsCartOpen(true)}
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs badge-luxury">
-                    {itemCount}
-                  </Badge>
-                )}
-              </Button>
-
-              {/* User Menu */}
+              {/* User */}
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="hidden md:flex">
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
                       <User className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -289,16 +116,122 @@ export function Navbar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Link to="/auth" className="hidden md:block">
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <User className="w-4 h-4" />
-                    <span>Login</span>
-                  </Button>
-                </Link>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/auth')}>
+                  <User className="w-5 h-5" />
+                </Button>
               )}
+
+              {/* Wishlist */}
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')}>
+                <Heart className="w-5 h-5" />
+              </Button>
+
+              {/* Cart */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 relative"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {itemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] badge-luxury">
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Row 2: Category navigation bar */}
+        <nav className="border-t border-border">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center gap-8 h-11">
+              {categoryNavItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    'text-xs font-medium tracking-[0.1em] transition-colors whitespace-nowrap',
+                    location.pathname === item.href || location.pathname.startsWith(item.href + '/')
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      {/* ── MOBILE HEADER ── */}
+      <header className="lg:hidden sticky top-0 z-40 bg-background border-b border-border">
+        {/* Row 1: Hamburger | Logo (center) | Search + Heart + Cart */}
+        <div className="flex items-center justify-between h-14 px-4">
+          {/* Left – Menu */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+
+          {/* Center – Logo */}
+          <Link to="/" className="absolute left-1/2 -translate-x-1/2">
+            <h1 className="font-serif text-lg font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
+              KRT JEWELS
+            </h1>
+          </Link>
+
+          {/* Right – Icons */}
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setMobileSearchVisible(!mobileSearchVisible)}
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')}>
+              <Heart className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative"
+              onClick={() => setIsCartOpen(true)}
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {itemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] badge-luxury">
+                  {itemCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Row 2: Mobile search bar (toggle) */}
+        {mobileSearchVisible && (
+          <div className="px-4 pb-3">
+            <button
+              onClick={() => {
+                setMobileSearchVisible(false);
+                setIsSearchOpen(true);
+              }}
+              className="flex items-center gap-2 w-full border border-border rounded px-3 py-2 text-sm text-muted-foreground bg-secondary/30"
+            >
+              <Search className="w-4 h-4" />
+              <span>SEARCH</span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Search Overlay */}
