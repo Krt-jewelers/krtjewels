@@ -43,8 +43,34 @@ export function Navbar() {
 
   return (
     <>
+      {/* ── GOLD RATE TICKER (both desktop + mobile) ── */}
+      {goldRate && (
+        <div className="sticky top-0 z-50 bg-rich-black text-ivory">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center gap-4 md:gap-8 h-8 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-ivory/60 hidden sm:inline">Live</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-primary font-semibold">22K Gold:</span>
+                <span className="text-ivory font-bold">₹{goldRate.rate_22k.toLocaleString('en-IN')}/g</span>
+              </div>
+              <span className="text-ivory/30">|</span>
+              <div className="flex items-center gap-1">
+                <span className="text-primary font-semibold">24K Gold:</span>
+                <span className="text-ivory font-bold">₹{goldRate.rate_24k.toLocaleString('en-IN')}/g</span>
+              </div>
+              <Link to="/gold-rate" className="text-primary hover:underline hidden sm:inline">
+                View History →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── DESKTOP HEADER ── */}
-      <header className="hidden lg:block sticky top-0 z-40 bg-background border-b border-border">
+      <header className={cn("hidden lg:block sticky z-40 bg-background border-b border-border", goldRate ? "top-8" : "top-0")}>
         {/* Row 1: Phone | Logo (center) | Search + Icons */}
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
@@ -146,7 +172,7 @@ export function Navbar() {
       </header>
 
       {/* ── MOBILE HEADER ── */}
-      <header className="lg:hidden sticky top-0 z-40 bg-background border-b border-border">
+      <header className={cn("lg:hidden sticky z-40 bg-background border-b border-border", goldRate ? "top-8" : "top-0")}>
         {/* Row 1: Hamburger + Logo (left) | Icons (right) */}
         <div className="flex items-center justify-between h-14 px-4">
           {/* Left – Menu + Logo */}
@@ -195,16 +221,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Row 2: Search bar always visible */}
-        <div className="px-4 pb-3">
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-2 w-full border border-border rounded px-3 py-2 text-sm text-muted-foreground bg-secondary/30"
-          >
-            <Search className="w-4 h-4" />
-            <span>SEARCH</span>
-          </button>
-        </div>
       </header>
 
       {/* Search Overlay */}
