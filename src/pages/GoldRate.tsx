@@ -3,7 +3,7 @@ import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Calendar, Info, Zap, Lock, BarChart3, Search } from 'lucide-react';
+import { TrendingUp, Calendar, Zap, Lock, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
