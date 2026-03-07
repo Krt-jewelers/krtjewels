@@ -32,8 +32,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Wallet, Users, IndianRupee, Weight, Receipt } from 'lucide-react';
+import { Plus, Wallet, Users, IndianRupee, Weight, Receipt, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ChitFund {
   id: string;
@@ -70,6 +80,7 @@ export default function AdminChitFunds() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedChit, setSelectedChit] = useState<ChitFund | null>(null);
+  const [deleteChitId, setDeleteChitId] = useState<string | null>(null);
   
   const [newChit, setNewChit] = useState({
     customer_name: '',
@@ -197,6 +208,41 @@ export default function AdminChitFunds() {
       });
     },
   });
+
+  const deleteChitMutation = useMutation({
+    mutationFn: async (chitId: string) => {
+      const { error: paymentsError } = await supabase
+        .from('chit_payments')
+        .delete()
+        .eq('chit_fund_id', chitId);
+
+      if (paymentsError) throw paymentsError;
+
+      const { error: chitError } = await supabase
+        .from('chit_funds')
+        .delete()
+        .eq('id', chitId);
+
+      if (chitError) throw chitError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chitFunds'] });
+      setDeleteChitId(null);
+      toast({ title: 'Scheme deleted' });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Failed to delete scheme',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleDeleteChit = async () => {
+    if (!deleteChitId || deleteChitMutation.isPending) return;
+    await deleteChitMutation.mutateAsync(deleteChitId);
+  };
 
   const stats = [
     {
@@ -405,20 +451,30 @@ export default function AdminChitFunds() {
                         <TableCell>{(chit.total_gold_grams || 0).toFixed(3)}g</TableCell>
                         <TableCell>{getStatusBadge(chit.status)}</TableCell>
                         <TableCell>
-                          {chit.status === 'active' && (
+                          <div className="flex items-center gap-2">
+                            {chit.status === 'active' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedChit(chit);
+                                  setNewPayment(prev => ({ ...prev, amount: chit.monthly_amount.toString() }));
+                                  setIsPaymentDialogOpen(true);
+                                }}
+                              >
+                                <Receipt className="w-4 h-4 mr-1" />
+                                Record Payment
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedChit(chit);
-                                setNewPayment(prev => ({ ...prev, amount: chit.monthly_amount.toString() }));
-                                setIsPaymentDialogOpen(true);
-                              }}
+                              variant="destructive"
+                              onClick={() => setDeleteChitId(chit.id)}
                             >
-                              <Receipt className="w-4 h-4 mr-1" />
-                              Record Payment
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -498,6 +554,27 @@ export default function AdminChitFunds() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteChitId} onOpenChange={(open) => !open && setDeleteChitId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Scheme</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this scheme? This will also remove all related payments and cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteChit}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteChitMutation.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
