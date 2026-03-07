@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ZoomIn, Play, Pause, RotateCw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Play, Sparkles, Star, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -36,220 +35,383 @@ export function ProductImageGallery({
   onOpenLightbox,
 }: ProductImageGalleryProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [mobileScale, setMobileScale] = useState(1);
+  const [mobileTranslate, setMobileTranslate] = useState({ x: 0, y: 0 });
+  const pinchStartRef = useRef<{ distance: number; scale: number } | null>(null);
+  const panStartRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
+  const isGestureRef = useRef(false);
 
-  // When a variation image is provided, show it as the displayed image
+  // When a variation image is provided, show it first in the grid
   const displayImages = variationImageUrl
     ? [variationImageUrl, ...images.filter(img => img !== variationImageUrl)]
     : images;
-  const [isHovering, setIsHovering] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
 
-  // Reset to first image when variation image changes
   useEffect(() => {
     setSelectedImage(0);
-    setShowVideo(false);
+    setMobileScale(1);
+    setMobileTranslate({ x: 0, y: 0 });
   }, [variationImageUrl]);
 
-  const handlePrev = () => {
-    setShowVideo(false);
-    setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
-  };
+  useEffect(() => {
+    setMobileScale(1);
+    setMobileTranslate({ x: 0, y: 0 });
+  }, [selectedImage]);
 
-  const handleNext = () => {
-    setShowVideo(false);
-    setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
-  };
+  const mediaItems: Array<{ type: 'image' | 'video'; url: string; index?: number }> = [
+    ...(videoUrl ? [{ type: 'video' as const, url: videoUrl }] : []),
+    ...displayImages.map((url, index) => ({ type: 'image' as const, url, index })),
+  ];
 
-  const handleVideoToggle = () => {
-    setShowVideo(true);
-    setIsVideoPlaying(!isVideoPlaying);
-  };
+  const LensImage = ({
+    src,
+    alt,
+  }: {
+    src: string;
+    alt: string;
+  }) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [lens, setLens] = useState({ x: 0, y: 0, visible: false });
+    const [zoom, setZoom] = useState(3.2);
+    const [lensSize, setLensSize] = useState(160);
+    const pinchDistanceRef = useRef<number | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
-  const currentIsVideo = displayImages[selectedImage] && isVideoUrl(displayImages[selectedImage]);
+    const updateLensFromPoint = (clientX: number, clientY: number) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = Math.min(Math.max(clientX - rect.left, 0), rect.width);
+      const y = Math.min(Math.max(clientY - rect.top, 0), rect.height);
+      const xPercent = (x / rect.width) * 100;
+      const yPercent = (y / rect.height) * 100;
+      setLens({ x: xPercent, y: yPercent, visible: true });
+    };
+
+    const handleMove = (event: React.MouseEvent<HTMLDivElement>) => {
+      updateLensFromPoint(event.clientX, event.clientY);
+    };
+
+    const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      event.preventDefault();
+      updateLensFromPoint(touch.clientX, touch.clientY);
+
+      if (event.touches.length >= 2) {
+        const t1 = event.touches[0];
+        const t2 = event.touches[1];
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        const distance = Math.hypot(dx, dy);
+        if (pinchDistanceRef.current) {
+          const delta = distance - pinchDistanceRef.current;
+          const nextZoom = Math.min(Math.max(2.6, zoom + delta * 0.005), 5.5);
+          setZoom(nextZoom);
+        }
+        pinchDistanceRef.current = distance;
+      }
+    };
+
+    const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+      const touch = event.touches[0];
+      if (touch) {
+        updateLensFromPoint(touch.clientX, touch.clientY);
+      }
+      if (event.touches.length >= 2) {
+        const t1 = event.touches[0];
+        const t2 = event.touches[1];
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        pinchDistanceRef.current = Math.hypot(dx, dy);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      pinchDistanceRef.current = null;
+      setLens((prev) => ({ ...prev, visible: false }));
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={cn(
+          "relative w-full h-full select-none",
+          isDragging ? "cursor-grabbing" : "cursor-crosshair"
+        )}
+        style={{ touchAction: 'none' }}
+        onMouseEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
+        onMouseMove={handleMove}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+          updateLensFromPoint(e.clientX, e.clientY);
+        }}
+        onMouseUp={() => setIsDragging(false)}
+        onMouseLeave={() => {
+          setIsDragging(false);
+          setLens((prev) => ({ ...prev, visible: false }));
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        {lens.visible && (
+          <div
+            className="absolute rounded-full border border-white/80 shadow-xl bg-white pointer-events-none"
+            style={{
+              width: `${lensSize}px`,
+              height: `${lensSize}px`,
+              left: `calc(${lens.x}% - ${lensSize / 2}px)`,
+              top: `calc(${lens.y}% - ${lensSize / 2}px)`,
+              backgroundImage: `url(${src})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: `${lens.x}% ${lens.y}%`,
+              backgroundSize: `${zoom * 100}%`,
+            }}
+          />
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
-      {/* Main Image */}
-      <div
-        className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        {/* Show video if video tab is selected or current media is video */}
-        {(showVideo && videoUrl) || currentIsVideo ? (
-          <div className="w-full h-full flex items-center justify-center bg-rich-black">
-            <video
-              src={showVideo ? videoUrl! : displayImages[selectedImage]}
-              className="w-full h-full object-contain"
-              controls
-              autoPlay={isVideoPlaying}
-              loop
-              playsInline
-              onPlay={() => setIsVideoPlaying(true)}
-              onPause={() => setIsVideoPlaying(false)}
-            >
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        ) : (
-          <>
-            <img
-              src={displayImages[selectedImage] || '/placeholder.svg'}
-              alt={`${productName} - Image ${selectedImage + 1}`}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-              onClick={() => onOpenLightbox(selectedImage)}
-            />
-
-            {/* Hover Overlay */}
-            <div 
-              className="absolute inset-0 bg-rich-black/0 group-hover:bg-rich-black/10 transition-colors flex items-center justify-center pointer-events-none"
-            >
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-full p-4 shadow-lg">
-                <ZoomIn className="w-6 h-6 text-foreground" />
-              </div>
+      {/* Mobile: single image with dots */}
+      <div className="block md:hidden">
+        <div
+          className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+          style={{ touchAction: 'none' }}
+          onTouchStart={(e) => {
+            if (e.touches.length === 2) {
+              const t1 = e.touches[0];
+              const t2 = e.touches[1];
+              const dx = t1.clientX - t2.clientX;
+              const dy = t1.clientY - t2.clientY;
+              pinchStartRef.current = { distance: Math.hypot(dx, dy), scale: mobileScale };
+              panStartRef.current = null;
+              isGestureRef.current = true;
+              return;
+            }
+            if (e.touches.length === 1) {
+              setTouchStartX(e.touches[0]?.clientX ?? null);
+              if (mobileScale > 1) {
+                panStartRef.current = {
+                  x: e.touches[0].clientX,
+                  y: e.touches[0].clientY,
+                  startX: mobileTranslate.x,
+                  startY: mobileTranslate.y,
+                };
+                isGestureRef.current = true;
+              } else {
+                isGestureRef.current = false;
+              }
+            }
+          }}
+          onTouchMove={(e) => {
+            if (e.touches.length === 2 && pinchStartRef.current) {
+              e.preventDefault();
+              const t1 = e.touches[0];
+              const t2 = e.touches[1];
+              const dx = t1.clientX - t2.clientX;
+              const dy = t1.clientY - t2.clientY;
+              const distance = Math.hypot(dx, dy);
+              const nextScale = Math.min(3, Math.max(1, (distance / pinchStartRef.current.distance) * pinchStartRef.current.scale));
+              setMobileScale(nextScale);
+              return;
+            }
+            if (e.touches.length === 1 && panStartRef.current && mobileScale > 1) {
+              e.preventDefault();
+              const touch = e.touches[0];
+              const dx = touch.clientX - panStartRef.current.x;
+              const dy = touch.clientY - panStartRef.current.y;
+              setMobileTranslate({
+                x: panStartRef.current.startX + dx,
+                y: panStartRef.current.startY + dy,
+              });
+            }
+          }}
+          onTouchEnd={(e) => {
+            pinchStartRef.current = null;
+            panStartRef.current = null;
+            if (mobileScale > 1 || isGestureRef.current) {
+              setTouchStartX(null);
+              isGestureRef.current = false;
+              return;
+            }
+            if (touchStartX == null) return;
+            const endX = e.changedTouches[0]?.clientX ?? touchStartX;
+            const delta = touchStartX - endX;
+            const threshold = 40;
+            if (Math.abs(delta) > threshold) {
+              if (delta > 0) {
+                setSelectedImage((prev) =>
+                  prev === displayImages.length - 1 ? 0 : prev + 1
+                );
+              } else {
+                setSelectedImage((prev) =>
+                  prev === 0 ? displayImages.length - 1 : prev - 1
+                );
+              }
+            } else {
+              onOpenLightbox(selectedImage);
+            }
+            setTouchStartX(null);
+          }}
+          onTouchCancel={() => {
+            pinchStartRef.current = null;
+            panStartRef.current = null;
+            setTouchStartX(null);
+            isGestureRef.current = false;
+          }}
+          onClick={() => onOpenLightbox(selectedImage)}
+        >
+          <img
+            src={displayImages[selectedImage] || '/placeholder.svg'}
+            alt={`${productName} - Image ${selectedImage + 1}`}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            style={{
+              transform: `translate3d(${mobileTranslate.x}px, ${mobileTranslate.y}px, 0) scale(${mobileScale})`,
+              transformOrigin: 'center',
+              transition: isGestureRef.current ? 'none' : undefined,
+            }}
+            draggable={false}
+          />
+          {selectedImage === 0 && (
+            <div className="absolute top-3 left-3 flex items-center gap-2">
+              {badges?.isNewArrival && (
+                <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
+                  <Sparkles className="w-4 h-4" />
+                </Badge>
+              )}
+              {badges?.isBestseller && (
+                <Badge className="bg-accent text-accent-foreground w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bestseller">
+                  <Star className="w-4 h-4" />
+                </Badge>
+              )}
+              {badges?.isBridal && (
+                <Badge className="bg-maroon text-ivory w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bridal">
+                  <Gem className="w-4 h-4" />
+                </Badge>
+              )}
             </div>
-          </>
-        )}
-
-        {/* Video/360° Button - Only show if videoUrl exists */}
-        {videoUrl && !showVideo && !currentIsVideo && (
-          <div className="absolute top-4 right-4 z-10">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2 bg-white/90 hover:bg-white shadow-lg"
-              onClick={handleVideoToggle}
-            >
-              <RotateCw className="w-4 h-4" />
-              360° View
-            </Button>
-          </div>
-        )}
-
-        {/* Back to Images button when video is playing */}
-        {(showVideo || currentIsVideo) && (
-          <div className="absolute top-4 right-4 z-10">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2 bg-white/90 hover:bg-white shadow-lg"
-              onClick={() => {
-                setShowVideo(false);
-                setIsVideoPlaying(false);
-                if (currentIsVideo && displayImages.length > 1) {
-                  const firstImageIndex = displayImages.findIndex(img => !isVideoUrl(img));
-                  if (firstImageIndex >= 0) setSelectedImage(firstImageIndex);
-                }
-              }}
-            >
-              <ZoomIn className="w-4 h-4" />
-              View Images
-            </Button>
-          </div>
-        )}
-
-        {/* Badges Overlay */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
-          {badges?.isNewArrival && (
-            <Badge className="badge-luxury">✨ New Arrival</Badge>
-          )}
-          {badges?.isBestseller && (
-            <Badge className="bg-accent text-accent-foreground">🔥 Bestseller</Badge>
-          )}
-          {badges?.isBridal && (
-            <Badge className="bg-maroon text-ivory">💍 Bridal</Badge>
           )}
         </div>
 
-        {/* Navigation Arrows */}
-        {displayImages.length > 1 && !showVideo && (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          </>
-        )}
-
-        {/* Image Counter */}
-        {!showVideo && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-            {selectedImage + 1} / {displayImages.length}
-            {videoUrl && ' • Video available'}
+        {displayImages.length > 1 && (
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {displayImages.map((_, index) => (
+              <button
+                key={`dot-${index}`}
+                type="button"
+                aria-label={`Go to image ${index + 1}`}
+                onClick={() => setSelectedImage(index)}
+                className={cn(
+                  'h-2 w-2 rounded-full transition-colors',
+                  selectedImage === index ? 'bg-primary' : 'bg-border'
+                )}
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* Thumbnail Gallery */}
-      {displayImages.length > 1 && (
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-luxury">
-          {/* Video thumbnail if video exists */}
-          {videoUrl && (
-            <button
-              onClick={() => {
-                setShowVideo(true);
-                setIsVideoPlaying(true);
-              }}
-              className={cn(
-                'flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 relative',
-                showVideo
-                  ? 'border-primary ring-2 ring-primary/30 scale-105'
-                  : 'border-transparent hover:border-primary/50'
-              )}
-            >
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                <div className="bg-primary/90 rounded-full p-2">
-                  <Play className="w-4 h-4 text-primary-foreground fill-current" />
+      {/* Desktop: grid or single image */}
+      {mediaItems.length === 1 && mediaItems[0]?.type === 'image' ? (
+        <button
+          type="button"
+          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+          onClick={() => onOpenLightbox(mediaItems[0]?.index ?? 0)}
+        >
+          <LensImage
+            src={mediaItems[0]?.url || '/placeholder.svg'}
+            alt={`${productName} - Image 1`}
+          />
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            {badges?.isNewArrival && (
+              <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
+                <Sparkles className="w-4 h-4" />
+              </Badge>
+            )}
+            {badges?.isBestseller && (
+              <Badge className="bg-accent text-accent-foreground w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bestseller">
+                <Star className="w-4 h-4" />
+              </Badge>
+            )}
+            {badges?.isBridal && (
+              <Badge className="bg-maroon text-ivory w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bridal">
+                <Gem className="w-4 h-4" />
+              </Badge>
+            )}
+          </div>
+        </button>
+      ) : (
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {mediaItems.map((item, idx) => {
+            if (item.type === 'video') {
+              return (
+                <div
+                  key={`video-${idx}`}
+                  className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10 pointer-events-none">
+                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                      <Play className="w-5 h-5 text-foreground" />
+                    </div>
+                  </div>
+                  <video
+                    src={item.url}
+                    className="w-full h-full object-contain"
+                    controls
+                    playsInline
+                  />
                 </div>
-              </div>
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-medium text-foreground bg-white/80 px-1.5 rounded">
-                360°
-              </span>
-            </button>
-          )}
-          
-          {displayImages.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setShowVideo(false);
-                setSelectedImage(index);
-              }}
-              className={cn(
-                'flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 relative',
-                selectedImage === index && !showVideo
-                  ? 'border-primary ring-2 ring-primary/30 scale-105'
-                  : 'border-transparent hover:border-primary/50'
-              )}
-            >
-              {isVideoUrl(image) ? (
-                <div className="w-full h-full bg-gradient-to-br from-secondary to-secondary/50 flex items-center justify-center">
-                  <Play className="w-6 h-6 text-foreground/70" />
-                </div>
-              ) : (
-                <img src={image} alt="" className="w-full h-full object-cover" />
-              )}
-            </button>
-          ))}
+              );
+            }
+
+            const imageIndex = item.index ?? 0;
+            return (
+              <button
+                key={`image-${imageIndex}`}
+                type="button"
+                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+                onClick={() => {
+                  setSelectedImage(imageIndex);
+                  onOpenLightbox(imageIndex);
+                }}
+              >
+                <LensImage
+                  src={item.url || '/placeholder.svg'}
+                  alt={`${productName} - Image ${imageIndex + 1}`}
+                />
+                {imageIndex === 0 && (
+                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                    {badges?.isNewArrival && (
+                      <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
+                        <Sparkles className="w-4 h-4" />
+                      </Badge>
+                    )}
+                    {badges?.isBestseller && (
+                      <Badge className="bg-accent text-accent-foreground w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bestseller">
+                        <Star className="w-4 h-4" />
+                      </Badge>
+                    )}
+                    {badges?.isBridal && (
+                      <Badge className="bg-maroon text-ivory w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bridal">
+                        <Gem className="w-4 h-4" />
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
