@@ -219,7 +219,7 @@ export default function AdminReviews() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-2 flex-1 md:flex-none text-red-600 border-red-200 hover:bg-red-50"
+                  className="gap-2 flex-1 md:flex-none bg-white text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
                   onClick={() => setDeleteId(review.id)}
                 >
                   <X className="w-4 h-4" />
