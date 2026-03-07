@@ -206,7 +206,7 @@ export default function GoldRatePage() {
             <div className="px-6 md:px-10">
               <div className="text-center mb-10">
                 <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">New Investment Option</span>
-                <h2 className="font-serif text-3xl md:text-4xl text-foreground font-bold mt-2 mb-3">
+                <h2 className="font-serif text-3xl md:text-4xl text-foreground font-medium mt-2 mb-3">
                   Digital Gold Scheme
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
