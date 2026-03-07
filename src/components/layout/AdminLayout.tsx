@@ -18,7 +18,14 @@ import {
   Tag,
   AlertTriangle,
   RefreshCw,
-  Truck
+  Truck,
+  Mail,
+  BarChart3,
+  Grid2X2,
+  ListTree,
+  Circle,
+  Layers,
+  FileText
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -34,10 +41,17 @@ const menuItems = [
   { name: 'Inventory Alerts', href: '/admin/inventory', icon: AlertTriangle },
   { name: 'Making Charges', href: '/admin/making-charges', icon: Settings },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+  { name: 'Invoices', href: '/admin/invoices', icon: FileText },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
+  { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
+  { name: 'Product Categories', href: '/admin/menu-categories', icon: ListTree },
+  { name: 'Homepage Carousel', href: '/admin/carousel-categories', icon: Circle },
+  { name: 'Megamenu', href: '/admin/megamenu', icon: Grid2X2 },
+  { name: 'Attributes', href: '/admin/attributes', icon: Layers },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
-  { name: 'Chit Funds', href: '/admin/chit-funds', icon: Wallet },
+  { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];
 
@@ -87,9 +101,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const pageTitle = currentPage?.name || 'Admin';
 
   return (
-    <div className="min-h-screen flex bg-secondary/20">
+    <div className="min-h-screen flex bg-secondary/20 select-none">
       {/* Mobile Header Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card border-b shadow-sm">
+      <div className="fixed top-0 left-0 right-0 z-50 lg:hidden bg-card border-b shadow-sm select-none">
         <div className="flex items-center justify-between px-4 h-16">
           <Button
             variant="ghost"
