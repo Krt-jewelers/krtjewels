@@ -5,7 +5,9 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { useGoldRate } from '@/hooks/useGoldRate';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { formatPrice } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +17,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2 } from 'lucide-react';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+type RazorpayResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayCtor = new (options: Record<string, unknown>) => { open: () => void };
 
 interface AddressForm {
   full_name: string;
@@ -34,7 +38,9 @@ interface AddressForm {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, gstTotal, total, clearCart, isLoading: cartLoading } = useCart();
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
+  const { user, loading: authLoading } = useAuth();
   const { data: goldRate } = useGoldRate();
   const { toast } = useToast();
   
@@ -105,11 +111,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // Redirect to auth AFTER auth loading is complete
-  if (!isAuthenticated) {
-    return <Navigate to="/auth?redirect=/checkout" replace />;
-  }
-
   if (items.length === 0) {
     return <Navigate to="/cart" replace />;
   }
@@ -123,9 +124,48 @@ export default function CheckoutPage() {
   };
 
   const createOrder = async (orderNumber: string, paymentId?: string) => {
-    if (!user || !goldRate) return null;
+    if (!goldRate) return null;
 
     // Create order
+    if (!user) {
+      const orderItems = items.map((item) => ({
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_image: item.product.images[0] || null,
+        weight_grams: item.product.weight_grams + (item.variation_weight_adjustment || 0),
+        gold_rate_applied: item.product.calculated_price.gold_rate_applied,
+        making_charges: item.product.calculated_price.making_charges,
+        diamond_cost: item.product.diamond_cost || 0,
+        stone_cost: item.product.stone_cost || 0,
+        quantity: item.quantity,
+        unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
+        total_price:
+          (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
+          item.quantity,
+        selected_variations: item.selected_variations || {},
+        variation_price_adjustment: item.variation_price_adjustment || 0,
+        variation_weight_adjustment: item.variation_weight_adjustment || 0,
+      }));
+
+      const { data: guestData, error: guestError } = await supabase.functions.invoke('create-guest-order', {
+        body: {
+          order_number: orderNumber,
+          subtotal,
+          gst_amount: gstTotal,
+          total_amount: total,
+          gold_rate_at_order: goldRate.rate_22k,
+          shipping_address: address as unknown as Json,
+          payment_method: paymentMethod,
+          payment_id: paymentId || null,
+          notes: notes || null,
+          items: orderItems,
+        },
+      });
+
+      if (guestError) throw new Error(guestError.message);
+      return guestData;
+    }
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
@@ -136,7 +176,7 @@ export default function CheckoutPage() {
         subtotal: subtotal,
         gst_amount: gstTotal,
         total_amount: total,
-        shipping_address: address as any,
+        shipping_address: address as unknown as Json,
         payment_method: paymentMethod,
         payment_id: paymentId || null,
         notes: notes || null,
@@ -152,14 +192,19 @@ export default function CheckoutPage() {
       product_id: item.product.id,
       product_name: item.product.name,
       product_image: item.product.images[0] || null,
-      weight_grams: item.product.weight_grams,
+      weight_grams: item.product.weight_grams + (item.variation_weight_adjustment || 0),
       gold_rate_applied: item.product.calculated_price.gold_rate_applied,
       making_charges: item.product.calculated_price.making_charges,
       diamond_cost: item.product.diamond_cost || 0,
       stone_cost: item.product.stone_cost || 0,
       quantity: item.quantity,
-      unit_price: item.product.calculated_price.total,
-      total_price: item.product.calculated_price.total * item.quantity,
+      unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
+      total_price:
+        (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
+        item.quantity,
+      selected_variations: item.selected_variations || {},
+      variation_price_adjustment: item.variation_price_adjustment || 0,
+      variation_weight_adjustment: item.variation_weight_adjustment || 0,
     }));
 
     const { error: itemsError } = await supabase
@@ -206,10 +251,10 @@ export default function CheckoutPage() {
         name: 'KRT Jewels',
         description: `Order #${orderNumber}`,
         order_id: data.orderId,
-        handler: async (response: any) => {
+        handler: async (response: RazorpayResponse) => {
           try {
             // Verify payment
-            const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
+            const { error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -227,11 +272,12 @@ export default function CheckoutPage() {
               title: 'Payment Successful!',
               description: `Your order #${orderNumber} has been confirmed.`,
             });
-            navigate(`/track-order?order=${orderNumber}`);
-          } catch (err: any) {
+            navigate(`/order-success?order=${orderNumber}`);
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Payment verification failed';
             toast({
               title: 'Payment verification failed',
-              description: err.message,
+              description: message,
               variant: 'destructive',
             });
           }
@@ -251,13 +297,15 @@ export default function CheckoutPage() {
         },
       };
 
-      const razorpay = new window.Razorpay(options);
+      const Razorpay = (window as unknown as { Razorpay: RazorpayCtor }).Razorpay;
+      const razorpay = new Razorpay(options as Record<string, unknown>);
       razorpay.open();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       console.error('Payment error:', error);
       toast({
         title: 'Payment failed',
-        description: error.message || 'Something went wrong. Please try again.',
+        description: message,
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -267,7 +315,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !goldRate) return;
+    if (!goldRate) return;
 
     // Validate address
     if (!address.full_name || !address.phone || !address.address_line1 || !address.city || !address.pincode) {
@@ -296,13 +344,14 @@ export default function CheckoutPage() {
         title: 'Order Placed Successfully!',
         description: `Your order #${orderNumber} has been confirmed.`,
       });
-      navigate(`/track-order?order=${orderNumber}`);
+      navigate(`/order-success?order=${orderNumber}`);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
       console.error('Order error:', error);
       toast({
         title: 'Failed to place order',
-        description: error.message || 'Something went wrong. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -313,7 +362,7 @@ export default function CheckoutPage() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-8">Checkout</h1>
+        <h1 className="font-serif text-3xl md:text-4xl font-medium mb-8">Checkout</h1>
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -322,7 +371,7 @@ export default function CheckoutPage() {
               {/* Shipping Address */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 font-medium">
                     <MapPin className="w-5 h-5 text-primary" />
                     Shipping Address
                   </CardTitle>
@@ -403,7 +452,7 @@ export default function CheckoutPage() {
               {/* Payment Method */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 font-medium">
                     <CreditCard className="w-5 h-5 text-primary" />
                     Payment Method
                   </CardTitle>
@@ -438,7 +487,7 @@ export default function CheckoutPage() {
               {/* Order Notes */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Order Notes (Optional)</CardTitle>
+                  <CardTitle className="font-medium">Order Notes (Optional)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
@@ -455,7 +504,7 @@ export default function CheckoutPage() {
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 font-medium">
                     <ShoppingBag className="w-5 h-5 text-primary" />
                     Order Summary
                   </CardTitle>
@@ -487,14 +536,14 @@ export default function CheckoutPage() {
                       <span>{formatPrice(subtotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>GST (3%)</span>
+                      <span>GST ({gstRate}%)</span>
                       <span>{formatPrice(gstTotal)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Shipping</span>
                       <span className="text-green-600">Free</span>
                     </div>
-                    <div className="flex justify-between font-serif text-lg font-bold pt-2 border-t">
+                    <div className="flex justify-between font-serif text-lg font-medium pt-2 border-t">
                       <span>Total</span>
                       <span className="text-primary">{formatPrice(total)}</span>
                     </div>
