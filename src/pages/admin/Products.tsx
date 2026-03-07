@@ -5,9 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatPrice, CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
 import { useGoldRate } from '@/hooks/useGoldRate';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { calculateProductPrice } from '@/hooks/useProducts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -27,26 +29,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Edit, Eye, Package, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit, Eye, Package, Loader2, Trash2, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 // Dedicated admin products query - fetches ALL products (active + inactive)
 function useAdminProducts() {
   const { data: goldRate } = useGoldRate();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
   
   return useQuery({
-    queryKey: ['adminProducts'],
+    queryKey: ['adminProducts', gstRate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.debug('useAdminProducts: supabase response', { data, error });
+      }
+
       if (error) throw error;
 
       return (data || []).map((product) => ({
         ...product,
         specifications: (product.specifications as Record<string, any>) || {},
-        calculated_price: calculateProductPrice(product as any, goldRate || null),
+        calculated_price: calculateProductPrice(product as any, goldRate || null, undefined, gstRate),
       }));
     },
     staleTime: 0, // Always refetch for admin
@@ -54,9 +64,11 @@ function useAdminProducts() {
 }
 
 export default function AdminProducts() {
-  const { data: products, isLoading, isFetching } = useAdminProducts();
+  const { data: products, isLoading, isFetching, isError, error } = useAdminProducts();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isDuplicatingId, setIsDuplicatingId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -119,6 +131,133 @@ export default function AdminProducts() {
     }
   };
 
+  const toggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds((filteredProducts || []).map(p => p.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const toggleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      if (checked) return Array.from(new Set([...prev, id]));
+      return prev.filter(x => x !== id);
+    });
+  };
+  // Delete modal state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
+
+  const openDeleteDialog = (ids: string[]) => {
+    setPendingDeleteIds(ids);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const performDelete = async (ids: string[]) => {
+    if (!ids || ids.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+      toast({ title: 'Deleted', description: ids.length > 1 ? 'Selected products deleted' : 'Product deleted' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to delete product(s)', variant: 'destructive' });
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setPendingDeleteIds([]);
+    }
+  };
+
+  const buildDuplicateSlug = (slug: string) => {
+    const suffix = Math.random().toString(36).slice(2, 6);
+    return `${slug}-copy-${suffix}`;
+  };
+
+  const duplicateProduct = async (productId: string) => {
+    setIsDuplicatingId(productId);
+    try {
+      const { data: original, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!original) throw new Error('Product not found');
+
+      const newSlug = buildDuplicateSlug(original.slug);
+      const newName = `${original.name} (Copy)`;
+
+      const {
+        id,
+        created_at,
+        updated_at,
+        ...rest
+      } = original as Record<string, any>;
+
+      const { data: newProduct, error: insertError } = await supabase
+        .from('products')
+        .insert({
+          ...rest,
+          name: newName,
+          slug: newSlug,
+          sku: null,
+          is_active: false,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) throw insertError;
+
+      const { data: variations, error: variationsError } = await supabase
+        .from('product_variations')
+        .select('*')
+        .eq('product_id', productId);
+
+      if (variationsError) throw variationsError;
+
+      if (variations && variations.length > 0) {
+        const variationPayload = variations.map((variation: Record<string, any>) => {
+          const { id: vId, product_id, created_at: vCreated, updated_at: vUpdated, ...variationRest } = variation;
+          return {
+            ...variationRest,
+            product_id: newProduct.id,
+          };
+        });
+
+        const { error: insertVariationError } = await supabase
+          .from('product_variations')
+          .insert(variationPayload);
+
+        if (insertVariationError) throw insertVariationError;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+
+      toast({
+        title: 'Product duplicated',
+        description: 'A draft copy was created. Review and publish when ready.',
+      });
+
+      navigate(`/admin/products/${newProduct.id}`);
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to duplicate product',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDuplicatingId(null);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -133,12 +272,20 @@ export default function AdminProducts() {
               Manage your jewellery catalog ({products?.length || 0} products)
             </p>
           </div>
-          <Link to="/admin/products/new">
-            <Button className="btn-premium gap-2">
-              <Plus className="w-4 h-4" />
-              Add Product
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/admin/products/new">
+              <Button className="btn-premium gap-2">
+                <Plus className="w-4 h-4" />
+                Add Product
+              </Button>
+            </Link>
+            {selectedIds.length > 0 && (
+              <Button type="button" variant="destructive" onClick={() => openDeleteDialog(selectedIds)} className="gap-2">
+                <Trash2 className="w-4 h-4" />
+                Delete Selected ({selectedIds.length})
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -178,11 +325,31 @@ export default function AdminProducts() {
               <div className="p-8 text-center text-muted-foreground">
                 Loading products...
               </div>
+            ) : isError ? (
+              <div className="p-8 text-center text-destructive">
+                <p className="mb-4">Failed to load products: {String(error?.message || error)}</p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button type="button" onClick={() => {
+                    // Retry fetching
+                    queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+                  }}>
+                    Retry
+                  </Button>
+                </div>
+              </div>
             ) : filteredProducts && filteredProducts.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[40px]">
+                        <div className="flex items-center justify-center">
+                          <Checkbox
+                            checked={selectedIds.length > 0 && selectedIds.length === (filteredProducts || []).length}
+                            onCheckedChange={(v) => toggleSelectAll(!!v)}
+                          />
+                        </div>
+                      </TableHead>
                       <TableHead className="w-[80px]">Image</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead>Category</TableHead>
@@ -196,6 +363,14 @@ export default function AdminProducts() {
                   <TableBody>
                     {filteredProducts.map((product) => (
                       <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            <Checkbox
+                              checked={selectedIds.includes(product.id)}
+                              onCheckedChange={(v) => toggleSelectOne(product.id, !!v)}
+                            />
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <img
                             src={product.images[0] || '/placeholder.svg'}
@@ -254,11 +429,34 @@ export default function AdminProducts() {
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={isDuplicatingId === product.id}
+                              onClick={() => duplicateProduct(product.id)}
+                              title="Duplicate product"
+                            >
+                              {isDuplicatingId === product.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => navigate(`/admin/products/${product.id}`)}
                             >
                               <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => openDeleteDialog([product.id])}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -275,6 +473,23 @@ export default function AdminProducts() {
             )}
           </CardContent>
         </Card>
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              <p>Are you sure you want to delete {pendingDeleteIds.length} product(s)? This action cannot be undone.</p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+              <Button type="button" className="btn-premium" onClick={() => performDelete(pendingDeleteIds)}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
