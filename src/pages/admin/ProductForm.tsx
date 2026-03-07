@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { METAL_TYPE_NAMES, MetalType } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
+import { useAttributeTemplates } from '@/hooks/useAttributeTemplates';
 import {
   Select,
   SelectContent,
@@ -23,12 +24,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon } from 'lucide-react';
 
+interface MenuCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface MenuSubcategory {
+  id: string;
+  product_category_id: string;
+  name: string;
+  slug: string;
+}
+
 interface ProductFormData {
   name: string;
   slug: string;
   description: string;
   short_description: string;
-  category: ProductCategory;
+  category_id: string;
+  subcategory_id: string;
   metal_type: MetalType;
   weight_grams: number;
   making_charge_percent: number | null;
@@ -49,7 +64,8 @@ const defaultFormData: ProductFormData = {
   slug: '',
   description: '',
   short_description: '',
-  category: 'necklaces',
+  category_id: '',
+  subcategory_id: '',
   metal_type: 'gold_22k',
   weight_grams: 0,
   making_charge_percent: null,
@@ -74,12 +90,60 @@ export default function AdminProductForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
+  const [productCategories, setProductCategories] = useState<MenuCategory[]>([]);
+  const [productSubcategories, setProductSubcategories] = useState<MenuSubcategory[]>([]);
+  const { data: attributeTemplates = [] } = useAttributeTemplates();
+  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
+
+  const { data: productTemplates = [] } = useQuery({
+    queryKey: ['productAttributeTemplates', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('product_attribute_templates')
+        .select('template_id')
+        .eq('product_id', id);
+      if (error) throw error;
+      return (data || []).map((row) => row.template_id as string);
+    },
+    enabled: !!id,
+  });
 
   useEffect(() => {
     if (isEditing) {
       fetchProduct();
     }
   }, [id]);
+
+  useEffect(() => {
+    fetchProductCategories();
+  }, []);
+
+  useEffect(() => {
+    if (productTemplates.length > 0) {
+      setSelectedTemplateIds(productTemplates);
+    }
+  }, [productTemplates]);
+
+  const fetchProductCategories = async () => {
+    const { data: categories, error: catError } = await supabase
+      .from('product_categories')
+      .select('id, name, slug')
+      .order('display_order');
+
+    if (!catError) {
+      setProductCategories(categories || []);
+    }
+
+    const { data: subcategories, error: subError } = await supabase
+      .from('product_subcategories')
+      .select('id, product_category_id, name, slug')
+      .order('display_order');
+
+    if (!subError) {
+      setProductSubcategories(subcategories || []);
+    }
+  };
 
   const fetchProduct = async () => {
     setIsFetching(true);
@@ -97,7 +161,8 @@ export default function AdminProductForm() {
         slug: data.slug,
         description: data.description || '',
         short_description: data.short_description || '',
-        category: data.category as ProductCategory,
+        category_id: data.product_category_id || '',
+        subcategory_id: data.product_subcategory_id || '',
         metal_type: data.metal_type as MetalType,
         weight_grams: data.weight_grams,
         making_charge_percent: data.making_charge_percent,
@@ -112,6 +177,7 @@ export default function AdminProductForm() {
         is_bridal: data.is_bridal || false,
         is_active: data.is_active ?? true,
       });
+
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -149,7 +215,8 @@ export default function AdminProductForm() {
         slug: formData.slug,
         description: formData.description || null,
         short_description: formData.short_description || null,
-        category: formData.category,
+        product_category_id: formData.category_id || null,
+        product_subcategory_id: formData.subcategory_id || null,
         metal_type: formData.metal_type,
         weight_grams: formData.weight_grams,
         making_charge_percent: formData.making_charge_percent,
@@ -172,6 +239,7 @@ export default function AdminProductForm() {
           .eq('id', id);
 
         if (error) throw error;
+
         
         queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -186,6 +254,7 @@ export default function AdminProductForm() {
         const { data, error } = await supabase.from('products').insert(productData).select('id').single();
 
         if (error) throw error;
+
 
         queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
         queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -209,6 +278,112 @@ export default function AdminProductForm() {
     }
   };
 
+  const applyTemplatesToProduct = async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+      const selectedSet = new Set(selectedTemplateIds);
+      const existing = productTemplates;
+
+      // Upsert product_attribute_templates
+      const upsertPayload = selectedTemplateIds.map((templateId, index) => ({
+        product_id: id,
+        template_id: templateId,
+        display_order: index,
+        is_enabled: true,
+      }));
+
+      if (upsertPayload.length > 0) {
+        const { error: upsertError } = await supabase
+          .from('product_attribute_templates')
+          .upsert(upsertPayload, { onConflict: 'product_id,template_id' });
+        if (upsertError) throw upsertError;
+      }
+
+      // Remove unselected templates
+      const toRemove = existing.filter((templateId) => !selectedSet.has(templateId));
+      if (toRemove.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('product_attribute_templates')
+          .delete()
+          .eq('product_id', id)
+          .in('template_id', toRemove);
+        if (deleteError) throw deleteError;
+      }
+
+      // Fetch selected templates + options
+      const { data: templates, error: templateError } = await supabase
+        .from('attribute_templates')
+        .select('*')
+        .in('id', selectedTemplateIds);
+      if (templateError) throw templateError;
+
+      const { data: options, error: optionsError } = await supabase
+        .from('attribute_template_options')
+        .select('*')
+        .in('template_id', selectedTemplateIds);
+      if (optionsError) throw optionsError;
+
+      // Remove existing variations for these templates
+      for (const template of templates || []) {
+        await supabase
+          .from('product_variations')
+          .delete()
+          .eq('product_id', id)
+          .eq('variation_group', template.name);
+      }
+
+      const variationsToInsert = (options || []).map((opt) => {
+        const template = (templates || []).find((t) => t.id === opt.template_id);
+        const templateType = template?.template_type || 'custom';
+        const variationType =
+          templateType === 'add_on' ? 'custom' : templateType;
+
+        return {
+          product_id: id,
+          variation_type: variationType,
+          size_value: templateType === 'size' ? opt.value : opt.value,
+          size_label:
+            templateType === 'size'
+              ? opt.label
+              : templateType === 'gemstone_quality'
+              ? opt.label
+              : templateType === 'carat_weight'
+              ? opt.label
+              : templateType === 'certificate'
+              ? opt.label
+              : templateType === 'add_on'
+              ? opt.label
+              : null,
+          metal_type: templateType === 'metal_type' ? opt.metal_type : null,
+          metal_label: templateType === 'metal_type' ? opt.label : null,
+          selection_mode: template?.selection_mode || 'single',
+          variation_group: template?.name || null,
+          price_adjustment: opt.price_adjustment || 0,
+          weight_adjustment: opt.weight_adjustment || 0,
+          stock_quantity: 1,
+          is_available: opt.is_active ?? true,
+          is_default: opt.is_default ?? false,
+          sku_suffix: null,
+          image_url: opt.image_url || null,
+        };
+      });
+
+      if (variationsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('product_variations')
+          .insert(variationsToInsert);
+        if (insertError) throw insertError;
+      }
+
+      toast({ title: 'Applied', description: 'Attributes applied to product variations' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to apply templates', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isFetching) {
     return (
       <AdminLayout>
@@ -218,6 +393,7 @@ export default function AdminProductForm() {
       </AdminLayout>
     );
   }
+
 
   return (
     <AdminLayout>
@@ -312,18 +488,22 @@ export default function AdminProductForm() {
                     <div className="space-y-2">
                       <Label>Category *</Label>
                       <Select
-                        value={formData.category}
-                        onValueChange={(value: ProductCategory) =>
-                          setFormData((prev) => ({ ...prev, category: value }))
+                        value={formData.category_id}
+                        onValueChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            category_id: value,
+                            subcategory_id: '',
+                          }))
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Choose category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
-                            <SelectItem key={key} value={key}>
-                              {name}
+                          {productCategories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -421,6 +601,34 @@ export default function AdminProductForm() {
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Subcategory</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Select
+                  value={formData.subcategory_id}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, subcategory_id: value }))
+                  }
+                  disabled={!formData.category_id}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productSubcategories
+                      .filter((sub) => sub.product_category_id === formData.category_id)
+                      .map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pricing Tab */}
@@ -532,7 +740,38 @@ export default function AdminProductForm() {
           {/* Variations Tab */}
           <TabsContent value="variations" className="space-y-6">
             {isEditing && id ? (
-              <ProductVariationsForm productId={id} category={formData.category} />
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Global Attributes</CardTitle>
+                    <CardDescription>Select attributes to apply to this product.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {attributeTemplates.map((attr) => (
+                        <label key={attr.id} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedTemplateIds.includes(attr.id)}
+                            onChange={(e) => {
+                              setSelectedTemplateIds((prev) => {
+                                if (e.target.checked) return [...prev, attr.id];
+                                return prev.filter((id) => id !== attr.id);
+                              });
+                            }}
+                          />
+                          <span>{attr.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <Button type="button" className="btn-premium" onClick={applyTemplatesToProduct}>
+                      Apply Attributes to Product
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <ProductVariationsForm productId={id} category={formData.category} />
+              </div>
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
