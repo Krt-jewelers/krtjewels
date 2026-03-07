@@ -4,8 +4,9 @@ const BUILD_STORAGE_KEY = 'krt_app_build_id';
 function getErrorMessage(reason: unknown): string {
   if (typeof reason === 'string') return reason;
   if (reason instanceof Error) return reason.message;
-  if (reason && typeof reason === 'object' && 'message' in reason && typeof (reason as any).message === 'string') {
-    return (reason as any).message;
+  if (reason && typeof reason === 'object' && 'message' in reason) {
+    const msg = (reason as Record<string, unknown>).message;
+    if (typeof msg === 'string') return msg;
   }
   return '';
 }
