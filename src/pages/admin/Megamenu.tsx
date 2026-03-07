@@ -489,7 +489,7 @@ export default function AdminMegamenu() {
       if (itemProductErr) throw itemProductErr;
 
       const rulesByItem = new Map<string, MegamenuItemRule[]>();
-      (rules || []).forEach((rule: MegamenuItemRule) => {
+      (rules || []).forEach((rule: any) => {
         if (!rulesByItem.has(rule.megamenu_item_id)) {
           rulesByItem.set(rule.megamenu_item_id, []);
         }

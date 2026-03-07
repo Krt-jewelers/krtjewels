@@ -209,7 +209,7 @@ export default function AdminProducts() {
           slug: newSlug,
           sku: null,
           is_active: false,
-        })
+        } as any)
         .select('id')
         .single();
 
@@ -233,7 +233,7 @@ export default function AdminProducts() {
 
         const { error: insertVariationError } = await supabase
           .from('product_variations')
-          .insert(variationPayload);
+          .insert(variationPayload as any);
 
         if (insertVariationError) throw insertVariationError;
       }

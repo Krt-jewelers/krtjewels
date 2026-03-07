@@ -68,13 +68,13 @@ export default function AdminCarouselCategories() {
       }
 
       if (editingId) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('carousel_categories')
           .update(formData)
           .eq('id', editingId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('carousel_categories')
           .insert({
             ...formData,
@@ -103,7 +103,7 @@ export default function AdminCarouselCategories() {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('carousel_categories')
         .delete()
         .eq('id', id);
@@ -128,7 +128,7 @@ export default function AdminCarouselCategories() {
   const reorderMutation = useMutation({
     mutationFn: async (updates: Array<{ id: string; display_order: number }>) => {
       for (const update of updates) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('carousel_categories')
           .update({ display_order: update.display_order })
           .eq('id', update.id);

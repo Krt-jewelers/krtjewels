@@ -372,7 +372,7 @@ export default function AdminProductForm() {
       if (variationsToInsert.length > 0) {
         const { error: insertError } = await supabase
           .from('product_variations')
-          .insert(variationsToInsert);
+          .insert(variationsToInsert as any);
         if (insertError) throw insertError;
       }
 
@@ -770,7 +770,7 @@ export default function AdminProductForm() {
                   </CardContent>
                 </Card>
 
-                <ProductVariationsForm productId={id} category={formData.category} />
+                <ProductVariationsForm productId={id} category={(formData as any).category} />
               </div>
             ) : (
               <Card>
