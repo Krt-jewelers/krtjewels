@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProduct, useBestsellerProducts } from '@/hooks/useProducts';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { CATEGORY_NAMES } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { ProductImageGallery } from '@/components/product/ProductImageGallery';
 import { ProductVariantSelector } from '@/components/product/ProductVariantSelector';
 import { ProductPricing } from '@/components/product/ProductPricing';
 import { ProductActions } from '@/components/product/ProductActions';
+import { PincodeChecker } from '@/components/product/PincodeChecker';
 import { ProductTabs } from '@/components/product/ProductTabs';
 import { TrustPromise } from '@/components/product/TrustPromise';
 import { StockBadge } from '@/components/product/StockBadge';
@@ -23,16 +25,37 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProduct(slug || '');
   const { data: relatedProducts } = useBestsellerProducts();
+  const { addToRecentlyViewed, getRecentlyViewed } = useRecentlyViewed();
+  const [recentlyViewedItems, setRecentlyViewedItems] = useState<any[]>([]);
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [variationState, setVariationState] = useState<{
-    metalType: MetalType;
+    metalType: string;
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
     imageUrl: string | null;
+    isComplete?: boolean;
+    selectedOptions?: {
+      gemstoneQuality?: string | string[] | null;
+      caratWeight?: string | string[] | null;
+      certificates?: string[];
+      addOns?: string[];
+      metalType: string;
+      size?: string | null;
+    };
   } | null>(null);
+
+  // Track product view on load
+  useEffect(() => {
+    if (product) {
+      addToRecentlyViewed(product);
+      // Update recently viewed list (excluding current product)
+      const viewed = getRecentlyViewed().filter(item => item.id !== product.id);
+      setRecentlyViewedItems(viewed);
+    }
+  }, [product?.id]);
 
   const handleOpenLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -61,7 +84,7 @@ export default function ProductDetail() {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-20 text-center">
-          <h1 className="font-serif text-3xl mb-4">Product Not Found</h1>
+          <h1 className="text-3xl font-medium mb-4">Product Not Found</h1>
           <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
           <Link to="/shop">
             <Button className="btn-premium">Browse Collections</Button>
@@ -94,24 +117,24 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           {/* Left — Image Gallery */}
-          <ProductImageGallery
-            images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
-            productName={product.name}
-            videoUrl={(product as any).video_url}
-            variationImageUrl={variationState?.imageUrl || null}
-            badges={{
-              isNewArrival: product.is_new_arrival,
-              isBestseller: product.is_bestseller,
+            <ProductImageGallery
+              images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
+              productName={product.name}
+              videoUrl={(product as any).video_url}
+              variationImageUrl={null}
+              badges={{
+                isNewArrival: product.is_new_arrival,
+                isBestseller: product.is_bestseller,
               isBridal: product.is_bridal,
             }}
             onOpenLightbox={handleOpenLightbox}
           />
 
           {/* Right — Product Info */}
-          <div className="space-y-4">
+          <div className="space-y-4 pb-20 md:pb-0">
             {/* Title + SKU */}
             <div>
-              <h1 className="font-serif text-xl md:text-2xl font-semibold leading-tight mb-1">
+              <h1 className="text-lg md:text-xl font-medium leading-snug mb-1">
                 {product.name}
               </h1>
               <div className="flex items-center gap-3 flex-wrap">
@@ -142,7 +165,12 @@ export default function ProductDetail() {
             />
 
             {/* Actions (Wishlist + Price + Add to Bag) */}
-            <ProductActions product={product} />
+            <ProductActions
+              product={product}
+              variationState={variationState}
+            />
+
+            <PincodeChecker />
 
             {/* Why Shop With Us — Angara horizontal trust strip */}
             <div className="border border-border rounded-xl p-4">
@@ -177,7 +205,7 @@ export default function ProductDetail() {
       {/* Reviews */}
       <section className="py-12 bg-background border-t border-border">
         <div className="container mx-auto px-4">
-          <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-medium text-center mb-8">
             Verified Customer Reviews
           </h2>
           <ProductReviews productId={product.id} productName={product.name} />
@@ -188,7 +216,7 @@ export default function ProductDetail() {
       {relatedProducts && relatedProducts.length > 0 && (
         <section className="py-12 bg-secondary/20 border-t border-border">
           <div className="container mx-auto px-4">
-            <h2 className="font-serif text-2xl md:text-3xl font-semibold text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-medium text-center mb-8">
               You May Also Like
             </h2>
             <Tabs defaultValue="bestsellers" className="w-full">
@@ -207,6 +235,50 @@ export default function ProductDetail() {
                 <ProductGrid products={relatedProducts.filter(p => p.id !== product.id && p.category === product.category).slice(0, 5)} isLoading={false} />
               </TabsContent>
             </Tabs>
+          </div>
+        </section>
+      )}
+
+      {/* Recently Viewed Products */}
+      {recentlyViewedItems.length > 0 && (
+        <section className="py-12 bg-white border-t border-border">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl md:text-3xl font-medium text-center mb-8">
+              Recently Viewed
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+              {recentlyViewedItems.slice(0, 5).map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/product/${item.slug}`}
+                  className="group"
+                >
+                  <div className="relative bg-white rounded-lg overflow-hidden shadow-soft transition-all duration-300 hover:shadow-gold">
+                    {/* Image */}
+                    <div className="aspect-square bg-secondary overflow-hidden rounded-lg">
+                      <img
+                        src={item.images[0] || '/placeholder.svg'}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 space-y-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                        {CATEGORY_NAMES[item.category]}
+                      </p>
+                      <h3 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {item.metal_type.replace('_', ' ').toUpperCase()} • {item.weight_grams}g
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
