@@ -1,18 +1,47 @@
 import { Layout } from '@/components/layout/Layout';
 import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Calendar, Info } from 'lucide-react';
+import { TrendingUp, Calendar, Info, Zap, Lock, BarChart3, Search } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
 
 export default function GoldRatePage() {
   const { data: currentRate, isLoading } = useGoldRate();
   const { data: history } = useGoldRateHistory(30);
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
+  const [schemeInput, setSchemeInput] = useState('');
+  const [searchedScheme, setSearchedScheme] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleTrackGold = async () => {
+    if (!schemeInput.trim()) return;
+    
+    setIsSearching(true);
+    // Simulate API call to fetch scheme details
+    setTimeout(() => {
+      setSearchedScheme({
+        schemeId: schemeInput,
+        totalGold: 5.25,
+        investedAmount: 45000,
+        currentValue: 51250,
+        profitLoss: 6250,
+        profitPercentage: 13.9,
+        monthlyContribution: 1500,
+      });
+      setIsSearching(false);
+    }, 1000);
+  };
 
   const chartData = history?.map((rate) => ({
     date: new Date(rate.effective_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
     '22K': rate.rate_22k,
     '24K': rate.rate_24k,
+    Silver: rate.silver_rate ?? null,
   }));
 
   return (
@@ -37,10 +66,10 @@ export default function GoldRatePage() {
       <section className="py-12">
         <div className="container mx-auto px-4">
           {/* Current Rates */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="card-luxury border-primary/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <Card className="card-luxury border-primary/20 bg-rich-black">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-muted-foreground text-sm font-normal">
+                <CardTitle className="flex items-center gap-2 text-ivory/70 text-sm font-normal">
                   <div className="w-3 h-3 rounded-full bg-primary" />
                   22K Gold (Per Gram)
                 </CardTitle>
@@ -49,15 +78,15 @@ export default function GoldRatePage() {
                 <p className="font-serif text-4xl text-gold-gradient font-bold">
                   {isLoading ? '...' : formatPrice(currentRate?.rate_22k || 0)}
                 </p>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-ivory/50 text-sm mt-1">
                   Most popular for jewellery
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-luxury border-primary/20">
+            <Card className="card-luxury border-primary/20 bg-rich-black">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-muted-foreground text-sm font-normal">
+                <CardTitle className="flex items-center gap-2 text-ivory/70 text-sm font-normal">
                   <div className="w-3 h-3 rounded-full bg-gold-shimmer" />
                   24K Gold (Per Gram)
                 </CardTitle>
@@ -66,21 +95,38 @@ export default function GoldRatePage() {
                 <p className="font-serif text-4xl text-gold-gradient font-bold">
                   {isLoading ? '...' : formatPrice(currentRate?.rate_24k || 0)}
                 </p>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-ivory/50 text-sm mt-1">
                   Pure gold, coins & bars
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="card-luxury border-accent/20">
+            <Card className="card-luxury border-accent/20 bg-rich-black">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-muted-foreground text-sm font-normal">
+                <CardTitle className="flex items-center gap-2 text-ivory/70 text-sm font-normal">
+                  <div className="w-3 h-3 rounded-full bg-slate-300" />
+                  Silver (Per Gram)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="font-serif text-4xl text-ivory font-bold">
+                  {isLoading ? '...' : currentRate?.silver_rate != null ? formatPrice(currentRate.silver_rate) : '—'}
+                </p>
+                <p className="text-ivory/50 text-sm mt-1">
+                  Sterling & daily trade
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-luxury border-accent/20 bg-rich-black">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-ivory/70 text-sm font-normal">
                   <Calendar className="w-4 h-4" />
                   Last Updated
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-serif text-2xl font-bold">
+                <p className="font-serif text-2xl font-bold text-ivory">
                   {currentRate ? new Date(currentRate.effective_date).toLocaleDateString('en-IN', {
                     weekday: 'long',
                     year: 'numeric',
@@ -88,12 +134,13 @@ export default function GoldRatePage() {
                     day: 'numeric'
                   }) : '...'}
                 </p>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="text-ivory/50 text-sm mt-1">
                   Source: {currentRate?.source || 'Market rate'}
                 </p>
               </CardContent>
             </Card>
           </div>
+
 
           {/* Chart */}
           <Card className="mb-12">
@@ -154,7 +201,7 @@ export default function GoldRatePage() {
           </Card>
 
           {/* Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             <Card>
               <CardHeader>
                 <CardTitle className="font-serif flex items-center gap-2">
@@ -171,7 +218,7 @@ export default function GoldRatePage() {
                   <p className="ml-4">(Gold Rate × Weight)</p>
                   <p className="ml-4">+ Making Charges</p>
                   <p className="ml-4">+ Stone/Diamond Cost</p>
-                  <p className="ml-4">+ 3% GST</p>
+                  <p className="ml-4">+ {gstRate}% GST</p>
                 </div>
                 <p>
                   When the gold rate changes, all product prices update automatically. 
@@ -209,6 +256,70 @@ export default function GoldRatePage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Digital Gold Scheme Section */}
+          <section className="py-12 bg-gradient-to-br from-gold/5 via-transparent to-primary/5 rounded-2xl border border-primary/20 mb-12">
+            <div className="px-6 md:px-10">
+              <div className="text-center mb-10">
+                <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">New Investment Option</span>
+                <h2 className="font-serif text-3xl md:text-4xl text-foreground font-bold mt-2 mb-3">
+                  Digital Gold Scheme
+                </h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  Buy and own real gold without the burden of storage, insurance, or purity concerns
+                </p>
+              </div>
+
+              {/* Benefits Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-primary/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-serif text-lg font-semibold text-foreground">Instant Purchase</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Buy gold in grams starting from ₹1, no minimum investment required
+                  </p>
+                </div>
+
+                <div className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-primary/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Lock className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-serif text-lg font-semibold text-foreground">100% Secure</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Stored in certified vaults with insurance included. No storage worries
+                  </p>
+                </div>
+
+                <div className="bg-white/50 backdrop-blur-sm p-6 rounded-xl border border-primary/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="font-serif text-lg font-semibold text-foreground">Easy Liquidation</h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    Sell anytime at live market rates with instant settlement
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="text-center">
+                <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                  Start building your gold investment portfolio today with flexible, secure digital gold
+                </p>
+                <Button className="btn-premium rounded-full px-10 py-6 text-base">
+                  Buy Digital Gold Now
+                </Button>
+              </div>
+            </div>
+          </section>
         </div>
       </section>
     </Layout>
