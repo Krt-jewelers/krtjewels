@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -127,11 +127,32 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: Poppins, Arial, Tahoma, sans-serif;
+    font-weight: 300;
+    font-style: normal;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: Poppins, Arial, Tahoma, sans-serif;
+    font-weight: 300;
+    font-style: normal;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection only on paragraphs and text content */
+  p, span, a, label {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  /* Allow text selection in inputs and textareas */
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
   }
 }
 
@@ -249,8 +270,9 @@
 
   /* Price display */
   .price-tag {
-    font-family: 'Cormorant Garamond', serif;
-    @apply font-semibold;
+    font-family: Poppins, Arial, Tahoma, sans-serif;
+    font-weight: 300;
+    font-style: normal;
   }
 
   /* Gold rate ticker */
@@ -355,6 +377,25 @@
 }
 
 @layer utilities {
+  /* Prevent text selection on interactive elements */
+  .select-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection when needed */
+  .select-text {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+  }
+
+  /* Prevent cursor from showing on non-interactive elements */
+  .cursor-default {
+    cursor: default !important;
+  }
+
   /* Custom scrollbar */
   .scrollbar-luxury::-webkit-scrollbar {
     width: 8px;
@@ -453,5 +494,17 @@
 
   .text-outline-hover {
     -webkit-text-stroke: 1px hsl(43 74% 52% / 0.5);
+  }
+
+  .font-engrave-script {
+    font-family: Poppins, Arial, Tahoma, sans-serif;
+    font-weight: 300;
+    font-style: normal;
+  }
+
+  .font-engrave-block {
+    font-family: Poppins, Arial, Tahoma, sans-serif;
+    font-weight: 300;
+    font-style: normal;
   }
 }
