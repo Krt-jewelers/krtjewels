@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useGoldRate } from './useGoldRate';
+import { useGstSettings } from './useSiteSettings';
 import { calculateProductPrice } from './useProducts';
 import type { WishlistItem, ProductWithPrice } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -13,11 +14,13 @@ interface WishlistItemWithProduct extends WishlistItem {
 export function useWishlist() {
   const { user } = useAuth();
   const { data: goldRate } = useGoldRate();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const wishlistQuery = useQuery({
-    queryKey: ['wishlist', user?.id],
+    queryKey: ['wishlist', user?.id, gstRate],
     queryFn: async (): Promise<WishlistItemWithProduct[]> => {
       if (!user) return [];
 
@@ -39,7 +42,7 @@ export function useWishlist() {
         ...item,
         product: {
           ...item.product,
-          calculated_price: calculateProductPrice(item.product, goldRate || null),
+          calculated_price: calculateProductPrice(item.product, goldRate || null, undefined, gstRate),
         },
       }));
     },
