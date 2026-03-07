@@ -52,7 +52,7 @@ export default function AdminCarouselCategories() {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['carouselCategories'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as unknown as { from: (table: string) => any })
         .from('carousel_categories')
         .select('*')
         .order('display_order', { ascending: true });
