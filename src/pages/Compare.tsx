@@ -1,238 +1,161 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, Mail, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useProductComparison } from '@/hooks/useProductComparison';
+import { formatPrice, METAL_TYPE_NAMES } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
+import { Scale, X, ShoppingCart, Heart, ArrowLeft } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
+export default function ComparePage() {
+  const { products, removeProduct, clearAll } = useProductComparison();
+  const { addToCart } = useCart();
+  const { toggleWishlist } = useWishlist();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
 
-export default function ContactPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-  });
-  const { toast } = useToast();
-  const { user } = useAuth();
+  if (products.length === 0) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <Scale className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h1 className="text-2xl font-serif font-semibold mb-2">No Products to Compare</h1>
+          <p className="text-muted-foreground mb-6">
+            Add products to comparison from collection pages
+          </p>
+          <Link to="/collections/necklaces">
+            <Button className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Browse Products
+            </Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const specs: { label: string; key: string; format: (v: any) => string; highlight?: boolean }[] = [
+    { label: 'Metal Type', key: 'metal_type', format: (v: string) => METAL_TYPE_NAMES[v as keyof typeof METAL_TYPE_NAMES] || v },
+    { label: 'Weight', key: 'weight_grams', format: (v: number) => `${v}g` },
+    { label: 'Category', key: 'category', format: (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) },
+    { label: 'Gold Value', key: 'calculated_price.gold_value', format: (v: number) => formatPrice(v) },
+    { label: 'Making Charges', key: 'calculated_price.making_charges', format: (v: number) => formatPrice(v) },
+    { label: `GST (${gstRate}%)`, key: 'calculated_price.gst', format: (v: number) => formatPrice(v) },
+    { label: 'Total Price', key: 'calculated_price.total', format: (v: number) => formatPrice(v), highlight: true },
+  ];
 
-    try {
-      const { error } = await supabase.from('enquiries').insert({
-        user_id: user?.id || null,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        subject: formData.subject,
-        message: formData.message,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Message sent!',
-        description: 'We will get back to you within 24 hours.',
-      });
-
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    } catch (error: any) {
-      toast({
-        title: 'Failed to send message',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const getNestedValue = (obj: Record<string, any>, path: string): any => {
+    return path.split('.').reduce((acc, part) => acc?.[part], obj);
   };
 
   return (
     <Layout>
-      {/* Hero */}
-      <section className="relative py-16 bg-gradient-to-r from-rich-black via-charcoal to-rich-black">
-        <div className="container mx-auto px-4 text-center">
-          <span className="text-gold-light text-sm uppercase tracking-[0.3em]">Get in Touch</span>
-          <h1 className="font-serif text-4xl md:text-5xl text-ivory font-semibold mt-2 mb-4">
-            Contact Us
-          </h1>
-          <p className="text-ivory/60 max-w-2xl mx-auto">
-            Have questions about our collections? Need help with an order? 
-            Our team is here to assist you.
-          </p>
-        </div>
-      </section>
-
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Contact Info */}
-            <div className="space-y-6">
-              <Card className="card-luxury">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-primary" />
-                    Call Us
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a href="tel:+919843010986" className="text-lg hover:text-primary transition-colors">
-                    +91 98430 10986
-                  </a>
-                  <p className="text-sm text-muted-foreground mt-1">Mon-Sun, 10AM-9PM</p>
-                </CardContent>
-              </Card>
-
-              <Card className="card-luxury">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-primary" />
-                    Email Us
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <a href="mailto:info@krtjewels.com" className="text-lg hover:text-primary transition-colors">
-                    info@krtjewels.com
-                  </a>
-                  <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
-                </CardContent>
-              </Card>
-
-              <Card className="card-luxury">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" />
-                    Visit Us
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    1154, Big Bazaar St, Prakasam,<br />
-                    Town Hall, Coimbatore,<br />
-                    Tamil Nadu 641001
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="card-luxury">
-                <CardHeader className="pb-2">
-                  <CardTitle className="font-serif flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary" />
-                    Store Hours
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Monday - Sunday<br />
-                    10:00 AM - 9:00 PM
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* WhatsApp CTA */}
-              <Button
-                onClick={() => window.open('https://wa.me/919843010986', '_blank')}
-                className="w-full py-6 gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white"
-              >
-                <MessageCircle className="w-5 h-5" />
-                Chat on WhatsApp
-              </Button>
-            </div>
-
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card className="shadow-luxury">
-                <CardHeader>
-                  <CardTitle className="font-serif text-2xl">Send us a Message</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name *</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          required
-                          className="input-luxury"
-                          placeholder="Your name"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                          className="input-luxury"
-                          placeholder="your@email.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone *</Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          required
-                          className="input-luxury"
-                          placeholder="+91 98765 43210"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="subject">Subject</Label>
-                        <Input
-                          id="subject"
-                          value={formData.subject}
-                          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                          className="input-luxury"
-                          placeholder="What is this about?"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message *</Label>
-                      <Textarea
-                        id="message"
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        required
-                        className="input-luxury min-h-[150px]"
-                        placeholder="Tell us how we can help you..."
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="btn-premium w-full py-6 gap-2"
-                    >
-                      <Send className="w-4 h-4" />
-                      {isSubmitting ? 'Sending...' : 'Send Message'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-serif font-semibold">Compare Products</h1>
+            <p className="text-muted-foreground">
+              Compare {products.length} products side by side
+            </p>
           </div>
+          <Button variant="outline" onClick={clearAll}>
+            Clear All
+          </Button>
         </div>
-      </section>
+
+        {/* Comparison Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="text-left p-4 bg-secondary/50 min-w-[150px]"></th>
+                {products.map((product) => (
+                  <th key={product.id} className="p-4 bg-secondary/50 min-w-[250px]">
+                    <div className="relative">
+                      <button
+                        onClick={() => removeProduct(product.id)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <Link to={`/product/${product.slug}`}>
+                        <img
+                          src={product.images?.[0] || '/placeholder.svg'}
+                          alt={product.name}
+                          className="w-full h-48 object-cover rounded-lg mb-3"
+                        />
+                        <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary">
+                          {product.name}
+                        </h3>
+                      </Link>
+                    </div>
+                  </th>
+                ))}
+                {/* Empty columns */}
+                {[...Array(3 - products.length)].map((_, i) => (
+                  <th key={`empty-${i}`} className="p-4 bg-secondary/30 min-w-[250px]">
+                    <div className="h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center">
+                      <span className="text-muted-foreground">Add product</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {specs.map((spec, index) => (
+                <tr key={spec.key} className={index % 2 === 0 ? 'bg-secondary/20' : ''}>
+                  <td className={`p-4 font-medium ${spec.highlight ? 'text-primary' : ''}`}>
+                    {spec.label}
+                  </td>
+                  {products.map((product) => (
+                    <td
+                      key={product.id}
+                      className={`p-4 text-center ${spec.highlight ? 'font-bold text-lg text-primary' : ''}`}
+                    >
+                      {spec.format(getNestedValue(product, spec.key))}
+                    </td>
+                  ))}
+                  {[...Array(3 - products.length)].map((_, i) => (
+                    <td key={`empty-${i}`} className="p-4 text-center text-muted-foreground">
+                      -
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              
+              {/* Actions Row */}
+              <tr>
+                <td className="p-4 font-medium">Actions</td>
+                {products.map((product) => (
+                  <td key={product.id} className="p-4">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        className="w-full gap-2"
+                        onClick={() => addToCart({ productId: product.id })}
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Add to Cart
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => toggleWishlist(product.id)}
+                      >
+                        <Heart className="w-4 h-4" />
+                        Wishlist
+                      </Button>
+                    </div>
+                  </td>
+                ))}
+                {[...Array(3 - products.length)].map((_, i) => (
+                  <td key={`empty-${i}`} className="p-4"></td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </Layout>
   );
 }
