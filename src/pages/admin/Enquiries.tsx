@@ -66,7 +66,7 @@ export default function AdminEnquiries() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEnquiries((data || []) as Enquiry[]);
+      setEnquiries((data || []) as unknown as Enquiry[]);
     } catch (error) {
       console.error('Error fetching enquiries:', error);
       toast({
