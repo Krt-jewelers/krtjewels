@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice, ORDER_STATUS_NAMES, type OrderStatus } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { ArrowLeft, Printer, Download } from 'lucide-react';
 
 interface OrderItem {
@@ -44,23 +45,45 @@ interface Order {
 export default function OrderInvoice() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { search } = useLocation();
+  const { pathname } = useLocation();
+  const { user, loading: authLoading, isAdmin } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
+  const searchParams = new URLSearchParams(search);
+  const formatSelectedValue = (value: any) => {
+    if (value && typeof value === 'object' && 'text' in value && 'font' in value) {
+      return `${value.text} (${value.font})`;
+    }
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  };
 
   useEffect(() => {
     if (authLoading) return;
     
     if (!user) {
-      navigate('/auth?redirect=/account/orders');
+      const redirect = pathname.startsWith('/admin')
+        ? '/admin/login'
+        : '/auth?redirect=/account/orders';
+      navigate(redirect);
+      return;
+    }
+
+    if (pathname.startsWith('/admin') && !isAdmin) {
+      navigate('/admin/login');
       return;
     }
 
     const fetchOrder = async () => {
       try {
-        // First try fetching the order (admins can see all orders)
-        const { data, error } = await supabase
+        const isUuid = (value: string) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+        const baseQuery = supabase
           .from('orders')
           .select(`
             id,
@@ -83,24 +106,35 @@ export default function OrderInvoice() {
               total_price,
               weight_grams,
               making_charges,
-              gold_rate_applied
+              gold_rate_applied,
+              selected_variations,
+              variation_price_adjustment,
+              variation_weight_adjustment
             )
-          `)
-          .eq('order_number', orderId)
-          .single();
+          `);
+
+        let data = null;
+        let error = null;
+
+        if (orderId) {
+          if (isUuid(orderId)) {
+            const res = await baseQuery.eq('id', orderId).maybeSingle();
+            data = res.data;
+            error = res.error;
+          } else {
+            const res = await baseQuery.eq('order_number', orderId).maybeSingle();
+            data = res.data;
+            error = res.error;
+          }
+        }
 
         if (error) throw error;
-        
-        // Check if user is admin
-        const { data: adminCheck } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-        
-        const isAdmin = !!adminCheck;
-        
+        if (!data) {
+          setOrder(null);
+          setLoading(false);
+          return;
+        }
+
         // Verify access - either user owns the order or is admin
         if (data.user_id !== user.id && !isAdmin) {
           setOrder(null);
@@ -122,10 +156,21 @@ export default function OrderInvoice() {
     };
 
     fetchOrder();
-  }, [user, orderId, authLoading, navigate]);
+  }, [user, orderId, authLoading, navigate, isAdmin, pathname]);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = () => {
+    const prevTitle = document.title;
+    if (order?.order_number) {
+      document.title = `Invoice-${order.order_number}`;
+    }
+    window.print();
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 1000);
   };
 
   if (authLoading || loading) {
@@ -154,13 +199,20 @@ export default function OrderInvoice() {
   }
 
   const address = order.shipping_address;
+  const itemsToRender = order.order_items;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Controls - Hidden when printing */}
       <div className="print:hidden sticky top-0 bg-background border-b z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+          <Button
+            variant="ghost"
+            onClick={() =>
+              pathname.startsWith('/admin') ? navigate('/admin/orders') : navigate(-1)
+            }
+            className="gap-2"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
@@ -169,12 +221,16 @@ export default function OrderInvoice() {
               <Printer className="w-4 h-4" />
               Print Invoice
             </Button>
+            <Button variant="outline" onClick={handleDownloadPdf} className="gap-2">
+              <Download className="w-4 h-4" />
+              Download PDF
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Invoice Content */}
-      <div ref={printRef} className="max-w-4xl mx-auto p-8 print:p-0">
+      <div ref={printRef} id="invoice-print" className="max-w-4xl mx-auto p-8 print:p-0">
         <div className="bg-card border rounded-lg p-8 print:border-0 print:shadow-none">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b">
@@ -252,9 +308,21 @@ export default function OrderInvoice() {
                 </tr>
               </thead>
               <tbody>
-                {order.order_items.map((item) => (
+                {itemsToRender.map((item) => (
                   <tr key={item.id} className="border-b">
-                    <td className="py-3">{item.product_name}</td>
+                    <td className="py-3">
+                      <div className="font-medium">{item.product_name}</div>
+                      {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                        <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                          {Object.entries(item.selected_variations).map(([key, value]) => (
+                            <div key={key} className="flex gap-1">
+                              <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                              <span>{formatSelectedValue(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="text-right py-3">{item.weight_grams.toFixed(2)}g</td>
                     <td className="text-right py-3">{item.quantity}</td>
                     <td className="text-right py-3">{formatPrice(item.gold_rate_applied)}/g</td>
@@ -269,9 +337,19 @@ export default function OrderInvoice() {
           {/* Items Cards - Mobile */}
           <div className="mb-8 sm:hidden space-y-3">
             <h3 className="font-semibold text-sm text-muted-foreground mb-2">ITEMS</h3>
-            {order.order_items.map((item) => (
+            {itemsToRender.map((item) => (
               <div key={item.id} className="border rounded-lg p-3 space-y-2">
                 <p className="font-medium text-sm">{item.product_name}</p>
+                {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                  <div className="text-[11px] text-muted-foreground space-y-0.5">
+                    {Object.entries(item.selected_variations).map(([key, value]) => (
+                      <div key={key} className="flex gap-1">
+                        <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                        <span>{formatSelectedValue(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Weight:</span>
@@ -306,7 +384,7 @@ export default function OrderInvoice() {
                 <span>{formatPrice(order.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">GST (3%)</span>
+                <span className="text-muted-foreground">GST ({gstRate}%)</span>
                 <span>{formatPrice(order.gst_amount)}</span>
               </div>
               <div className="flex justify-between font-semibold text-lg pt-2 border-t">
@@ -334,12 +412,18 @@ export default function OrderInvoice() {
           .print\\:hidden {
             display: none !important;
           }
-          #root {
+          body * {
+            visibility: hidden;
+          }
+          #invoice-print,
+          #invoice-print * {
             visibility: visible;
           }
-          #root > div > div:last-child,
-          #root > div > div:last-child * {
-            visibility: visible;
+          #invoice-print {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
           }
           @page {
             size: A4;
