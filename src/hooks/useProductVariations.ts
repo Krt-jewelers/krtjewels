@@ -9,6 +9,7 @@ export interface ProductVariation {
   size_value: string | null;
   size_label: string | null;
   metal_type: MetalType | null;
+  metal_label?: string | null;
   price_adjustment: number;
   weight_adjustment: number;
   stock_quantity: number;
@@ -16,6 +17,8 @@ export interface ProductVariation {
   is_default: boolean;
   sku_suffix: string | null;
   image_url: string | null;
+  variation_group?: string | null;
+  selection_mode?: 'single' | 'multi' | string;
   created_at: string;
   updated_at: string;
 }
