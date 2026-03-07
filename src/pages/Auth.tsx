@@ -101,10 +101,10 @@ export default function AuthPage() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-block">
-              <h1 className="font-serif text-3xl font-bold">
-                <span className="text-primary">KRT</span> Jewels
+              <h1 className="font-serif text-4xl font-bold">
+                <span className="text-primary">KRT</span> <span className="text-ivory">Jewels</span>
               </h1>
-              <p className="text-xs text-muted-foreground tracking-widest uppercase mt-1">
+              <p className="text-xs text-ivory/70 tracking-widest uppercase mt-2 font-light">
                 Trusted Since 30+ Years
               </p>
             </Link>
