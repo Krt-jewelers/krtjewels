@@ -15,3 +15,13 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Development debug: ensure env vars are present
+if (import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.debug('Supabase config:', {
+    url: SUPABASE_URL,
+    hasKey: !!SUPABASE_PUBLISHABLE_KEY,
+    keyLength: SUPABASE_PUBLISHABLE_KEY ? String(SUPABASE_PUBLISHABLE_KEY).length : 0,
+  });
+}
