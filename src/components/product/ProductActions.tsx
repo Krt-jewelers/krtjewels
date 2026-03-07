@@ -4,23 +4,38 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
-import { AuthPromptModal } from './AuthPromptModal';
+import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import type { ProductWithPrice } from '@/lib/types';
 
 interface ProductActionsProps {
   product: ProductWithPrice;
+  variationState?: {
+    metalType: string;
+    size: string | null;
+    priceAdjustment: number;
+    weightAdjustment: number;
+    imageUrl: string | null;
+    isComplete?: boolean;
+    selectedOptions?: {
+      gemstoneQuality?: string | string[] | null;
+      caratWeight?: string | string[] | null;
+      certificates?: string[];
+      addOns?: string[];
+      metalType: string;
+      size?: string | null;
+    };
+  } | null;
 }
 
-export function ProductActions({ product }: ProductActionsProps) {
+export function ProductActions({ product, variationState }: ProductActionsProps) {
   const { isAuthenticated } = useAuth();
   const { addToCart, isAdding } = useCart();
   const { isInWishlist, toggleWishlist, isToggling } = useWishlist();
+  const { toast } = useToast();
   
   const [quantity, setQuantity] = useState(1);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authAction, setAuthAction] = useState('');
   const [isAdded, setIsAdded] = useState(false);
   
   const inWishlist = isInWishlist(product.id);
@@ -28,21 +43,35 @@ export function ProductActions({ product }: ProductActionsProps) {
   const maxQuantity = product.stock_quantity ?? 99;
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      setAuthAction('add items to your cart');
-      setShowAuthModal(true);
+    if (isOutOfStock) return;
+    if (variationState && variationState.isComplete === false) {
+      toast({
+        title: 'Select all options',
+        description: 'Please choose metal type and required options before adding to cart.',
+        variant: 'destructive',
+      });
       return;
     }
-    if (isOutOfStock) return;
-    addToCart({ productId: product.id, quantity });
+    addToCart({
+      productId: product.id,
+      quantity,
+      variation: {
+        priceAdjustment: variationState?.priceAdjustment || 0,
+        weightAdjustment: variationState?.weightAdjustment || 0,
+        imageUrl: variationState?.imageUrl || null,
+        selectedOptions: variationState?.selectedOptions || null,
+      },
+    });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
 
   const handleToggleWishlist = () => {
     if (!isAuthenticated) {
-      setAuthAction('save items to your wishlist');
-      setShowAuthModal(true);
+      toast({
+        title: 'Login required',
+        description: 'Please sign in to use your wishlist.',
+      });
       return;
     }
     toggleWishlist(product.id);
@@ -70,7 +99,7 @@ export function ProductActions({ product }: ProductActionsProps) {
         ) : null}
 
         {/* Angara-style: Wishlist + Price + ADD TO BAG inline */}
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -88,12 +117,12 @@ export function ProductActions({ product }: ProductActionsProps) {
 
           {/* Price display */}
           <div className="flex-1 bg-secondary/50 rounded-lg px-3 py-2 text-center">
-            <span className="text-lg font-serif font-bold text-foreground">
-              {formatPrice(product.calculated_price.total * quantity)}
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              {formatPrice((product.calculated_price.total + (variationState?.priceAdjustment || 0)) * quantity)}
             </span>
             {quantity > 1 && (
               <span className="text-xs text-muted-foreground ml-1">
-                ({formatPrice(product.calculated_price.total)} × {quantity})
+                ({formatPrice(product.calculated_price.total + (variationState?.priceAdjustment || 0))} × {quantity})
               </span>
             )}
           </div>
@@ -117,6 +146,51 @@ export function ProductActions({ product }: ProductActionsProps) {
               <><ShoppingBag className="w-4 h-4 mr-1" /> ADD TO BAG</>
             )}
           </Button>
+        </div>
+
+        {/* Mobile sticky action bar */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-foreground text-background border-t border-border px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleToggleWishlist}
+              disabled={isToggling}
+              className={cn(
+                'h-12 w-12 rounded-lg border-2 flex-shrink-0 transition-all bg-background text-foreground',
+                inWishlist
+                  ? 'bg-red-50 border-red-300 text-red-600'
+                  : 'hover:border-primary'
+              )}
+            >
+              <Heart className={cn('w-5 h-5', inWishlist && 'fill-current')} />
+            </Button>
+
+            <div className="flex-1 rounded-lg px-3 py-2 text-center">
+              <span className="text-base font-semibold tracking-tight text-background">
+                {formatPrice((product.calculated_price.total + (variationState?.priceAdjustment || 0)) * quantity)}
+              </span>
+            </div>
+
+            <Button
+              onClick={handleAddToCart}
+              disabled={isAdding || isOutOfStock}
+              className={cn(
+                'h-12 px-4 font-semibold rounded-lg transition-all flex-shrink-0 bg-foreground text-background border border-background',
+                isAdded
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-none'
+                  : 'hover:bg-foreground/90'
+              )}
+            >
+              {isAdded ? (
+                <><Check className="w-4 h-4 mr-1" /> Added</>
+              ) : isOutOfStock ? (
+                'Sold Out'
+              ) : (
+                <><ShoppingBag className="w-4 h-4 mr-1" /> ADD TO BAG</>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Quantity selector — compact inline */}
@@ -162,11 +236,6 @@ export function ProductActions({ product }: ProductActionsProps) {
         </Button>
       </div>
 
-      <AuthPromptModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        action={authAction}
-      />
     </>
   );
 }
