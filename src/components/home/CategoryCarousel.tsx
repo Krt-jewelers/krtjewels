@@ -120,8 +120,8 @@ export function CategoryCarousel() {
     isDraggingRef.current = false;
     didDragRef.current = false;
     dragStartXRef.current = event.clientX;
+    dragStartYRef.current = event.clientY;
     dragScrollLeftRef.current = scrollRef.current.scrollLeft;
-    // Don't capture pointer - let vertical scroll work naturally
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
