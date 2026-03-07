@@ -35,22 +35,22 @@ const features = [
 
 export function WhyChooseUs() {
   return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-secondary/30 to-background relative overflow-hidden">
+    <section className="py-20 md:py-28 bg-gradient-to-b from-secondary/30 to-background relative overflow-hidden select-none">
       {/* Decorative Pattern */}
       <div className="absolute inset-0 bg-pattern-lines opacity-30" />
       
       <div className="container mx-auto px-4 relative">
         {/* Header */}
-        <div className="text-center mb-16">
-          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium mb-3">
+        <div className="flex flex-col items-center gap-4 text-center mb-16">
+          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium select-none">
             <span className="w-8 h-px bg-primary" />
             Our Promise
             <span className="w-8 h-px bg-primary" />
           </span>
-          <h2 className="font-serif text-4xl md:text-5xl font-semibold section-heading mb-6">
+          <h2 className="font-serif text-4xl md:text-5xl font-medium section-heading select-none cursor-default">
             Why Choose KRT Jewels
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto select-text">
             Experience the perfect blend of tradition and trust with every purchase
           </p>
         </div>
@@ -60,15 +60,15 @@ export function WhyChooseUs() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group p-8 bg-card rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-gold"
+              className="group p-8 bg-card rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-gold select-none cursor-default"
             >
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors duration-300">
                 <feature.icon className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="font-serif text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+              <h3 className="font-serif text-xl font-medium mb-3 group-hover:text-primary transition-colors select-none">
                 {feature.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed select-text">
                 {feature.description}
               </p>
             </div>
