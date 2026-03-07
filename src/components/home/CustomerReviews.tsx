@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Star, Quote } from 'lucide-react';
 import {
   Carousel,
@@ -5,6 +6,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from '@/components/ui/carousel';
 
 interface Review {
@@ -99,8 +101,35 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function CustomerReviews() {
+  const [api, setApi] = useState<CarouselApi | null>(null);
+  const [direction, setDirection] = useState<'next' | 'prev'>('next');
   const averageRating = 5.0;
   const totalReviews = 286;
+
+  useEffect(() => {
+    if (!api) return;
+
+    const interval = setInterval(() => {
+      if (direction === 'next') {
+        if (!api.canScrollNext()) {
+          setDirection('prev');
+          api.scrollPrev();
+          return;
+        }
+        api.scrollNext();
+        return;
+      }
+
+      if (!api.canScrollPrev()) {
+        setDirection('next');
+        api.scrollNext();
+        return;
+      }
+      api.scrollPrev();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [api, direction]);
 
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-secondary/20 to-secondary/40 relative">
@@ -109,15 +138,18 @@ export function CustomerReviews() {
       
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-14">
-          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium mb-3">
+        <div className="flex flex-col items-center gap-4 text-center mb-14">
+          <span className="inline-flex items-center gap-2 text-primary text-sm uppercase tracking-[0.3em] font-medium">
             <span className="w-8 h-px bg-primary" />
             Testimonials
             <span className="w-8 h-px bg-primary" />
           </span>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-semibold mb-6 section-heading">
+          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl font-medium section-heading">
             What Our Customers Say
           </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Real stories from families who trust KRT for every milestone.
+          </p>
           <div className="flex items-center justify-center gap-3 mt-8 mb-2">
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) => (
@@ -133,6 +165,7 @@ export function CustomerReviews() {
 
         {/* Reviews Carousel */}
         <Carousel
+          setApi={setApi}
           opts={{
             align: 'start',
             loop: true,
