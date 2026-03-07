@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProductWithPrice } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 
 interface ProductTabsProps {
   product: ProductWithPrice;
@@ -9,6 +10,8 @@ interface ProductTabsProps {
 
 export function ProductTabs({ product }: ProductTabsProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['product-details']));
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -94,7 +97,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
             <span>₹{product.calculated_price.subtotal.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">GST (3%)</span>
+            <span className="text-muted-foreground">GST ({gstRate}%)</span>
             <span>₹{product.calculated_price.gst.toLocaleString('en-IN')}</span>
           </div>
           <div className="flex justify-between pt-2 border-t border-primary/30">
