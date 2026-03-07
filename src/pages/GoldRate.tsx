@@ -1,6 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
 import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
-import { useGstSettings } from '@/hooks/useSiteSettings';
+
 import { formatPrice } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Calendar, Zap, Lock, BarChart3 } from 'lucide-react';
@@ -12,8 +12,6 @@ import { useState } from 'react';
 export default function GoldRatePage() {
   const { data: currentRate, isLoading } = useGoldRate();
   const { data: history } = useGoldRateHistory(30);
-  const { data: gstSettings } = useGstSettings();
-  const gstRate = gstSettings?.rate ?? 3;
   const [schemeInput, setSchemeInput] = useState('');
   const [searchedScheme, setSearchedScheme] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
