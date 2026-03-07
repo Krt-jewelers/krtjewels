@@ -3,6 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useProductComparison } from '@/hooks/useProductComparison';
 import { formatPrice, METAL_TYPE_NAMES } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Scale, X, ShoppingCart, Heart, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -10,6 +11,8 @@ export default function ComparePage() {
   const { products, removeProduct, clearAll } = useProductComparison();
   const { addToCart } = useCart();
   const { toggleWishlist } = useWishlist();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
 
   if (products.length === 0) {
     return (
@@ -37,7 +40,7 @@ export default function ComparePage() {
     { label: 'Category', key: 'category', format: (v: string) => v.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) },
     { label: 'Gold Value', key: 'calculated_price.gold_value', format: (v: number) => formatPrice(v) },
     { label: 'Making Charges', key: 'calculated_price.making_charges', format: (v: number) => formatPrice(v) },
-    { label: 'GST (3%)', key: 'calculated_price.gst', format: (v: number) => formatPrice(v) },
+    { label: `GST (${gstRate}%)`, key: 'calculated_price.gst', format: (v: number) => formatPrice(v) },
     { label: 'Total Price', key: 'calculated_price.total', format: (v: number) => formatPrice(v), highlight: true },
   ];
 
