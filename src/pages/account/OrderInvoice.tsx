@@ -18,6 +18,7 @@ interface OrderItem {
   weight_grams: number;
   making_charges: number;
   gold_rate_applied: number;
+  selected_variations: Record<string, unknown> | null;
 }
 
 interface Order {

@@ -29,7 +29,7 @@ export function DebugPanel() {
           fontSize: 11,
           fontWeight: 600,
           cursor: 'pointer',
-          hover: { background: 'rgba(59, 130, 246, 1)' },
+          
         }}
       >
         {isOpen ? '✕ Close Debug' : '⚙ Debug'}
@@ -68,7 +68,7 @@ export function DebugPanel() {
                 <div>status: {q.state.status}</div>
                 {q.state.error && (
                   <div style={{ color: '#f88' }}>
-                    error: {String((q.state.error as unknown)?.message || q.state.error)}
+                    error: {String((q.state.error as Error)?.message || q.state.error)}
                   </div>
                 )}
                 <div style={{ fontSize: 11, color: '#ccc' }}>
