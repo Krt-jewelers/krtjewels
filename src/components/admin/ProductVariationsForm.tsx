@@ -64,10 +64,13 @@ interface ProductVariationsFormProps {
 }
 
 interface VariationFormData {
-  variation_type: 'size' | 'metal_type';
+  variation_type: 'size' | 'metal_type' | 'gemstone_quality' | 'carat_weight' | 'certificate' | 'custom';
   size_value: string;
   size_label: string;
   metal_type: MetalType | '';
+  metal_label: string;
+  selection_mode: 'single' | 'multi';
+  variation_group: string;
   price_adjustment: number;
   weight_adjustment: number;
   stock_quantity: number;
@@ -82,6 +85,9 @@ const defaultFormData: VariationFormData = {
   size_value: '',
   size_label: '',
   metal_type: '',
+  metal_label: '',
+  selection_mode: 'single',
+  variation_group: '',
   price_adjustment: 0,
   weight_adjustment: 0,
   stock_quantity: 1,
@@ -115,10 +121,13 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
     if (variation) {
       setEditingId(variation.id);
       setFormData({
-        variation_type: variation.variation_type as 'size' | 'metal_type',
+        variation_type: variation.variation_type as VariationFormData['variation_type'],
         size_value: variation.size_value || '',
         size_label: variation.size_label || '',
         metal_type: (variation.metal_type as MetalType) || '',
+        metal_label: variation.metal_label || (variation.metal_type ? METAL_TYPE_NAMES[variation.metal_type as MetalType] : '') || '',
+        selection_mode: (variation.selection_mode as 'single' | 'multi') || 'single',
+        variation_group: variation.variation_group || '',
         price_adjustment: variation.price_adjustment || 0,
         weight_adjustment: variation.weight_adjustment || 0,
         stock_quantity: variation.stock_quantity || 1,
@@ -144,7 +153,10 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         variation_type: formData.variation_type,
         size_value: formData.variation_type === 'size' ? formData.size_value : null,
         size_label: formData.variation_type === 'size' ? (formData.size_label || sizeLabel) : null,
-        metal_type: formData.variation_type === 'metal_type' ? formData.metal_type as MetalType : null,
+        metal_type: formData.variation_type === 'metal_type' && formData.metal_type ? formData.metal_type as MetalType : null,
+        metal_label: formData.variation_type === 'metal_type' ? (formData.metal_label || null) : null,
+        selection_mode: formData.selection_mode,
+        variation_group: formData.variation_group || null,
         price_adjustment: formData.price_adjustment,
         weight_adjustment: formData.weight_adjustment,
         stock_quantity: formData.stock_quantity,
@@ -169,10 +181,11 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
       setIsDialogOpen(false);
       setFormData(defaultFormData);
       setEditingId(null);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save variation';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save variation',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -182,10 +195,11 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
     try {
       await deleteVariation.mutateAsync({ id, productId });
       toast({ title: 'Success', description: 'Variation deleted' });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete variation';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete variation',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -220,17 +234,18 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
 
       await bulkCreate.mutateAsync(variationsToCreate);
       toast({ title: 'Success', description: `Added ${newSizes.length} size variations` });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add sizes';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add sizes',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
   };
 
   const handleQuickAddMetals = async () => {
-    const metalTypes: MetalType[] = ['gold_22k', 'gold_24k', 'gold_18k'];
+    const metalTypes: MetalType[] = ['gold_22k', 'gold_24k', 'gold_18k', 'silver', 'platinum'];
     const existingMetals = metalVariations.map(v => v.metal_type);
     const newMetals = metalTypes.filter(m => !existingMetals.includes(m));
 
@@ -246,6 +261,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
         size_value: null,
         size_label: null,
         metal_type: metal,
+        metal_label: METAL_TYPE_NAMES[metal],
         price_adjustment: 0,
         weight_adjustment: 0,
         stock_quantity: 1,
@@ -257,10 +273,11 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
 
       await bulkCreate.mutateAsync(variationsToCreate);
       toast({ title: 'Success', description: `Added ${newMetals.length} metal variations` });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add metals';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add metals',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -286,12 +303,13 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
               Product Variations
             </CardTitle>
             <CardDescription>
-              Add size, metal type variations with price adjustments
+              Add size, metal type, gemstone quality, carat weight, certificates, or custom attributes with pricing.
             </CardDescription>
           </div>
           <div className="flex gap-2">
             {hasSizes && (
               <Button 
+                type="button"
                 variant="outline" 
                 size="sm"
                 onClick={handleQuickAddSizes}
@@ -301,6 +319,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
               </Button>
             )}
             <Button 
+              type="button"
               variant="outline" 
               size="sm"
               onClick={handleQuickAddMetals}
@@ -309,8 +328,8 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
               Quick Add Metal Types
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="btn-premium" onClick={() => handleOpenDialog()}>
+                <DialogTrigger asChild>
+                <Button type="button" size="sm" className="btn-premium" onClick={() => handleOpenDialog()}>
                   <Plus className="w-4 h-4 mr-1" />
                   Add Variation
                 </Button>
@@ -326,7 +345,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                     <Label>Variation Type</Label>
                     <Select
                       value={formData.variation_type}
-                      onValueChange={(value: 'size' | 'metal_type') =>
+                      onValueChange={(value: VariationFormData['variation_type']) =>
                         setFormData(prev => ({ ...prev, variation_type: value }))
                       }
                     >
@@ -336,6 +355,10 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                       <SelectContent>
                         {hasSizes && <SelectItem value="size">{sizeLabel}</SelectItem>}
                         <SelectItem value="metal_type">Metal Type</SelectItem>
+                        <SelectItem value="gemstone_quality">Gemstone Quality</SelectItem>
+                        <SelectItem value="carat_weight">Total Carat Weight</SelectItem>
+                        <SelectItem value="certificate">Certificate Add-on</SelectItem>
+                        <SelectItem value="custom">Custom Attribute</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -364,25 +387,120 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                   )}
 
                   {formData.variation_type === 'metal_type' && (
-                    <div className="space-y-2">
-                      <Label>Metal Type</Label>
-                      <Select
-                        value={formData.metal_type}
-                        onValueChange={(value: MetalType) =>
-                          setFormData(prev => ({ ...prev, metal_type: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select metal" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
-                            <SelectItem key={key} value={key}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Metal Label</Label>
+                        <Input
+                          value={formData.metal_label}
+                          onChange={(e) =>
+                            setFormData(prev => ({ ...prev, metal_label: e.target.value }))
+                          }
+                          placeholder="e.g., 22K White Gold"
+                        />
+                      </div>
+                      <div className="space-y-2 min-w-0">
+                        <Label>Base Metal Key (optional)</Label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Select
+                            value={formData.metal_type || undefined}
+                            onValueChange={(value: MetalType) =>
+                              setFormData(prev => ({ ...prev, metal_type: value }))
+                            }
+                          >
+                            <SelectTrigger className="min-w-[160px] w-full sm:w-auto">
+                              <SelectValue placeholder="Select metal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
+                                <SelectItem key={key} value={key}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => setFormData(prev => ({ ...prev, metal_type: '' }))}
+                          >
+                            Clear
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={() => {
+                              if (!formData.metal_type) return;
+                              const name = METAL_TYPE_NAMES[formData.metal_type as MetalType];
+                              if (name) {
+                                setFormData(prev => ({ ...prev, metal_label: name }));
+                              }
+                            }}
+                          >
+                            Use Name
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {['gemstone_quality', 'carat_weight', 'certificate', 'custom'].includes(formData.variation_type) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Option Label</Label>
+                        <Input
+                          value={formData.size_label}
+                          onChange={(e) =>
+                            setFormData(prev => ({ ...prev, size_label: e.target.value }))
+                          }
+                          placeholder="e.g., Good / 1.50 cts / IGI"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Option Value</Label>
+                        <Input
+                          value={formData.size_value}
+                          onChange={(e) =>
+                            setFormData(prev => ({ ...prev, size_value: e.target.value }))
+                          }
+                          placeholder="e.g., good / 1.50 / igi"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {['gemstone_quality', 'carat_weight', 'certificate', 'custom'].includes(formData.variation_type) && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Selection Mode</Label>
+                        <Select
+                          value={formData.selection_mode}
+                          onValueChange={(value: 'single' | 'multi') =>
+                            setFormData(prev => ({ ...prev, selection_mode: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single">Single (Radio)</SelectItem>
+                            <SelectItem value="multi">Multi (Checkbox)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Group Label</Label>
+                        <Input
+                          value={formData.variation_group}
+                          onChange={(e) =>
+                            setFormData(prev => ({ ...prev, variation_group: e.target.value }))
+                          }
+                          placeholder="e.g., Gemstone Quality"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -480,10 +598,11 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>
                   <Button
+                    type="button"
                     className="btn-premium"
                     onClick={handleSubmit}
                     disabled={createVariation.isPending || updateVariation.isPending}
@@ -539,7 +658,9 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                   <TableCell className="font-medium">
                     {variation.variation_type === 'size'
                       ? variation.size_value
-                      : METAL_TYPE_NAMES[variation.metal_type as MetalType] || variation.metal_type}
+                      : variation.variation_type === 'metal_type'
+                      ? variation.metal_label || METAL_TYPE_NAMES[variation.metal_type as MetalType] || variation.metal_type
+                      : variation.size_label || variation.size_value || variation.metal_type}
                   </TableCell>
                   <TableCell>
                     {variation.price_adjustment > 0 && '+'}
@@ -572,6 +693,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenDialog(variation)}
@@ -579,6 +701,7 @@ export function ProductVariationsForm({ productId, category }: ProductVariations
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive"
