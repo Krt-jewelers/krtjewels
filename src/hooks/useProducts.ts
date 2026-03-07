@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Product, ProductCategory, MetalType, CalculatedPrice, ProductWithPrice } from '@/lib/types';
 import { useGoldRate } from './useGoldRate';
+import { useGstSettings } from './useSiteSettings';
 
 interface ProductFilters {
   category?: ProductCategory;
@@ -14,6 +15,7 @@ interface ProductFilters {
   isBestseller?: boolean;
   isNewArrival?: boolean;
   isBridal?: boolean;
+  tag?: string;
   search?: string;
 }
 
@@ -21,7 +23,8 @@ interface ProductFilters {
 export function calculateProductPrice(
   product: Product,
   goldRate: { rate_22k: number; rate_24k: number; rate_18k: number | null } | null,
-  categoryMakingCharge?: number
+  categoryMakingCharge?: number,
+  gstRatePercent?: number
 ): CalculatedPrice {
   if (!goldRate) {
     return {
@@ -59,8 +62,8 @@ export function calculateProductPrice(
   // Calculate subtotal (gold + making + diamond + stone costs)
   const subtotal = goldValue + makingCharges + product.diamond_cost + product.stone_cost;
 
-  // GST at 3% for gold jewellery
-  const gst = subtotal * 0.03;
+  const gstRate = typeof gstRatePercent === 'number' ? gstRatePercent : 3;
+  const gst = subtotal * (gstRate / 100);
 
   // Total price
   const total = subtotal + gst;
@@ -77,9 +80,11 @@ export function calculateProductPrice(
 
 export function useProducts(filters?: ProductFilters) {
   const { data: goldRate, isLoading: goldRateLoading } = useGoldRate();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['products', filters, goldRate?.id],
+    queryKey: ['products', filters, goldRate?.id, gstRate],
     queryFn: async (): Promise<ProductWithPrice[]> => {
       let query = supabase
         .from('products')
@@ -111,6 +116,9 @@ export function useProducts(filters?: ProductFilters) {
       if (filters?.isBridal) {
         query = query.eq('is_bridal', true);
       }
+      if (filters?.tag) {
+        query = query.contains('tags', [filters.tag]);
+      }
       if (filters?.search) {
         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
       }
@@ -133,7 +141,7 @@ export function useProducts(filters?: ProductFilters) {
           stone_cost: product.stone_cost ?? 0,
           images: product.images || [],
           tags: product.tags || [],
-          specifications: (product.specifications as Record<string, any>) || {},
+          specifications: (product.specifications as Record<string, string | number | boolean> | null) || {},
           stock_quantity: product.stock_quantity ?? 0,
           is_featured: product.is_featured ?? false,
           is_bestseller: product.is_bestseller ?? false,
@@ -142,7 +150,7 @@ export function useProducts(filters?: ProductFilters) {
         };
         return {
           ...normalizedProduct,
-          calculated_price: calculateProductPrice(normalizedProduct as any, goldRate || null),
+          calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
         };
       }) as ProductWithPrice[];
 
@@ -170,9 +178,11 @@ export function useProducts(filters?: ProductFilters) {
 
 export function useProduct(slug: string) {
   const { data: goldRate } = useGoldRate();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['product', slug, goldRate?.id],
+    queryKey: ['product', slug, goldRate?.id, gstRate],
     queryFn: async (): Promise<ProductWithPrice | null> => {
       const { data, error } = await supabase
         .from('products')
@@ -195,7 +205,7 @@ export function useProduct(slug: string) {
         stone_cost: data.stone_cost ?? 0,
         images: data.images || [],
         tags: data.tags || [],
-        specifications: (data.specifications as Record<string, any>) || {},
+        specifications: (data.specifications as Record<string, string | number | boolean> | null) || {},
         stock_quantity: data.stock_quantity ?? 0,
         is_featured: data.is_featured ?? false,
         is_bestseller: data.is_bestseller ?? false,
@@ -205,7 +215,7 @@ export function useProduct(slug: string) {
 
       return {
         ...normalizedProduct,
-        calculated_price: calculateProductPrice(normalizedProduct as any, goldRate || null),
+        calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
       } as ProductWithPrice;
     },
     enabled: !!slug,
