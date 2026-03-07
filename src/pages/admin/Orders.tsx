@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { ShoppingCart, Eye, Package, Printer } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ORDER_STATUSES = [
   { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
@@ -62,14 +63,25 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  selected_variations?: Record<string, any> | null;
 }
 
 export default function AdminOrders() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const formatSelectedValue = (value: any) => {
+    if (value && typeof value === 'object' && 'text' in value && 'font' in value) {
+      return `${value.text} (${value.font})`;
+    }
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  };
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['adminOrders'],
@@ -131,11 +143,26 @@ export default function AdminOrders() {
     
     const { data, error } = await supabase
       .from('order_items')
-      .select('*')
+      .select('id, product_name, product_image, weight_grams, quantity, unit_price, total_price, selected_variations')
       .eq('order_id', order.id);
 
     if (!error && data) {
-      setOrderItems(data);
+      const normalized = (data || []).map((item) => {
+        const raw = (item as any).selected_variations;
+        let parsed = raw;
+        if (typeof raw === 'string') {
+          try {
+            parsed = JSON.parse(raw);
+          } catch {
+            parsed = raw;
+          }
+        }
+        return {
+          ...item,
+          selected_variations: parsed,
+        } as OrderItem;
+      });
+      setOrderItems(normalized);
     }
   };
 
@@ -325,6 +352,16 @@ export default function AdminOrders() {
                         <div className="flex-1">
                           <p className="font-medium text-sm">{item.product_name}</p>
                           <p className="text-xs text-muted-foreground">{item.weight_grams}g × {item.quantity}</p>
+                          {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                            <div className="mt-1 text-[11px] text-muted-foreground space-y-0.5">
+                              {Object.entries(item.selected_variations).map(([key, value]) => (
+                                <div key={key} className="flex gap-1">
+                                  <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                                  <span>{formatSelectedValue(value)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <p className="font-semibold text-primary mt-1">
                             {formatPrice(item.total_price)}
                           </p>
@@ -341,7 +378,7 @@ export default function AdminOrders() {
                     <span>{formatPrice(selectedOrder.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>GST (3%)</span>
+                    <span>GST ({gstRate}%)</span>
                     <span>{formatPrice(selectedOrder.gst_amount)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-lg pt-2 border-t">
@@ -350,12 +387,18 @@ export default function AdminOrders() {
                   </div>
                   {/* Print Invoice Button */}
                   <div className="pt-4">
-                    <Link to={`/account/orders/${selectedOrder.order_number}/invoice`} target="_blank">
-                      <Button variant="outline" className="w-full gap-2">
-                        <Printer className="w-4 h-4" />
-                        View / Print Invoice
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        const id = selectedOrder?.order_number || selectedOrder?.id;
+                        if (!id) return;
+                        navigate(`/admin/orders/${id}/invoice`);
+                      }}
+                    >
+                      <Printer className="w-4 h-4" />
+                      View / Print Invoice
+                    </Button>
                   </div>
                 </div>
 
