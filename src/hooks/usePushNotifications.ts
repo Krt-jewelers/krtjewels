@@ -117,11 +117,12 @@ export function usePushNotifications(userId: string | undefined) {
       });
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Could not enable notifications.';
       console.error('Error subscribing:', error);
       toast({
         title: 'Subscription failed',
-        description: error.message || 'Could not enable notifications.',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
