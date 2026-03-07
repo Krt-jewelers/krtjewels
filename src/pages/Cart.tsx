@@ -1,7 +1,7 @@
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
-import { useAuth } from '@/hooks/useAuth';
 import { formatPrice } from '@/lib/types';
+import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,28 +10,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CartPage() {
   const { items, subtotal, gstTotal, total, isLoading, updateQuantity, removeFromCart, itemCount } = useCart();
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return (
-      <Layout>
-        <div className="container mx-auto px-4 py-20 text-center">
-          <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="font-serif text-3xl mb-4">Your Cart is Empty</h1>
-          <p className="text-muted-foreground mb-8">Please sign in to view your cart</p>
-          <Link to="/auth">
-            <Button className="btn-premium">Sign In</Button>
-          </Link>
-        </div>
-      </Layout>
-    );
-  }
+  const { data: gstSettings } = useGstSettings();
+  const gstRate = gstSettings?.rate ?? 3;
+  const formatSelectedValue = (value: any) => {
+    if (value && typeof value === 'object' && 'text' in value && 'font' in value) {
+      return `${value.text} (${value.font})`;
+    }
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  };
 
   if (isLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-12">
-          <h1 className="font-serif text-3xl mb-8">Shopping Cart</h1>
+        <h1 className="font-serif text-3xl font-medium mb-8">Shopping Cart</h1>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {[1, 2, 3].map((i) => (
@@ -50,7 +43,7 @@ export default function CartPage() {
       <Layout>
         <div className="container mx-auto px-4 py-20 text-center">
           <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="font-serif text-3xl mb-4">Your Cart is Empty</h1>
+          <h1 className="font-serif text-3xl font-medium mb-4">Your Cart is Empty</h1>
           <p className="text-muted-foreground mb-8">Add some beautiful jewellery to get started</p>
           <Link to="/collections/necklaces">
             <Button className="btn-premium">Browse Collections</Button>
@@ -63,7 +56,7 @@ export default function CartPage() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12">
-        <h1 className="font-serif text-3xl mb-8">Shopping Cart ({itemCount} items)</h1>
+        <h1 className="font-serif text-3xl font-medium mb-8">Shopping Cart ({itemCount} items)</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -86,16 +79,27 @@ export default function CartPage() {
                   <div className="flex-1 p-4 flex flex-col justify-between">
                     <div>
                       <Link to={`/product/${item.product.slug}`} className="hover:text-primary">
-                        <h3 className="font-serif text-lg font-semibold line-clamp-1">
+                        <h3 className="font-serif text-lg font-medium line-clamp-1">
                           {item.product.name}
                         </h3>
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        {item.product.weight_grams}g • {formatPrice(item.product.calculated_price.gold_rate_applied)}/g
+                        {(item.product.weight_grams + (item.variation_weight_adjustment || 0)).toFixed(2)}g •{' '}
+                        {formatPrice(item.product.calculated_price.gold_rate_applied)}/g
                       </p>
+                      {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                        <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
+                          {Object.entries(item.selected_variations).map(([key, value]) => (
+                            <div key={key} className="flex gap-1">
+                              <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
+                              <span>{formatSelectedValue(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       {/* Quantity */}
                       <div className="flex items-center border rounded-lg">
                         <Button
@@ -118,8 +122,11 @@ export default function CartPage() {
                       </div>
 
                       {/* Price */}
-                      <p className="price-tag text-lg font-semibold text-primary">
-                        {formatPrice(item.product.calculated_price.total * item.quantity)}
+                      <p className="price-tag text-lg font-semibold text-primary sm:text-right">
+                        {formatPrice(
+                          (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
+                            item.quantity
+                        )}
                       </p>
                     </div>
                   </div>
@@ -142,7 +149,7 @@ export default function CartPage() {
           <div>
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle className="font-serif">Order Summary</CardTitle>
+                <CardTitle className="font-serif font-medium">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
@@ -150,7 +157,7 @@ export default function CartPage() {
                   <span>{formatPrice(subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">GST (3%)</span>
+                  <span className="text-muted-foreground">GST ({gstRate}%)</span>
                   <span>{formatPrice(gstTotal)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -158,7 +165,7 @@ export default function CartPage() {
                   <span className="text-green-600">Free</span>
                 </div>
                 <div className="divider-gold" />
-                <div className="flex justify-between text-lg font-semibold">
+                <div className="flex justify-between text-lg font-medium">
                   <span>Total</span>
                   <span className="price-tag text-primary text-xl">{formatPrice(total)}</span>
                 </div>
