@@ -157,7 +157,7 @@ export default function AdminCarouselCategories() {
   const seedCategoriesMutation = useMutation({
     mutationFn: async () => {
       // Check if categories already exist
-      const { data: existingData } = await supabase
+      const { data: existingData } = await (supabase as any)
         .from('carousel_categories')
         .select('id')
         .limit(1);
@@ -166,7 +166,7 @@ export default function AdminCarouselCategories() {
         throw new Error('Categories already exist. Delete them first or edit individually.');
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('carousel_categories')
         .insert(defaultCategories);
       if (error) throw error;
