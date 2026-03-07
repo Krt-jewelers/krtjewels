@@ -1,9 +1,9 @@
 import { Layout } from '@/components/layout/Layout';
 import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
-import { useGstSettings } from '@/hooks/useSiteSettings';
+
 import { formatPrice } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Calendar, Info, Zap, Lock, BarChart3, Search } from 'lucide-react';
+import { TrendingUp, Calendar, Zap, Lock, BarChart3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,6 @@ import { useState } from 'react';
 export default function GoldRatePage() {
   const { data: currentRate, isLoading } = useGoldRate();
   const { data: history } = useGoldRateHistory(30);
-  const { data: gstSettings } = useGstSettings();
-  const gstRate = gstSettings?.rate ?? 3;
   const [schemeInput, setSchemeInput] = useState('');
   const [searchedScheme, setSearchedScheme] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -52,7 +50,7 @@ export default function GoldRatePage() {
         <div className="container mx-auto px-4 relative">
           <div className="text-center">
             <span className="text-gold-light text-sm uppercase tracking-[0.3em]">Live Update</span>
-            <h1 className="font-serif text-4xl md:text-5xl text-ivory font-semibold mt-2 mb-4">
+            <h1 className="font-serif text-4xl md:text-5xl text-ivory font-medium mt-2 mb-4">
               Today's Gold Rate
             </h1>
             <p className="text-ivory/60 max-w-2xl mx-auto">
@@ -75,7 +73,7 @@ export default function GoldRatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-serif text-4xl text-gold-gradient font-bold">
+                <p className="font-serif text-4xl text-gold-gradient font-medium">
                   {isLoading ? '...' : formatPrice(currentRate?.rate_22k || 0)}
                 </p>
                 <p className="text-ivory/50 text-sm mt-1">
@@ -92,7 +90,7 @@ export default function GoldRatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-serif text-4xl text-gold-gradient font-bold">
+                <p className="font-serif text-4xl text-gold-gradient font-medium">
                   {isLoading ? '...' : formatPrice(currentRate?.rate_24k || 0)}
                 </p>
                 <p className="text-ivory/50 text-sm mt-1">
@@ -109,7 +107,7 @@ export default function GoldRatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-serif text-4xl text-ivory font-bold">
+                <p className="font-serif text-4xl text-ivory font-medium">
                   {isLoading ? '...' : currentRate?.silver_rate != null ? formatPrice(currentRate.silver_rate) : '—'}
                 </p>
                 <p className="text-ivory/50 text-sm mt-1">
@@ -126,7 +124,7 @@ export default function GoldRatePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="font-serif text-2xl font-bold text-ivory">
+                <p className="font-serif text-2xl font-medium text-ivory">
                   {currentRate ? new Date(currentRate.effective_date).toLocaleDateString('en-IN', {
                     weekday: 'long',
                     year: 'numeric',
@@ -200,69 +198,13 @@ export default function GoldRatePage() {
             </CardContent>
           </Card>
 
-          {/* Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif flex items-center gap-2">
-                  <Info className="w-5 h-5 text-primary" />
-                  How We Calculate Prices
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-muted-foreground">
-                <p>
-                  All our jewellery prices are calculated using a transparent formula:
-                </p>
-                <div className="bg-secondary/50 p-4 rounded-lg font-mono text-sm">
-                  <p><strong>Final Price =</strong></p>
-                  <p className="ml-4">(Gold Rate × Weight)</p>
-                  <p className="ml-4">+ Making Charges</p>
-                  <p className="ml-4">+ Stone/Diamond Cost</p>
-                  <p className="ml-4">+ {gstRate}% GST</p>
-                </div>
-                <p>
-                  When the gold rate changes, all product prices update automatically. 
-                  This ensures you always pay the fair market price.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-serif flex items-center gap-2">
-                  <Info className="w-5 h-5 text-primary" />
-                  Gold Purity Guide
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-muted-foreground">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
-                    <span className="font-medium text-foreground">24K Gold</span>
-                    <span>99.9% Pure</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
-                    <span className="font-medium text-foreground">22K Gold</span>
-                    <span>91.6% Pure</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
-                    <span className="font-medium text-foreground">18K Gold</span>
-                    <span>75% Pure</span>
-                  </div>
-                </div>
-                <p className="text-sm">
-                  22K gold is the most popular choice for jewellery as it offers 
-                  the perfect balance between purity and durability.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
 
           {/* Digital Gold Scheme Section */}
           <section className="py-12 bg-gradient-to-br from-gold/5 via-transparent to-primary/5 rounded-2xl border border-primary/20 mb-12">
             <div className="px-6 md:px-10">
               <div className="text-center mb-10">
                 <span className="text-primary text-sm uppercase tracking-[0.2em] font-semibold">New Investment Option</span>
-                <h2 className="font-serif text-3xl md:text-4xl text-foreground font-bold mt-2 mb-3">
+                <h2 className="font-serif text-3xl md:text-4xl text-foreground font-medium mt-2 mb-3">
                   Digital Gold Scheme
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">

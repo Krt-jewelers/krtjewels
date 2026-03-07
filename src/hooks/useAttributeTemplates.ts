@@ -25,12 +25,13 @@ export interface AttributeTemplateOption {
   display_order: number;
 }
 
+const fromTable = (table: string) => (supabase as unknown as { from: (t: string) => any }).from(table);
+
 export function useAttributeTemplates() {
   return useQuery({
     queryKey: ['attributeTemplates'],
     queryFn: async (): Promise<AttributeTemplate[]> => {
-      const { data, error } = await supabase
-        .from('attribute_templates')
+      const { data, error } = await fromTable('attribute_templates')
         .select('*')
         .order('display_order', { ascending: true });
       if (error) throw error;
@@ -44,8 +45,7 @@ export function useAttributeTemplateOptions(templateId?: string) {
     queryKey: ['attributeTemplateOptions', templateId],
     queryFn: async (): Promise<AttributeTemplateOption[]> => {
       if (!templateId) return [];
-      const { data, error } = await supabase
-        .from('attribute_template_options')
+      const { data, error } = await fromTable('attribute_template_options')
         .select('*')
         .eq('template_id', templateId)
         .order('display_order', { ascending: true });
@@ -60,8 +60,7 @@ export function useCreateAttributeTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<AttributeTemplate, 'id'>) => {
-      const { data, error } = await supabase
-        .from('attribute_templates')
+      const { data, error } = await fromTable('attribute_templates')
         .insert(payload)
         .select()
         .single();
@@ -79,8 +78,7 @@ export function useUpdateAttributeTemplate() {
   return useMutation({
     mutationFn: async (payload: Partial<AttributeTemplate> & { id: string }) => {
       const { id, ...updates } = payload;
-      const { data, error } = await supabase
-        .from('attribute_templates')
+      const { data, error } = await fromTable('attribute_templates')
         .update(updates)
         .eq('id', id)
         .select()
@@ -98,8 +96,7 @@ export function useDeleteAttributeTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('attribute_templates')
+      const { error } = await fromTable('attribute_templates')
         .delete()
         .eq('id', id);
       if (error) throw error;
@@ -114,8 +111,7 @@ export function useCreateAttributeOption() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Omit<AttributeTemplateOption, 'id'>) => {
-      const { data, error } = await supabase
-        .from('attribute_template_options')
+      const { data, error } = await fromTable('attribute_template_options')
         .insert(payload)
         .select()
         .single();
@@ -133,8 +129,7 @@ export function useUpdateAttributeOption() {
   return useMutation({
     mutationFn: async (payload: Partial<AttributeTemplateOption> & { id: string; template_id: string }) => {
       const { id, template_id, ...updates } = payload;
-      const { data, error } = await supabase
-        .from('attribute_template_options')
+      const { data, error } = await fromTable('attribute_template_options')
         .update(updates)
         .eq('id', id)
         .select()
@@ -152,8 +147,7 @@ export function useDeleteAttributeOption() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, template_id }: { id: string; template_id: string }) => {
-      const { error } = await supabase
-        .from('attribute_template_options')
+      const { error } = await fromTable('attribute_template_options')
         .delete()
         .eq('id', id);
       if (error) throw error;

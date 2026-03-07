@@ -28,6 +28,7 @@ interface Enquiry {
   phone: string;
   subject: string;
   message: string;
+  is_resolved: boolean;
   is_replied: boolean;
   created_at: string;
 }
@@ -65,7 +66,7 @@ export default function AdminEnquiries() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEnquiries(data || []);
+      setEnquiries((data || []) as unknown as Enquiry[]);
     } catch (error) {
       console.error('Error fetching enquiries:', error);
       toast({
@@ -82,7 +83,7 @@ export default function AdminEnquiries() {
     try {
       const { error } = await supabase
         .from('enquiries')
-        .update({ is_replied: true })
+        .update({ is_resolved: true } as any)
         .eq('id', id);
 
       if (error) throw error;
