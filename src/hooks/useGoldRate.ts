@@ -14,6 +14,11 @@ export function useGoldRate() {
         .limit(1)
         .maybeSingle();
 
+      if (process.env.NODE_ENV !== 'production') {
+        // eslint-disable-next-line no-console
+        console.debug('useGoldRate: supabase response', { data, error });
+      }
+
       if (error) {
         console.error('Error fetching gold rate:', error);
         throw error;
