@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import DebugPanel from '@/components/dev/DebugPanel';
+import NetworkWatcher from '@/components/dev/NetworkWatcher';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SplashScreen } from "@/components/layout/SplashScreen";
@@ -20,6 +23,7 @@ import AboutPage from "./pages/About";
 import ContactPage from "./pages/Contact";
 import TrackOrderPage from "./pages/TrackOrder";
 import CheckoutPage from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
 import ComparePage from "./pages/Compare";
 import ChitFundLookupPage from "./pages/ChitFundLookup";
 // Customer Account Pages
@@ -37,12 +41,20 @@ import AdminProducts from "./pages/admin/Products";
 import AdminProductForm from "./pages/admin/ProductForm";
 import AdminMakingCharges from "./pages/admin/MakingCharges";
 import AdminOrders from "./pages/admin/Orders";
+import AdminInvoices from "./pages/admin/Invoices";
 import AdminChitFunds from "./pages/admin/ChitFunds";
 import AdminUsers from "./pages/admin/Users";
 import AdminReviews from "./pages/admin/Reviews";
 import AdminInventory from "./pages/admin/InventoryAlerts";
 import AdminCoupons from "./pages/admin/Coupons";
 import AdminShippingSettings from "./pages/admin/ShippingSettings";
+import AdminTaxSettings from "./pages/admin/TaxSettings";
+import AdminEnquiries from "./pages/admin/Enquiries";
+import AdminMegamenu from "./pages/admin/Megamenu";
+import AdminMenuCategories from "./pages/admin/MenuCategories";
+import AdminCarouselCategories from "./pages/admin/CarouselCategories";
+import AdminAttributes from "./pages/admin/Attributes";
+import AdminAnalytics from "./pages/admin/Analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,7 +72,11 @@ const queryClient = new QueryClient({
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(false);
-  
+
+  // NOTE: `useRealtimeSync` uses `useQueryClient()` and must be called
+  // from inside `QueryClientProvider`. We'll render a small child
+  // component below that invokes the hook after the provider is mounted.
+
   useEffect(() => {
     // Check if this is first visit
     const hasVisited = localStorage.getItem('krt_visited');
@@ -76,6 +92,15 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
+    {import.meta.env.DEV && <NetworkWatcher />}
+      {/* Invoke realtime sync inside the provider */}
+      {(() => {
+        function RealtimeSyncInvoker() {
+          useRealtimeSync();
+          return null;
+        }
+        return <RealtimeSyncInvoker />;
+      })()}
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -88,10 +113,12 @@ const App = () => {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/collections/:category" element={<CollectionPage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/:category/:subcategory" element={<ShopPage />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/gold-rate" element={<GoldRatePage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/stores" element={<StoresPage />} />
             <Route path="/about" element={<AboutPage />} />
@@ -104,6 +131,7 @@ const App = () => {
             <Route path="/account" element={<AccountDashboard />} />
             <Route path="/account/orders" element={<AccountOrders />} />
             <Route path="/account/orders/:orderId/invoice" element={<OrderInvoice />} />
+            <Route path="/admin/orders/:orderId/invoice" element={<OrderInvoice />} />
             <Route path="/account/profile" element={<AccountProfile />} />
             <Route path="/account/addresses" element={<AccountAddresses />} />
             <Route path="/account/coupons" element={<AccountCoupons />} />
@@ -118,11 +146,19 @@ const App = () => {
             <Route path="/admin/inventory" element={<AdminInventory />} />
             <Route path="/admin/making-charges" element={<AdminMakingCharges />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/invoices" element={<AdminInvoices />} />
             <Route path="/admin/chit-funds" element={<AdminChitFunds />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/admin/coupons" element={<AdminCoupons />} />
             <Route path="/admin/shipping" element={<AdminShippingSettings />} />
+            <Route path="/admin/tax-settings" element={<AdminTaxSettings />} />
+            <Route path="/admin/enquiries" element={<AdminEnquiries />} />
+            <Route path="/admin/megamenu" element={<AdminMegamenu />} />
+            <Route path="/admin/menu-categories" element={<AdminMenuCategories />} />
+            <Route path="/admin/carousel-categories" element={<AdminCarouselCategories />} />
+            <Route path="/admin/attributes" element={<AdminAttributes />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
