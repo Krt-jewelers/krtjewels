@@ -34,6 +34,7 @@ export function CategoryCarousel() {
   const didDragRef = useRef(false);
   const dragStartXRef = useRef(0);
   const dragScrollLeftRef = useRef(0);
+  const dragStartYRef = useRef<number | null>(null);
 
   const { data: categories = defaultCategories } = useQuery({
     queryKey: ['carouselCategories'],
@@ -116,28 +117,43 @@ export function CategoryCarousel() {
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
     if (!scrollRef.current) return;
-    isDraggingRef.current = true;
+    isDraggingRef.current = false;
     didDragRef.current = false;
     dragStartXRef.current = event.clientX;
     dragScrollLeftRef.current = scrollRef.current.scrollLeft;
-    scrollRef.current.setPointerCapture(event.pointerId);
+    // Don't capture pointer - let vertical scroll work naturally
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
-    if (!isDraggingRef.current || !scrollRef.current) return;
+    if (!scrollRef.current) return;
     const deltaX = event.clientX - dragStartXRef.current;
-    if (Math.abs(deltaX) > 4) {
-      didDragRef.current = true;
+    const deltaY = event.clientY - (dragStartYRef.current ?? event.clientY);
+    
+    // If not yet dragging, determine direction
+    if (!isDraggingRef.current) {
+      if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal drag - capture and handle
+        isDraggingRef.current = true;
+        didDragRef.current = true;
+        scrollRef.current.setPointerCapture(event.pointerId);
+      } else if (Math.abs(deltaY) > 8) {
+        // Vertical scroll - don't interfere
+        return;
+      }
+      return;
     }
+    
+    event.preventDefault();
     scrollRef.current.scrollLeft = dragScrollLeftRef.current - deltaX;
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
-    if (!scrollRef.current) return;
+    if (isDraggingRef.current && scrollRef.current) {
+      try { scrollRef.current.releasePointerCapture(event.pointerId); } catch {}
+    }
     isDraggingRef.current = false;
-    scrollRef.current.releasePointerCapture(event.pointerId);
     setTimeout(() => {
       didDragRef.current = false;
     }, 0);
