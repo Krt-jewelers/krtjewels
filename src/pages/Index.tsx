@@ -13,22 +13,17 @@ import { InstagramFeed } from '@/components/home/InstagramFeed';
 import { MarqueeSection } from '@/components/home/MarqueeSection';
 import { RotatingCardsSection } from '@/components/home/RotatingCardsSection';
 import { GoogleReviewBadge } from '@/components/home/GoogleReviewBadge';
-import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 
 const Index = () => {
-  // Enable realtime sync for products, gold rates, and stock
-  useRealtimeSync();
   
   return (
     <Layout>
-      <CategoryCarousel />
       <HeroCarousel />
+      <CategoryCarousel />
       <MarqueeSection />
       <GoldRateWidget />
       <FeaturedProducts />
       <CollectionBanner />
-      <RotatingCardsSection />
-      <CategoryShowcase />
       <WhyChooseUs />
       <CustomerReviews />
       <BridalBanner />
