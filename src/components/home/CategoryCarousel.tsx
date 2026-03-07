@@ -33,8 +33,9 @@ export function CategoryCarousel() {
   const isDraggingRef = useRef(false);
   const didDragRef = useRef(false);
   const dragStartXRef = useRef(0);
+  const dragStartYRef = useRef(0);
   const dragScrollLeftRef = useRef(0);
-  const dragStartYRef = useRef<number | null>(null);
+  const dragAxisRef = useRef<'x' | 'y' | null>(null);
 
   const { data: categories = defaultCategories } = useQuery({
     queryKey: ['carouselCategories'],
@@ -117,43 +118,36 @@ export function CategoryCarousel() {
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
     if (!scrollRef.current) return;
-    isDraggingRef.current = false;
+    isDraggingRef.current = true;
     didDragRef.current = false;
     dragStartXRef.current = event.clientX;
     dragStartYRef.current = event.clientY;
     dragScrollLeftRef.current = scrollRef.current.scrollLeft;
+    dragAxisRef.current = null;
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
-    if (!scrollRef.current) return;
+    if (!isDraggingRef.current || !scrollRef.current) return;
     const deltaX = event.clientX - dragStartXRef.current;
-    const deltaY = event.clientY - (dragStartYRef.current ?? event.clientY);
-    
-    // If not yet dragging, determine direction
-    if (!isDraggingRef.current) {
-      if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Horizontal drag - capture and handle
-        isDraggingRef.current = true;
-        didDragRef.current = true;
-        scrollRef.current.setPointerCapture(event.pointerId);
-      } else if (Math.abs(deltaY) > 8) {
-        // Vertical scroll - don't interfere
-        return;
-      }
+    const deltaY = event.clientY - dragStartYRef.current;
+    if (!dragAxisRef.current && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
+      dragAxisRef.current = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
+    }
+    if (dragAxisRef.current === 'y') {
+      isDraggingRef.current = false;
       return;
     }
-    
-    event.preventDefault();
+    if (Math.abs(deltaX) > 4) {
+      didDragRef.current = true;
+    }
     scrollRef.current.scrollLeft = dragScrollLeftRef.current - deltaX;
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'touch') return;
-    if (isDraggingRef.current && scrollRef.current) {
-      try { scrollRef.current.releasePointerCapture(event.pointerId); } catch {}
-    }
     isDraggingRef.current = false;
+    dragAxisRef.current = null;
     setTimeout(() => {
       didDragRef.current = false;
     }, 0);
@@ -175,7 +169,7 @@ export function CategoryCarousel() {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
-            className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-start lg:gap-4 lg:overflow-x-auto cursor-grab active:cursor-grabbing touch-pan-x"
+            className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-start lg:gap-4 lg:overflow-x-auto cursor-grab active:cursor-grabbing touch-pan-y"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {categories.filter((category) => !category.is_view_all).map((category) => (
