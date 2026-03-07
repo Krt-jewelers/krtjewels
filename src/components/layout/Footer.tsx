@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, ExternalLink } from 'lucide-react';
 
 const collections = [
   { name: 'Necklaces', href: '/collections/necklaces' },
@@ -14,7 +14,6 @@ const quickLinks = [
   { name: 'About Us', href: '/about' },
   { name: 'Store Locator', href: '/stores' },
   { name: 'Gold Rate', href: '/gold-rate' },
-  { name: 'Digital Gold Scheme', href: '/chit-fund' },
   { name: 'Contact', href: '/contact' },
   { name: 'Track Order', href: '/track-order' },
 ];
@@ -28,6 +27,9 @@ const policies = [
 ];
 
 export function Footer() {
+  const mapLink =
+    'https://www.google.com/maps/place/1154,+Big+Bazaar+St,+Prakasam,+Town+Hall,+Coimbatore,+Tamil+Nadu+641001';
+
   return (
     <footer className="bg-rich-black text-ivory">
       {/* Main Footer */}
@@ -36,8 +38,8 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
-              <h2 className="font-serif text-2xl font-bold">
-                <span className="text-primary">KRT</span> Jewels
+              <h2 className="font-serif text-2xl font-medium">
+                <span className="text-primary">KRT</span> JEWELLERS
               </h2>
               <p className="text-xs text-ivory/50 tracking-widest uppercase mt-1">Trusted Since 30+ Years</p>
             </Link>
@@ -59,11 +61,12 @@ export function Footer() {
                 <span>1154, Big Bazaar St, Prakasam,<br />Town Hall, Coimbatore,<br />Tamil Nadu 641001</span>
               </div>
             </div>
+
           </div>
 
           {/* Collections */}
           <div>
-            <h4 className="font-serif text-lg font-semibold mb-6 text-gold-light">Collections</h4>
+            <h4 className="font-serif text-lg font-medium mb-6 text-gold-light">Collections</h4>
             <ul className="space-y-3">
               {collections.map((item) => (
                 <li key={item.name}>
@@ -80,7 +83,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-serif text-lg font-semibold mb-6 text-gold-light">Quick Links</h4>
+            <h4 className="font-serif text-lg font-medium mb-6 text-gold-light">Quick Links</h4>
             <ul className="space-y-3">
               {quickLinks.map((item) => (
                 <li key={item.name}>
@@ -97,7 +100,7 @@ export function Footer() {
 
           {/* Policies */}
           <div>
-            <h4 className="font-serif text-lg font-semibold mb-6 text-gold-light">Policies</h4>
+            <h4 className="font-serif text-lg font-medium mb-6 text-gold-light">Policies</h4>
             <ul className="space-y-3">
               {policies.map((item) => (
                 <li key={item.name}>
@@ -114,36 +117,69 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Large Brand Name - Blufacade Style */}
-      <div className="relative overflow-hidden py-8 border-t border-charcoal/50">
-        <div className="container mx-auto px-4">
-          {/* Desktop - Single Line */}
-          <h2 
-            className="hidden md:block font-serif text-[8rem] md:text-[12rem] lg:text-[16rem] font-bold leading-none text-center text-outline select-none"
-            style={{ 
-              letterSpacing: '-0.02em',
-            }}
-          >
-            KRT JEWELS
-          </h2>
-          {/* Mobile - Stacked */}
-          <div className="md:hidden flex flex-col items-center">
-            <h2 
-              className="font-serif text-[6rem] font-bold leading-none text-center text-outline select-none"
-              style={{ 
-                letterSpacing: '-0.02em',
-              }}
+      {/* Full-width Map */}
+      <div className="relative overflow-hidden border-t border-charcoal/50">
+        <div className="container mx-auto px-4 py-12">
+          <div className="rounded-3xl border border-primary/60 bg-gradient-to-br from-rich-black via-rich-black/80 to-black/90 p-2 md:p-3 shadow-[0_0_25px_rgba(212,175,55,0.25)]">
+            <a
+              href={mapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open KRT Jewellers location in Google Maps"
+              className="relative block w-full overflow-hidden rounded-2xl border border-gold-light/30 shadow-2xl group transition-all duration-500 hover:border-gold-light/80"
             >
-              KRT
-            </h2>
-            <h2 
-              className="font-serif text-[4rem] font-bold leading-none text-center text-outline select-none"
-              style={{ 
-                letterSpacing: '-0.02em',
-              }}
-            >
-              JEWELS
-            </h2>
+              <div className="w-full h-[260px] md:h-[320px] bg-[#14100e] relative flex items-center justify-center">
+                <svg
+                  className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                  viewBox="0 0 1000 400"
+                  preserveAspectRatio="xMidYMid slice"
+                  aria-hidden="true"
+                >
+                  <g stroke="#cca352" strokeWidth="1.5" fill="none" opacity="0.4">
+                    <path d="M-100,250 C200,240 500,280 1100,200" />
+                    <path d="M-100,150 C300,160 600,120 1100,180" />
+                    <path d="M300,-50 C320,100 280,300 350,450" />
+                    <path d="M700,-50 C680,150 720,250 650,450" />
+                    <path d="M480,-50 L520,450" strokeWidth="2.5" opacity="0.6" />
+                  </g>
+                  <g fill="#cca352" opacity="0.7" fontFamily="serif" fontSize="14" letterSpacing="2">
+                    <text x="540" y="320" transform="rotate(-5, 540, 320)">
+                      BIG BAZAAR ST
+                    </text>
+                    <text x="200" y="140" transform="rotate(3, 200, 140)">
+                      RAJA ST
+                    </text>
+                    <text x="730" y="170" transform="rotate(10, 730, 170)">
+                      TOWN HALL
+                    </text>
+                  </g>
+                  <circle cx="900" cy="80" r="30" stroke="#cca352" strokeWidth="1" fill="none" opacity="0.3" />
+                  <path d="M900,40 L900,120 M860,80 L940,80" stroke="#cca352" strokeWidth="1" opacity="0.3" />
+                </svg>
+
+                <div className="absolute z-10 flex flex-col items-center transform -translate-y-4 group-hover:-translate-y-6 transition-transform duration-500">
+                  <div className="w-12 h-12 bg-[#cca352] rotate-45 flex items-center justify-center shadow-[0_0_30px_rgba(204,163,82,0.4)] border-2 border-[#1a1512]">
+                    <span className="text-[#1a1512] font-serif font-bold text-lg -rotate-45 block tracking-tighter">
+                      KRT
+                    </span>
+                  </div>
+                  <div className="w-1 h-8 bg-gradient-to-b from-[#cca352] to-transparent mt-1"></div>
+                </div>
+              </div>
+
+              <div className="absolute inset-0 bg-[#1a1512]/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center">
+                <div className="flex flex-col items-center transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                  <div className="w-14 h-14 rounded-full border border-[#cca352] flex items-center justify-center mb-4 bg-[#cca352]/10 text-[#cca352]">
+                    <MapPin size={24} />
+                  </div>
+                  <span className="text-[#cca352] font-serif tracking-widest text-lg uppercase">Get Directions</span>
+                  <div className="flex items-center gap-2 mt-2 text-white/50 text-sm font-light">
+                    <span>Opens in Google Maps</span>
+                    <ExternalLink size={14} />
+                  </div>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </div>
@@ -153,7 +189,7 @@ export function Footer() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-ivory/40 text-sm">
-              © {new Date().getFullYear()} KRT Jewels. All rights reserved.
+              © {new Date().getFullYear()} KRT JEWELLERS. All rights reserved.
             </p>
             
             {/* Social Links */}
