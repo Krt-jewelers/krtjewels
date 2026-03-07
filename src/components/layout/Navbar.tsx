@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Search, Heart, ShoppingBag, User, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useGoldRate } from '@/hooks/useGoldRate';
-import { formatPrice, CATEGORY_NAMES, type ProductCategory } from '@/lib/types';
+import { useMegamenu, useMegamenuSettings } from '@/hooks/useMegamenu';
+import { buildFallbackMegamenu, getCategoryHref } from '@/lib/megamenuUtils';
 import { SearchOverlay } from './SearchOverlay';
 import { MobileSidebar } from './MobileSidebar';
 import { FlyingCart } from '@/components/cart/FlyingCart';
+import { MegamenuPanel } from './MegamenuPanel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,25 +22,32 @@ import {
 import { cn } from '@/lib/utils';
 
 // Category route slugs for the navigation bar
-const categoryNavItems: { name: string; href: string }[] = [
-  { name: 'RINGS', href: '/collections/rings' },
-  { name: 'EARRINGS', href: '/collections/earrings' },
-  { name: 'NECKLACES', href: '/collections/necklaces' },
-  { name: 'BANGLES & BRACELETS', href: '/collections/bangles' },
-  { name: 'ENGAGEMENT & WEDDING', href: '/collections/wedding-bridal' },
-  { name: 'COLLECTIONS', href: '/shop' },
-  { name: 'GIFTS', href: '/collections/diamond-jewellery' },
-];
+interface NavbarProps {
+  isCartOpen: boolean;
+  onCartOpenChange: (isOpen: boolean) => void;
+}
 
-export function Navbar() {
+export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const { isAuthenticated, user, signOut, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { data: goldRate } = useGoldRate();
+  const { data: megamenu } = useMegamenu();
+  const { data: megamenuSettings } = useMegamenuSettings();
   const navigate = useNavigate();
-  const location = useLocation();
+  const isMegamenuEnabled = megamenuSettings?.is_enabled !== false;
+  const megamenuData =
+    megamenu && megamenu.length > 0 ? megamenu : buildFallbackMegamenu();
+  const activeMegamenuCategory = megamenuData.find(
+    (category) => category.category_slug === hoveredCategory
+  );
+  const desktopCategories: typeof megamenuData = megamenuData.filter(
+    (category) =>
+      (category.megamenu_sections && category.megamenu_sections.length > 0) ||
+      (category.featured_products && category.featured_products.length > 0)
+  );
 
   return (
     <>
@@ -50,7 +58,7 @@ export function Navbar() {
             <div className="flex items-center justify-center gap-4 md:gap-8 h-8 text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-ivory/60 hidden sm:inline">Live</span>
+                <span className="text-ivory/60">Live</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-primary font-semibold">22K Gold:</span>
@@ -58,8 +66,12 @@ export function Navbar() {
               </div>
               <span className="text-ivory/30">|</span>
               <div className="flex items-center gap-1">
-                <span className="text-primary font-semibold">24K Gold:</span>
-                <span className="text-ivory font-bold">₹{goldRate.rate_24k.toLocaleString('en-IN')}/g</span>
+                <span className="text-primary font-semibold">Silver:</span>
+                <span className="text-ivory font-bold">
+                  {goldRate.silver_rate != null
+                    ? `₹${goldRate.silver_rate.toLocaleString('en-IN')}/g`
+                    : '—'}
+                </span>
               </div>
               <Link to="/gold-rate" className="text-primary hover:underline hidden sm:inline">
                 View History →
@@ -70,20 +82,20 @@ export function Navbar() {
       )}
 
       {/* ── DESKTOP HEADER ── */}
-      <header className={cn("hidden lg:block sticky z-40 bg-background border-b border-border", goldRate ? "top-8" : "top-0")}>
+      <header className={cn("hidden lg:block sticky z-40 bg-background border-b border-border select-none", goldRate ? "top-8" : "top-0")}>
         {/* Row 1: Phone | Logo (center) | Search + Icons */}
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Left – Phone */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-[200px]">
               <Phone className="w-4 h-4" />
-              <span>+91-900-100-1313</span>
+              <span>+91 98430 10986</span>
             </div>
 
             {/* Center – Logo */}
             <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-              <h1 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
-                KRT JEWELS
+              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.15em] text-foreground whitespace-nowrap">
+                KRT JEWELLERS
               </h1>
             </Link>
 
@@ -125,9 +137,6 @@ export function Navbar() {
                     <DropdownMenuItem onClick={() => navigate('/account/orders')}>
                       My Orders
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/chit-fund')}>
-                      Digital Gold Scheme
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate('/wishlist')}>
                       My Wishlist
                     </DropdownMenuItem>
@@ -156,7 +165,7 @@ export function Navbar() {
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 relative"
-                onClick={() => setIsCartOpen(true)}
+                onClick={() => onCartOpenChange(true)}
               >
                 <ShoppingBag className="w-5 h-5" />
                 {itemCount > 0 && (
@@ -169,10 +178,46 @@ export function Navbar() {
           </div>
         </div>
 
+        {/* Row 2: Category Navigation with Megamenu */}
+        {isMegamenuEnabled && desktopCategories.length > 0 && (
+          <div
+            className="border-t border-border bg-white relative"
+            onMouseLeave={() => setHoveredCategory(null)}
+          >
+            <div className="container mx-auto px-4">
+              <div className="flex items-center justify-center gap-8 h-12">
+                {desktopCategories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="relative group"
+                    onMouseEnter={() => setHoveredCategory(category.category_slug)}
+                  >
+                    <button
+                      onClick={() => navigate(getCategoryHref(category.category_slug))}
+                      className={cn(
+                        "text-xs font-semibold tracking-wider transition-colors h-12 flex items-center",
+                        hoveredCategory === category.category_slug
+                          ? 'text-primary'
+                          : 'text-gray-700 hover:text-primary'
+                      )}
+                    >
+                      {category.category_name}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Full-width megamenu panel */}
+            {isMegamenuEnabled && activeMegamenuCategory && (
+              <MegamenuPanel category={activeMegamenuCategory} />
+            )}
+          </div>
+        )}
       </header>
 
       {/* ── MOBILE HEADER ── */}
-      <header className={cn("lg:hidden sticky z-40 bg-background border-b border-border", goldRate ? "top-8" : "top-0")}>
+      <header className={cn("lg:hidden sticky z-40 bg-background border-b border-border select-none", goldRate ? "top-8" : "top-0")}>
         {/* Row 1: Hamburger + Logo (left) | Icons (right) */}
         <div className="flex items-center justify-between h-14 px-4">
           {/* Left – Menu + Logo */}
@@ -186,8 +231,8 @@ export function Navbar() {
               <Menu className="w-5 h-5" />
             </Button>
             <Link to="/">
-              <h1 className="font-serif text-lg font-bold tracking-[0.15em] text-foreground whitespace-nowrap">
-                KRT JEWELS
+              <h1 className="font-serif text-lg font-medium tracking-[0.15em] text-foreground whitespace-nowrap">
+                KRT JEWELLERS
               </h1>
             </Link>
           </div>
@@ -209,7 +254,7 @@ export function Navbar() {
               variant="ghost"
               size="icon"
               className="h-9 w-9 relative"
-              onClick={() => setIsCartOpen(true)}
+              onClick={() => onCartOpenChange(true)}
             >
               <ShoppingBag className="w-5 h-5" />
               {itemCount > 0 && (
@@ -230,7 +275,7 @@ export function Navbar() {
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Flying Cart Sidebar */}
-      <FlyingCart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <FlyingCart isOpen={isCartOpen} onClose={() => onCartOpenChange(false)} />
     </>
   );
 }
