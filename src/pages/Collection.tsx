@@ -67,6 +67,7 @@ export default function CollectionPage() {
     || (category ? defaultBannerMap[category] : null)
     || '/collection-banners/necklaces.jpg';
 
+  const { data: products, isLoading } = useProducts({
     category,
     metalType: metalFilter !== 'all' ? metalFilter as any : undefined,
     minWeight: weightRange[0] > 0 ? weightRange[0] : undefined,
