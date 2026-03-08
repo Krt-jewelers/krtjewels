@@ -37,8 +37,8 @@ serve(async (req) => {
     async function migrateImage(imageUrl: string, folder: string): Promise<string | null> {
       if (!imageUrl) return null;
       
-      // Skip if already on Cloudinary
-      if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary')) {
+      // Only skip if already on the NEW Cloudinary account
+      if (imageUrl.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) {
         return imageUrl;
       }
 
@@ -93,14 +93,14 @@ serve(async (req) => {
     for (const product of (products || [])) {
       if (!product.images || product.images.length === 0) { productsSkipped++; continue; }
       
-      const allCloudinary = product.images.every((img: string) => img.includes('cloudinary.com'));
-      if (allCloudinary) { productsSkipped++; continue; }
+      const allOnNewCloud = product.images.every((img: string) => img.includes(`res.cloudinary.com/${CLOUD_NAME}/`));
+      if (allOnNewCloud) { productsSkipped++; continue; }
 
       const newImages: string[] = [];
       let hasChanges = false;
 
       for (const img of product.images) {
-        if (img.includes('cloudinary.com')) {
+        if (img.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) {
           newImages.push(img);
         } else {
           const newUrl = await migrateImage(img, 'products');
@@ -128,7 +128,7 @@ serve(async (req) => {
     const carouselErrors: string[] = [];
 
     for (const item of (carousels || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { carouselSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { carouselSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'carousel');
       if (newUrl) {
         await supabase.from('carousel_categories').update({ image_url: newUrl }).eq('id', item.id);
@@ -146,7 +146,7 @@ serve(async (req) => {
     const variationErrors: string[] = [];
 
     for (const item of (variations || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { variationsSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { variationsSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'variations');
       if (newUrl) {
         await supabase.from('product_variations').update({ image_url: newUrl }).eq('id', item.id);
@@ -164,7 +164,7 @@ serve(async (req) => {
     const attrErrors: string[] = [];
 
     for (const item of (attrOptions || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { attrSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { attrSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'attributes');
       if (newUrl) {
         await supabase.from('attribute_template_options').update({ image_url: newUrl }).eq('id', item.id);
@@ -182,7 +182,7 @@ serve(async (req) => {
     const menuErrors: string[] = [];
 
     for (const item of (menuItems || [])) {
-      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) { menuSkipped++; continue; }
+      if (!item.product_image_url || item.product_image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { menuSkipped++; continue; }
       const newUrl = await migrateImage(item.product_image_url, 'megamenu');
       if (newUrl) {
         await supabase.from('megamenu_item_products').update({ product_image_url: newUrl }).eq('id', item.id);
@@ -200,7 +200,7 @@ serve(async (req) => {
     const featuredErrors: string[] = [];
 
     for (const item of (featuredItems || [])) {
-      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) { featuredSkipped++; continue; }
+      if (!item.product_image_url || item.product_image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { featuredSkipped++; continue; }
       const newUrl = await migrateImage(item.product_image_url, 'megamenu');
       if (newUrl) {
         await supabase.from('megamenu_featured_products').update({ product_image_url: newUrl }).eq('id', item.id);
