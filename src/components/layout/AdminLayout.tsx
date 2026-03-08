@@ -25,7 +25,8 @@ import {
   ListTree,
   Circle,
   Layers,
-  FileText
+  FileText,
+  ImageIcon
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
