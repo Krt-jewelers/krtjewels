@@ -1,9 +1,38 @@
+import imageCompression from 'browser-image-compression';
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+export async function compressImage(file: File): Promise<File> {
+  const options = {
+    maxSizeMB: 2,
+    maxWidthOrHeight: 2048,
+    useWebWorker: true,
+    preserveExif: true,
+    fileType: file.type as string,
+    initialQuality: 0.92,
+  };
+
+  const originalSizeMB = file.size / (1024 * 1024);
+
+  // Only compress if > 1MB
+  if (originalSizeMB <= 1) {
+    return file;
+  }
+
+  const compressed = await imageCompression(file, options);
+  console.log(
+    `Compressed ${file.name}: ${originalSizeMB.toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB`
+  );
+  return compressed;
+}
+
 export async function uploadToCloudinary(file: File, folder = 'products'): Promise<string> {
+  // Compress before upload
+  const compressed = await compressImage(file);
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', compressed);
   formData.append('folder', folder);
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-upload`, {
@@ -21,4 +50,33 @@ export async function uploadToCloudinary(file: File, folder = 'products'): Promi
   }
 
   return result.url;
+}
+
+export interface CloudinaryUsage {
+  storage_used_bytes: number;
+  storage_limit_bytes: number;
+  bandwidth_used_bytes: number;
+  bandwidth_limit_bytes: number;
+  transformations_used: number;
+  transformations_limit: number;
+  resources: number;
+  plan: string;
+}
+
+export async function getCloudinaryUsage(): Promise<CloudinaryUsage> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-usage`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Failed to fetch usage');
+  }
+
+  return result;
 }
