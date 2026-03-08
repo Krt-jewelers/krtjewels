@@ -108,7 +108,7 @@ export default function CollectionPage() {
       <section className="relative h-64 md:h-80 overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1920&h=400&fit=crop"
+            src={bannerImage}
             alt={categoryName}
             className="w-full h-full object-cover"
           />
