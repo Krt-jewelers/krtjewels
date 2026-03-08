@@ -61,6 +61,7 @@ export interface CloudinaryUsage {
   transformations_limit: number;
   resources: number;
   plan: string;
+  limited?: boolean;
 }
 
 export async function getCloudinaryUsage(): Promise<CloudinaryUsage> {

@@ -3,7 +3,7 @@ import { getCloudinaryUsage } from '@/lib/cloudinary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { HardDrive, Wifi, ImageIcon, Sparkles, RefreshCw } from 'lucide-react';
+import { HardDrive, Wifi, ImageIcon, Sparkles, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
