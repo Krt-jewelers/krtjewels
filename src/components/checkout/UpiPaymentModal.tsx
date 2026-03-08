@@ -211,7 +211,7 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
 
             <Button
               onClick={handleSubmit}
-              disabled={submitting || (!utr && !screenshotUrl)}
+              disabled={submitting || !utr}
               className="w-full gap-2"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
