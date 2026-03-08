@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCloudinaryUsage } from '@/lib/cloudinary';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCloudinaryUsage, listCloudinaryImages } from '@/lib/cloudinary';
 import { Card, CardContent } from '@/components/ui/card';
 import { HardDrive, Wifi, Zap, RefreshCw, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,12 +26,20 @@ function formatNumber(num: number): string {
 }
 
 export function FoundifMediaUsage() {
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ['foundif-media-usage'],
     queryFn: getCloudinaryUsage,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always refetch when invalidated
+    gcTime: 2 * 60 * 1000,
     retry: 1,
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['foundif-media-usage'] });
+    queryClient.invalidateQueries({ queryKey: ['cloudinary-images'] });
+  };
 
   if (error) {
     return (
@@ -100,7 +108,7 @@ export function FoundifMediaUsage() {
                 variant="ghost"
                 size="icon"
                 className="w-7 h-7"
-                onClick={() => refetch()}
+                onClick={handleRefresh}
                 disabled={isFetching}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
