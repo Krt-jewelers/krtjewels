@@ -113,44 +113,56 @@ export function ProductTabs({ product }: ProductTabsProps) {
       id: 'certificate',
       icon: ShieldCheck,
       title: 'Certificate & Authenticity',
-      content: (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { title: 'BIS Hallmark Certified', desc: 'Guaranteeing purity and authenticity of the gold.' },
-            { title: 'Certificate of Authenticity', desc: 'Includes weight, purity, and making charges.' },
-            { title: 'Detailed Invoice', desc: 'Itemized breakdown for gold, making charges, and taxes.' },
-            { title: 'Lifetime Exchange', desc: '100% gold value buyback and lifetime exchange.' },
-          ].map((item) => (
-            <div key={item.title} className="flex gap-3">
-              <ShieldCheck className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+      content: (() => {
+        const specs = (product.specifications || {}) as Record<string, any>;
+        const items = Array.isArray(specs.certificate_items) && specs.certificate_items.length > 0
+          ? specs.certificate_items
+          : [
+              { title: 'BIS Hallmark Certified', desc: 'Guaranteeing purity and authenticity of the gold.' },
+              { title: 'Certificate of Authenticity', desc: 'Includes weight, purity, and making charges.' },
+              { title: 'Detailed Invoice', desc: 'Itemized breakdown for gold, making charges, and taxes.' },
+              { title: 'Lifetime Exchange', desc: '100% gold value buyback and lifetime exchange.' },
+            ];
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {items.map((item: any) => (
+              <div key={item.title} className="flex gap-3">
+                <ShieldCheck className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ),
+            ))}
+          </div>
+        );
+      })(),
     },
     {
       id: 'manufacturer',
       icon: FileText,
       title: 'Manufacturer & Origin',
-      content: (
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            ['Manufacturer', 'KRT Jewels'],
-            ['Country', 'India'],
-            ['Imported By', 'N/A (Domestic)'],
-            ['Packer', 'KRT Jewels'],
-          ].map(([label, value]) => (
-            <div key={label} className="flex justify-between text-sm py-1.5 border-b border-border/50">
-              <span className="text-muted-foreground">{label}</span>
-              <span className="font-medium">{value}</span>
-            </div>
-          ))}
-        </div>
-      ),
+      content: (() => {
+        const specs = (product.specifications || {}) as Record<string, any>;
+        const items = Array.isArray(specs.manufacturer_info) && specs.manufacturer_info.length > 0
+          ? specs.manufacturer_info
+          : [
+              { label: 'Manufacturer', value: 'KRT Jewels' },
+              { label: 'Country', value: 'India' },
+              { label: 'Imported By', value: 'N/A (Domestic)' },
+              { label: 'Packer', value: 'KRT Jewels' },
+            ];
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            {items.map((item: any) => (
+              <div key={item.label} className="flex justify-between text-sm py-1.5 border-b border-border/50">
+                <span className="text-muted-foreground">{item.label}</span>
+                <span className="font-medium">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        );
+      })(),
     },
   ];
 
