@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+
 import { formatPrice } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, Upload, Loader2, QrCode, CheckCircle2, Smartphone } from 'lucide-react';
@@ -44,8 +44,6 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
   const [upiPhone, setUpiPhone] = useState('');
   const [upiProvider, setUpiProvider] = useState('');
   const [utr, setUtr] = useState('');
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -75,7 +73,7 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
     if (open) {
       setStep('qr');
       setUtr('');
-      setScreenshotUrl(null);
+      
       setUpiPhone('');
       setUpiProvider('');
     }
@@ -92,28 +90,15 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadToCloudinary(file, 'payment-proofs');
-      setScreenshotUrl(url);
-    } catch {
-      toast({ title: 'Upload failed', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async () => {
-    if (!utr && !screenshotUrl) {
-      toast({ title: 'Please enter UTR number or upload screenshot', variant: 'destructive' });
+    if (!utr) {
+      toast({ title: 'Please enter UTR / Transaction Reference Number', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
     try {
-      await onSubmit({ utr, screenshotUrl, upiPhone, upiProvider });
+      await onSubmit({ utr, screenshotUrl: null, upiPhone, upiProvider });
     } finally {
       setSubmitting(false);
     }
@@ -210,7 +195,7 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
             <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/20 dark:border-green-800">
               <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" />
               <p className="text-sm font-medium">Now verify your payment</p>
-              <p className="text-xs text-muted-foreground">Enter your UTR number or upload payment screenshot</p>
+              <p className="text-xs text-muted-foreground">Enter your UTR / Transaction Reference Number to verify</p>
             </div>
 
             <div className="space-y-2">
@@ -223,26 +208,10 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Payment Screenshot (optional)</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadScreenshot}
-                  disabled={uploading}
-                  className="flex-1"
-                />
-                {uploading && <Loader2 className="w-5 h-5 animate-spin" />}
-              </div>
-              {screenshotUrl && (
-                <img src={screenshotUrl} alt="Screenshot" className="w-32 h-auto rounded-lg border mt-2" />
-              )}
-            </div>
 
             <Button
               onClick={handleSubmit}
-              disabled={submitting || (!utr && !screenshotUrl)}
+              disabled={submitting || !utr}
               className="w-full gap-2"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
