@@ -109,43 +109,6 @@ export function CategoryCarousel() {
     }, 5000);
   };
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'touch') return;
-    if (!scrollRef.current) return;
-    isDraggingRef.current = true;
-    didDragRef.current = false;
-    dragStartXRef.current = event.clientX;
-    dragStartYRef.current = event.clientY;
-    dragScrollLeftRef.current = scrollRef.current.scrollLeft;
-    dragAxisRef.current = null;
-  };
-
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'touch') return;
-    if (!isDraggingRef.current || !scrollRef.current) return;
-    const deltaX = event.clientX - dragStartXRef.current;
-    const deltaY = event.clientY - dragStartYRef.current;
-    if (!dragAxisRef.current && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
-      dragAxisRef.current = Math.abs(deltaX) >= Math.abs(deltaY) ? 'x' : 'y';
-    }
-    if (dragAxisRef.current === 'y') {
-      isDraggingRef.current = false;
-      return;
-    }
-    if (Math.abs(deltaX) > 4) {
-      didDragRef.current = true;
-    }
-    scrollRef.current.scrollLeft = dragScrollLeftRef.current - deltaX;
-  };
-
-  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== 'touch') return;
-    isDraggingRef.current = false;
-    dragAxisRef.current = null;
-    setTimeout(() => {
-      didDragRef.current = false;
-    }, 0);
-  };
 
   return (
     <section className="py-4 md:py-6 bg-background border-b">
