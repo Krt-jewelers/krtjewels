@@ -93,8 +93,8 @@ serve(async (req) => {
     for (const product of (products || [])) {
       if (!product.images || product.images.length === 0) { productsSkipped++; continue; }
       
-      const allCloudinary = product.images.every((img: string) => img.includes('cloudinary.com'));
-      if (allCloudinary) { productsSkipped++; continue; }
+      const allOnNewCloud = product.images.every((img: string) => img.includes(`res.cloudinary.com/${CLOUD_NAME}/`));
+      if (allOnNewCloud) { productsSkipped++; continue; }
 
       const newImages: string[] = [];
       let hasChanges = false;
