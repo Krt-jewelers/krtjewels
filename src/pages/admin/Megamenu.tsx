@@ -77,6 +77,8 @@ interface MegamenuCategory {
   }>;
 }
 
+const supabase = supabaseClient as unknown as { from: (table: string) => any };
+
 export default function AdminMegamenu() {
   const { toast } = useToast();
   const queryClient = useQueryClient();

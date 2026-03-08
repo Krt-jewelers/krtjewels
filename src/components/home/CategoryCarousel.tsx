@@ -131,11 +131,6 @@ export function CategoryCarousel() {
                 to={`/collections/${category.slug}`}
                 className="flex-shrink-0 lg:flex-shrink group snap-start"
                 onClick={(event) => {
-                  if (didDragRef.current) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    return;
-                  }
                   handleInteractionStart();
                 }}
               >
