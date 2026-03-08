@@ -168,6 +168,7 @@ const App = () => {
             <Route path="/admin/media" element={<AdminMedia />} />
             <Route path="/admin/payment-settings" element={<AdminPaymentSettings />} />
             <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
+            <Route path="/admin/hero-slides" element={<AdminHeroSlides />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
