@@ -110,6 +110,10 @@ export default function AdminHeroSlides() {
           .eq('id', editing.id);
         if (error) throw error;
         toast({ title: 'Slide updated' });
+      } else if (slides.length >= 5) {
+        toast({ title: 'Maximum 5 slides allowed', variant: 'destructive' });
+        setSaving(false);
+        return;
       } else {
         const { error } = await supabase
           .from('hero_slides')
