@@ -37,6 +37,16 @@ interface MenuSubcategory {
   slug: string;
 }
 
+interface CertificateItem {
+  title: string;
+  desc: string;
+}
+
+interface ManufacturerItem {
+  label: string;
+  value: string;
+}
+
 interface ProductFormData {
   name: string;
   slug: string;
@@ -57,7 +67,23 @@ interface ProductFormData {
   is_new_arrival: boolean;
   is_bridal: boolean;
   is_active: boolean;
+  certificate_items: CertificateItem[];
+  manufacturer_info: ManufacturerItem[];
 }
+
+const defaultCertificateItems: CertificateItem[] = [
+  { title: 'BIS Hallmark Certified', desc: 'Guaranteeing purity and authenticity of the gold.' },
+  { title: 'Certificate of Authenticity', desc: 'Includes weight, purity, and making charges.' },
+  { title: 'Detailed Invoice', desc: 'Itemized breakdown for gold, making charges, and taxes.' },
+  { title: 'Lifetime Exchange', desc: '100% gold value buyback and lifetime exchange.' },
+];
+
+const defaultManufacturerInfo: ManufacturerItem[] = [
+  { label: 'Manufacturer', value: 'KRT Jewels' },
+  { label: 'Country', value: 'India' },
+  { label: 'Imported By', value: 'N/A (Domestic)' },
+  { label: 'Packer', value: 'KRT Jewels' },
+];
 
 const defaultFormData: ProductFormData = {
   name: '',
@@ -79,6 +105,8 @@ const defaultFormData: ProductFormData = {
   is_new_arrival: false,
   is_bridal: false,
   is_active: true,
+  certificate_items: defaultCertificateItems,
+  manufacturer_info: defaultManufacturerInfo,
 };
 
 export default function AdminProductForm() {
