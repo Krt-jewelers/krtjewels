@@ -237,6 +237,10 @@ export default function AdminProductForm() {
         is_new_arrival: formData.is_new_arrival,
         is_bridal: formData.is_bridal,
         is_active: formData.is_active,
+        specifications: {
+          certificate_items: formData.certificate_items,
+          manufacturer_info: formData.manufacturer_info,
+        },
       };
 
       if (isEditing) {
