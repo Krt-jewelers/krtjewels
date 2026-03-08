@@ -96,13 +96,28 @@ export default function AdminMedia() {
     queryKey: ['cloudinary-images', selectedFolder],
     queryFn: async () => {
       const result = await listCloudinaryImages(folderParam);
-      setAllImages(result.resources);
-      setNextCursor(result.next_cursor);
-      setTotalCount(result.total_count);
       return result;
     },
     staleTime: 2 * 60 * 1000,
   });
+
+  // Sync query result to state
+  const { data: queryData } = useQuery({
+    queryKey: ['cloudinary-images', selectedFolder],
+    queryFn: async () => {
+      const result = await listCloudinaryImages(folderParam);
+      return result;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (queryData) {
+      setAllImages(queryData.resources);
+      setNextCursor(queryData.next_cursor);
+      setTotalCount(queryData.total_count);
+    }
+  }, [queryData]);
 
   // Reset when folder changes
   useEffect(() => {
