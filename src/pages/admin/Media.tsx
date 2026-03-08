@@ -46,7 +46,7 @@ function formatBytes(bytes: number): string {
 }
 
 const FOLDERS = [
-  { value: '', label: 'All Images' },
+  { value: 'all', label: 'All Images' },
   { value: 'products', label: 'Products' },
   { value: 'variations', label: 'Variations' },
   { value: 'carousel', label: 'Carousel' },
@@ -55,7 +55,7 @@ const FOLDERS = [
 ];
 
 export default function AdminMedia() {
-  const [selectedFolder, setSelectedFolder] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<CloudinaryImage | null>(null);
   const { toast } = useToast();
@@ -63,7 +63,7 @@ export default function AdminMedia() {
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: () => listCloudinaryImages(selectedFolder),
+    queryFn: () => listCloudinaryImages(selectedFolder === 'all' ? '' : selectedFolder),
     staleTime: 2 * 60 * 1000,
   });
 
