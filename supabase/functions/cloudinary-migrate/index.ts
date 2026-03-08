@@ -128,7 +128,7 @@ serve(async (req) => {
     const carouselErrors: string[] = [];
 
     for (const item of (carousels || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { carouselSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { carouselSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'carousel');
       if (newUrl) {
         await supabase.from('carousel_categories').update({ image_url: newUrl }).eq('id', item.id);
