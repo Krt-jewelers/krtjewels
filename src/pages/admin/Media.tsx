@@ -92,25 +92,13 @@ export default function AdminMedia() {
   const folderParam = selectedFolder === 'all' ? '' : selectedFolder;
 
   // Initial load
-  const { isLoading, error, isFetching, refetch } = useQuery({
+  const { data: queryData, isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: async () => {
-      const result = await listCloudinaryImages(folderParam);
-      return result;
-    },
+    queryFn: () => listCloudinaryImages(folderParam),
     staleTime: 2 * 60 * 1000,
   });
 
   // Sync query result to state
-  const { data: queryData } = useQuery({
-    queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: async () => {
-      const result = await listCloudinaryImages(folderParam);
-      return result;
-    },
-    staleTime: 2 * 60 * 1000,
-  });
-
   useEffect(() => {
     if (queryData) {
       setAllImages(queryData.resources);
