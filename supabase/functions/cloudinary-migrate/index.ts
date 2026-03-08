@@ -6,14 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const DEFAULT_CLOUD_NAME = 'dy6mjjky3';
+const DEFAULT_API_KEY = '144956732892888';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const CLOUD_NAME = 'dy6mjjky3';
-    const API_KEY = '144956732892888';
+    const CLOUD_NAME = Deno.env.get('CLOUDINARY_CLOUD_NAME') || DEFAULT_CLOUD_NAME;
+    const API_KEY = Deno.env.get('CLOUDINARY_API_KEY') || DEFAULT_API_KEY;
     const API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -25,15 +28,23 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const auth = btoa(`${API_KEY}:${API_SECRET}`);
 
-    const results: { table: string; field: string; migrated: number; errors: string[] }[] = [];
+    // Track already-migrated URLs to prevent duplicates
+    const migratedUrlMap = new Map<string, string>(); // original -> cloudinary url
 
-    // Helper to upload image to Cloudinary
+    const results: { table: string; field: string; migrated: number; skipped: number; total: number; errors: string[] }[] = [];
+
+    // Helper to upload image to Cloudinary with dedup
     async function migrateImage(imageUrl: string, folder: string): Promise<string | null> {
       if (!imageUrl) return null;
       
       // Skip if already on Cloudinary
       if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary')) {
         return imageUrl;
+      }
+
+      // Dedup: if we already migrated this exact URL, reuse the result
+      if (migratedUrlMap.has(imageUrl)) {
+        return migratedUrlMap.get(imageUrl)!;
       }
 
       try {
@@ -63,21 +74,28 @@ serve(async (req) => {
           return null;
         }
 
-        return result.secure_url;
+        const newUrl = result.secure_url;
+        migratedUrlMap.set(imageUrl, newUrl);
+        return newUrl;
       } catch (e) {
         console.error('Migration error:', e);
         return null;
       }
     }
 
-    // 1. Migrate product images
+    // ── 1. Products ──
     const { data: products } = await supabase.from('products').select('id, images');
     let productsMigrated = 0;
+    let productsSkipped = 0;
     const productErrors: string[] = [];
+    const productsTotal = (products || []).length;
 
     for (const product of (products || [])) {
-      if (!product.images || product.images.length === 0) continue;
+      if (!product.images || product.images.length === 0) { productsSkipped++; continue; }
       
+      const allCloudinary = product.images.every((img: string) => img.includes('cloudinary.com'));
+      if (allCloudinary) { productsSkipped++; continue; }
+
       const newImages: string[] = [];
       let hasChanges = false;
 
@@ -101,16 +119,16 @@ serve(async (req) => {
         productsMigrated++;
       }
     }
-    results.push({ table: 'products', field: 'images', migrated: productsMigrated, errors: productErrors });
+    results.push({ table: 'products', field: 'images', migrated: productsMigrated, skipped: productsSkipped, total: productsTotal, errors: productErrors });
 
-    // 2. Migrate carousel_categories images
+    // ── 2. Carousel ──
     const { data: carousels } = await supabase.from('carousel_categories').select('id, image_url');
     let carouselMigrated = 0;
+    let carouselSkipped = 0;
     const carouselErrors: string[] = [];
 
     for (const item of (carousels || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) continue;
-      
+      if (!item.image_url || item.image_url.includes('cloudinary.com')) { carouselSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'carousel');
       if (newUrl) {
         await supabase.from('carousel_categories').update({ image_url: newUrl }).eq('id', item.id);
@@ -119,16 +137,16 @@ serve(async (req) => {
         carouselErrors.push(`Carousel ${item.id}: Failed`);
       }
     }
-    results.push({ table: 'carousel_categories', field: 'image_url', migrated: carouselMigrated, errors: carouselErrors });
+    results.push({ table: 'carousel_categories', field: 'image_url', migrated: carouselMigrated, skipped: carouselSkipped, total: (carousels || []).length, errors: carouselErrors });
 
-    // 3. Migrate product_variations images
+    // ── 3. Variations ──
     const { data: variations } = await supabase.from('product_variations').select('id, image_url');
     let variationsMigrated = 0;
+    let variationsSkipped = 0;
     const variationErrors: string[] = [];
 
     for (const item of (variations || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) continue;
-      
+      if (!item.image_url || item.image_url.includes('cloudinary.com')) { variationsSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'variations');
       if (newUrl) {
         await supabase.from('product_variations').update({ image_url: newUrl }).eq('id', item.id);
@@ -137,16 +155,16 @@ serve(async (req) => {
         variationErrors.push(`Variation ${item.id}: Failed`);
       }
     }
-    results.push({ table: 'product_variations', field: 'image_url', migrated: variationsMigrated, errors: variationErrors });
+    results.push({ table: 'product_variations', field: 'image_url', migrated: variationsMigrated, skipped: variationsSkipped, total: (variations || []).length, errors: variationErrors });
 
-    // 4. Migrate attribute_template_options images
+    // ── 4. Attributes ──
     const { data: attrOptions } = await supabase.from('attribute_template_options').select('id, image_url');
     let attrMigrated = 0;
+    let attrSkipped = 0;
     const attrErrors: string[] = [];
 
     for (const item of (attrOptions || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) continue;
-      
+      if (!item.image_url || item.image_url.includes('cloudinary.com')) { attrSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'attributes');
       if (newUrl) {
         await supabase.from('attribute_template_options').update({ image_url: newUrl }).eq('id', item.id);
@@ -155,16 +173,16 @@ serve(async (req) => {
         attrErrors.push(`Attribute ${item.id}: Failed`);
       }
     }
-    results.push({ table: 'attribute_template_options', field: 'image_url', migrated: attrMigrated, errors: attrErrors });
+    results.push({ table: 'attribute_template_options', field: 'image_url', migrated: attrMigrated, skipped: attrSkipped, total: (attrOptions || []).length, errors: attrErrors });
 
-    // 5. Migrate megamenu images
+    // ── 5. Megamenu items ──
     const { data: menuItems } = await supabase.from('megamenu_item_products').select('id, product_image_url');
     let menuMigrated = 0;
+    let menuSkipped = 0;
     const menuErrors: string[] = [];
 
     for (const item of (menuItems || [])) {
-      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) continue;
-      
+      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) { menuSkipped++; continue; }
       const newUrl = await migrateImage(item.product_image_url, 'megamenu');
       if (newUrl) {
         await supabase.from('megamenu_item_products').update({ product_image_url: newUrl }).eq('id', item.id);
@@ -173,16 +191,16 @@ serve(async (req) => {
         menuErrors.push(`Menu ${item.id}: Failed`);
       }
     }
-    results.push({ table: 'megamenu_item_products', field: 'product_image_url', migrated: menuMigrated, errors: menuErrors });
+    results.push({ table: 'megamenu_item_products', field: 'product_image_url', migrated: menuMigrated, skipped: menuSkipped, total: (menuItems || []).length, errors: menuErrors });
 
-    // 6. Migrate megamenu_featured_products images
+    // ── 6. Featured products ──
     const { data: featuredItems } = await supabase.from('megamenu_featured_products').select('id, product_image_url');
     let featuredMigrated = 0;
+    let featuredSkipped = 0;
     const featuredErrors: string[] = [];
 
     for (const item of (featuredItems || [])) {
-      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) continue;
-      
+      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) { featuredSkipped++; continue; }
       const newUrl = await migrateImage(item.product_image_url, 'megamenu');
       if (newUrl) {
         await supabase.from('megamenu_featured_products').update({ product_image_url: newUrl }).eq('id', item.id);
@@ -191,14 +209,23 @@ serve(async (req) => {
         featuredErrors.push(`Featured ${item.id}: Failed`);
       }
     }
-    results.push({ table: 'megamenu_featured_products', field: 'product_image_url', migrated: featuredMigrated, errors: featuredErrors });
+    results.push({ table: 'megamenu_featured_products', field: 'product_image_url', migrated: featuredMigrated, skipped: featuredSkipped, total: (featuredItems || []).length, errors: featuredErrors });
+
+    const totalItems = results.reduce((s, r) => s + r.total, 0);
+    const totalMigrated = results.reduce((s, r) => s + r.migrated, 0);
+    const totalSkipped = results.reduce((s, r) => s + r.skipped, 0);
+    const totalErrors = results.reduce((s, r) => s + r.errors.length, 0);
+    const deduplicated = migratedUrlMap.size;
 
     return new Response(JSON.stringify({ 
       success: true, 
       results,
       summary: {
-        total_migrated: results.reduce((sum, r) => sum + r.migrated, 0),
-        total_errors: results.reduce((sum, r) => sum + r.errors.length, 0),
+        total_items: totalItems,
+        total_migrated: totalMigrated,
+        total_skipped: totalSkipped,
+        total_errors: totalErrors,
+        deduplicated_uploads: deduplicated,
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
