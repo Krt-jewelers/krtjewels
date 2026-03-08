@@ -156,6 +156,7 @@ export default function AdminProductForm() {
 
       if (error) throw error;
 
+      const specs = (data.specifications || {}) as Record<string, any>;
       setFormData({
         name: data.name,
         slug: data.slug,
@@ -176,6 +177,12 @@ export default function AdminProductForm() {
         is_new_arrival: data.is_new_arrival || false,
         is_bridal: data.is_bridal || false,
         is_active: data.is_active ?? true,
+        certificate_items: Array.isArray(specs.certificate_items) && specs.certificate_items.length > 0
+          ? specs.certificate_items
+          : defaultCertificateItems,
+        manufacturer_info: Array.isArray(specs.manufacturer_info) && specs.manufacturer_info.length > 0
+          ? specs.manufacturer_info
+          : defaultManufacturerInfo,
       });
 
     } catch (error: any) {
