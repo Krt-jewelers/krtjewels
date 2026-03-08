@@ -100,7 +100,7 @@ serve(async (req) => {
       let hasChanges = false;
 
       for (const img of product.images) {
-        if (img.includes('cloudinary.com')) {
+        if (img.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) {
           newImages.push(img);
         } else {
           const newUrl = await migrateImage(img, 'products');
