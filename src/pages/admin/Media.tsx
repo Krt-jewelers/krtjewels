@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { FoundifMediaUsage } from '@/components/admin/FoundifMediaUsage';
@@ -22,7 +22,8 @@ import {
   CheckSquare,
   Square,
   X,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -81,14 +82,76 @@ export default function AdminMedia() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState<CloudinaryImage | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<number | null>(null);
+  const [allImages, setAllImages] = useState<CloudinaryImage[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const folderParam = selectedFolder === 'all' ? '' : selectedFolder;
+
+  // Initial load
+  const { isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: () => listCloudinaryImages(selectedFolder === 'all' ? '' : selectedFolder),
+    queryFn: async () => {
+      const result = await listCloudinaryImages(folderParam);
+      setAllImages(result.resources);
+      setNextCursor(result.next_cursor);
+      setTotalCount(result.total_count);
+      return result;
+    },
     staleTime: 2 * 60 * 1000,
   });
+
+  // Reset when folder changes
+  useEffect(() => {
+    setAllImages([]);
+    setNextCursor(null);
+    setTotalCount(0);
+  }, [selectedFolder]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const result = await listCloudinaryImages(folderParam, nextCursor);
+      setAllImages(prev => [...prev, ...result.resources]);
+      setNextCursor(result.next_cursor);
+      setTotalCount(result.total_count);
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to load more images', variant: 'destructive' });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, isLoadingMore, folderParam, toast]);
+
+  const loadAll = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    let cursor: string | null = nextCursor;
+    let accumulated: CloudinaryImage[] = [];
+    try {
+      while (cursor) {
+        const result = await listCloudinaryImages(folderParam, cursor);
+        accumulated = [...accumulated, ...result.resources];
+        cursor = result.next_cursor;
+        setTotalCount(result.total_count);
+        // Small delay to avoid rate limiting
+        if (cursor) await new Promise(r => setTimeout(r, 300));
+      }
+      setAllImages(prev => [...prev, ...accumulated]);
+      setNextCursor(null);
+    } catch (e) {
+      // Save what we got so far
+      if (accumulated.length > 0) {
+        setAllImages(prev => [...prev, ...accumulated]);
+      }
+      toast({ title: 'Error', description: 'Failed to load all images', variant: 'destructive' });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, isLoadingMore, folderParam, toast]);
 
   const migrateMutation = useMutation({
     mutationFn: async () => {
