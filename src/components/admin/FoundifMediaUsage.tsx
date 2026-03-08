@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCloudinaryUsage } from '@/lib/cloudinary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { HardDrive, Wifi, ImageIcon, Sparkles, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,38 +38,40 @@ export function FoundifMediaUsage() {
     );
   }
 
-  const metrics = data ? [
-    {
-      label: 'Storage',
-      used: data.storage_used_bytes,
-      limit: data.storage_limit_bytes,
-      format: formatBytes,
-      icon: HardDrive,
-      iconClass: 'text-primary',
-      iconBgClass: 'bg-primary/10',
-      progressClass: 'bg-primary',
-    },
-    {
-      label: 'Bandwidth',
-      used: data.bandwidth_used_bytes,
-      limit: data.bandwidth_limit_bytes,
-      format: formatBytes,
-      icon: Wifi,
-      iconClass: 'text-accent-foreground',
-      iconBgClass: 'bg-accent/30',
-      progressClass: 'bg-accent',
-    },
-    {
-      label: 'Transformations',
-      used: data.transformations_used,
-      limit: data.transformations_limit,
-      format: formatNumber,
-      icon: Sparkles,
-      iconClass: 'text-foreground',
-      iconBgClass: 'bg-secondary',
-      progressClass: 'bg-foreground/70',
-    },
-  ] : [];
+  const metrics = data
+    ? [
+        {
+          label: 'Storage',
+          used: data.storage_used_bytes,
+          limit: data.storage_limit_bytes,
+          format: formatBytes,
+          icon: HardDrive,
+          iconClass: 'text-primary',
+          iconBgClass: 'bg-primary/10',
+          progressClass: 'bg-primary',
+        },
+        {
+          label: 'Bandwidth',
+          used: data.bandwidth_used_bytes,
+          limit: data.bandwidth_limit_bytes,
+          format: formatBytes,
+          icon: Wifi,
+          iconClass: 'text-accent-foreground',
+          iconBgClass: 'bg-accent/30',
+          progressClass: 'bg-accent',
+        },
+        {
+          label: 'Transformations',
+          used: data.transformations_used,
+          limit: data.transformations_limit,
+          format: formatNumber,
+          icon: Sparkles,
+          iconClass: 'text-foreground',
+          iconBgClass: 'bg-secondary',
+          progressClass: 'bg-foreground/70',
+        },
+      ]
+    : [];
 
   return (
     <Card className="border-2 border-primary/10 bg-gradient-to-br from-background to-secondary/20">
@@ -78,7 +79,7 @@ export function FoundifMediaUsage() {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ImageIcon className="w-5 h-5 text-primary" />
-            Foundif Media
+            Media Usage
           </CardTitle>
           <div className="flex items-center gap-2">
             {data && (
@@ -116,21 +117,21 @@ export function FoundifMediaUsage() {
               return (
                 <div key={metric.label} className="space-y-2 p-3 rounded-lg bg-secondary/30">
                   <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-md ${metric.bgColor}`}>
-                      <Icon className={`w-3.5 h-3.5 ${metric.color}`} />
+                    <div className={`p-1.5 rounded-md ${metric.iconBgClass}`}>
+                      <Icon className={`w-3.5 h-3.5 ${metric.iconClass}`} />
                     </div>
                     <span className="text-sm font-medium">{metric.label}</span>
                   </div>
                   <div className="space-y-1">
                     <div className="h-2 rounded-full bg-secondary overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all ${metric.progressColor}`}
+                        className={`h-full rounded-full transition-all ${metric.progressClass}`}
                         style={{ width: `${Math.min(percentage, 100)}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{metric.format(metric.used)}</span>
-                      <span>{metric.limit > 0 ? metric.format(metric.limit) : '∞'}</span>
+                      <span>{metric.limit > 0 ? metric.format(metric.limit) : 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -140,10 +141,12 @@ export function FoundifMediaUsage() {
         )}
 
         {data?.limited && (
-          <Alert className="border-amber-200 bg-amber-50">
-            <Info className="w-4 h-4 text-amber-600" />
-            <AlertDescription className="text-amber-800 text-xs">
-              Detailed usage stats require Admin API access. Enable "Admin API" read permissions in your Cloudinary console under Settings → Access Keys to see full metrics.
+          <Alert className="border-border bg-secondary/30">
+            <Info className="w-4 h-4" />
+            <AlertDescription className="text-xs text-muted-foreground">
+              Usage limits are not available for API key ending with <span className="font-medium">{data.api_key_hint || 'unknown'}</span>.
+              Ensure this exact key has Admin/Master Admin role and API secret matches it.
+              {data.usage_api_status ? ` (Usage API status: ${data.usage_api_status})` : ''}
             </AlertDescription>
           </Alert>
         )}
