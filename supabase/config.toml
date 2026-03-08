@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.cloudinary-usage]
 verify_jwt = false
+
+[functions.cloudinary-list]
+verify_jwt = false
+
+[functions.cloudinary-migrate]
+verify_jwt = false

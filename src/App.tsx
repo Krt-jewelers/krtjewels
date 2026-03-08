@@ -56,6 +56,7 @@ import AdminCarouselCategories from "./pages/admin/CarouselCategories";
 import AdminAttributes from "./pages/admin/Attributes";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminMediaUsage from "./pages/admin/MediaUsage";
+import AdminMedia from "./pages/admin/Media";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -161,6 +162,7 @@ const App = () => {
             <Route path="/admin/attributes" element={<AdminAttributes />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/media-usage" element={<AdminMediaUsage />} />
+            <Route path="/admin/media" element={<AdminMedia />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
