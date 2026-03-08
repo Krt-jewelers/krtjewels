@@ -122,7 +122,7 @@ export function CategoryCarousel() {
             onMouseLeave={handleInteractionEnd}
             onTouchStart={handleInteractionStart}
             onTouchEnd={handleInteractionEnd}
-            className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-start lg:gap-4 lg:overflow-x-auto touch-pan-y"
+            className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-center lg:gap-4 lg:overflow-x-auto touch-pan-y"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
           >
             {categories.filter((category) => !category.is_view_all).map((category) => (
