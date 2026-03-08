@@ -208,22 +208,6 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Payment Screenshot (optional)</Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadScreenshot}
-                  disabled={uploading}
-                  className="flex-1"
-                />
-                {uploading && <Loader2 className="w-5 h-5 animate-spin" />}
-              </div>
-              {screenshotUrl && (
-                <img src={screenshotUrl} alt="Screenshot" className="w-32 h-auto rounded-lg border mt-2" />
-              )}
-            </div>
 
             <Button
               onClick={handleSubmit}
