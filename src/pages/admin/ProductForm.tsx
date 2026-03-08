@@ -267,9 +267,9 @@ export default function AdminProductForm() {
         is_bridal: formData.is_bridal,
         is_active: formData.is_active,
         specifications: {
-          certificate_items: formData.certificate_items,
-          manufacturer_info: formData.manufacturer_info,
-        },
+          certificate_items: formData.certificate_items.map(i => ({ title: i.title, desc: i.desc })),
+          manufacturer_info: formData.manufacturer_info.map(i => ({ label: i.label, value: i.value })),
+        } as unknown as Json,
       };
 
       if (isEditing) {
