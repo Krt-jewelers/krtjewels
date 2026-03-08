@@ -47,9 +47,8 @@ export function HeroCarousel() {
 
   return (
     <section className="relative w-full overflow-hidden bg-background">
-      {/* Aspect ratio container: 16:6 desktop, 9:16 mobile */}
-      <div className="relative w-full" style={{ paddingBottom: 'clamp(120%, 50vw, 37.5%)' }}>
-        {/* Use CSS to handle responsive aspect ratio */}
+      {/* Responsive container: tall on mobile, wide on desktop */}
+      <div className="relative w-full aspect-[9/14] md:aspect-[16/6]">
         <div className="absolute inset-0">
           {slides.map((slide, index) => (
             <Link
