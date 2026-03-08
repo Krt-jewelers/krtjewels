@@ -184,7 +184,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
           <div
             className={cn(
               'overflow-hidden transition-all duration-300',
-              expandedSections.has(section.id) ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+              expandedSections.has(section.id) ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'
             )}
           >
             <div className="px-4 pb-4">{section.content}</div>
