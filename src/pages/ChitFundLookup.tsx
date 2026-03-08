@@ -66,30 +66,14 @@ export default function ChitFundLookup() {
 
     try {
       const trimmedSearch = searchId.trim();
-      let chitData = null;
-      let chitError = null;
 
-      // Only search by ID if it looks like a valid UUID, otherwise search by phone
-      if (isValidUUID(trimmedSearch)) {
-        const result = await supabase
-          .from('chit_funds')
-          .select('*')
-          .eq('id', trimmedSearch)
-          .maybeSingle();
-        chitData = result.data;
-        chitError = result.error;
-      } else {
-        // Search by phone number
-        const result = await supabase
-          .from('chit_funds')
-          .select('*')
-          .eq('phone', trimmedSearch)
-          .maybeSingle();
-        chitData = result.data;
-        chitError = result.error;
-      }
+      // Use secure edge function for lookup (no direct table access)
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('chit-fund-lookup', {
+        body: { search: trimmedSearch },
+      });
 
-      if (chitError) throw chitError;
+      if (fnError) throw fnError;
+      const chitData = fnData?.data;
 
       if (!chitData) {
         setChitFund(null);
@@ -101,18 +85,11 @@ export default function ChitFundLookup() {
         return;
       }
 
-      // Fetch payments for this chit fund
-      const { data: payments, error: paymentsError } = await supabase
-        .from('chit_payments')
-        .select('*')
-        .eq('chit_fund_id', chitData.id)
-        .order('payment_date', { ascending: false });
-
-      if (paymentsError) throw paymentsError;
-
       setChitFund({
         ...chitData,
-        payments: payments || [],
+        phone: '', // Not returned by edge function for privacy
+        notes: null,
+        payments: chitData.payments || [],
       });
     } catch (error: any) {
       toast({
