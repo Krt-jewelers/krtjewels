@@ -162,6 +162,7 @@ export function CategoryCarousel() {
               </Link>
             ))}
           </div>
+        </div>
       </div>
 
       <style>{`
