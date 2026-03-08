@@ -140,16 +140,6 @@ export function FoundifMediaUsage() {
           </div>
         )}
 
-        {data?.limited && (
-          <Alert className="border-border bg-secondary/30">
-            <Info className="w-4 h-4" />
-            <AlertDescription className="text-xs text-muted-foreground">
-              Usage limits are not available for API key ending with <span className="font-medium">{data.api_key_hint || 'unknown'}</span>.
-              Ensure this exact key has Admin/Master Admin role and API secret matches it.
-              {data.usage_api_status ? ` (Usage API status: ${data.usage_api_status})` : ''}
-            </AlertDescription>
-          </Alert>
-        )}
       </CardContent>
     </Card>
   );
