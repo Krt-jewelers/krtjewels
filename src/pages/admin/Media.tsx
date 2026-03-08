@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { FoundifMediaUsage } from '@/components/admin/FoundifMediaUsage';
-import { listCloudinaryImages, migrateToCloudinary, CloudinaryImage } from '@/lib/cloudinary';
+import { listCloudinaryImages, migrateToCloudinary, deleteCloudinaryImages, CloudinaryImage } from '@/lib/cloudinary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,17 @@ import {
   Upload,
   Loader2,
   CheckCircle,
-  XCircle
+  XCircle,
+  Trash2,
+  CheckSquare,
+  Square,
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -35,7 +42,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -58,6 +76,11 @@ export default function AdminMedia() {
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<CloudinaryImage | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [singleDeleteTarget, setSingleDeleteTarget] = useState<CloudinaryImage | null>(null);
+  const [migrationProgress, setMigrationProgress] = useState<number | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,17 +91,63 @@ export default function AdminMedia() {
   });
 
   const migrateMutation = useMutation({
-    mutationFn: migrateToCloudinary,
+    mutationFn: async () => {
+      setMigrationProgress(5);
+      const interval = setInterval(() => {
+        setMigrationProgress(prev => {
+          if (prev === null) return 5;
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 8;
+        });
+      }, 1500);
+      
+      try {
+        const result = await migrateToCloudinary();
+        clearInterval(interval);
+        setMigrationProgress(100);
+        return result;
+      } catch (e) {
+        clearInterval(interval);
+        setMigrationProgress(null);
+        throw e;
+      }
+    },
     onSuccess: (result) => {
       toast({
         title: 'Migration Complete',
-        description: `Migrated ${result.summary.total_migrated} images. ${result.summary.total_errors} errors.`,
+        description: `Migrated ${result.summary.total_migrated}, skipped ${result.summary.total_skipped} (already on Cloudinary). ${result.summary.total_errors} errors. ${result.summary.deduplicated_uploads} deduped.`,
       });
       queryClient.invalidateQueries({ queryKey: ['cloudinary-images'] });
+      queryClient.invalidateQueries({ queryKey: ['foundif-media-usage'] });
+      setTimeout(() => setMigrationProgress(null), 2000);
     },
     onError: (error: Error) => {
       toast({
         title: 'Migration Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setMigrationProgress(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (publicIds: string[]) => deleteCloudinaryImages(publicIds),
+    onSuccess: (result) => {
+      toast({
+        title: 'Delete Complete',
+        description: `Deleted ${result.summary.total_deleted} image(s). ${result.summary.total_failed} failed.`,
+      });
+      setSelectedIds(new Set());
+      setSelectMode(false);
+      setSingleDeleteTarget(null);
+      setDeleteConfirmOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['cloudinary-images'] });
+      queryClient.invalidateQueries({ queryKey: ['foundif-media-usage'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete Failed',
         description: error.message,
         variant: 'destructive',
       });
@@ -94,6 +163,48 @@ export default function AdminMedia() {
     searchQuery === '' || 
     img.public_id.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+
+  const toggleSelect = (publicId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(publicId)) next.delete(publicId);
+      else next.add(publicId);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === filteredImages.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredImages.map(i => i.public_id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleSingleDelete = (image: CloudinaryImage) => {
+    setSingleDeleteTarget(image);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (singleDeleteTarget) {
+      deleteMutation.mutate([singleDeleteTarget.public_id]);
+    } else {
+      deleteMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setSingleDeleteTarget(null);
+  };
+
+  const deleteCount = singleDeleteTarget ? 1 : selectedIds.size;
 
   return (
     <AdminLayout>
@@ -125,28 +236,61 @@ export default function AdminMedia() {
                 <DialogHeader>
                   <DialogTitle>Migrate Images to Cloudinary</DialogTitle>
                   <DialogDescription>
-                    This will scan all database tables and migrate any images not yet on Cloudinary.
-                    This includes products, carousels, variations, and menu items.
+                    Scans all database tables and migrates images not yet on Cloudinary. Duplicates are automatically skipped.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 pt-4">
                   {migrateMutation.isPending ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                      <span className="ml-3">Migrating images...</span>
+                    <div className="space-y-4 py-4">
+                      <div className="flex items-center justify-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="font-medium">Migrating images...</span>
+                      </div>
+                      {migrationProgress !== null && (
+                        <div className="space-y-2">
+                          <Progress value={migrationProgress} className="h-3" />
+                          <p className="text-center text-sm text-muted-foreground">
+                            {Math.round(migrationProgress)}% complete
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : migrateMutation.isSuccess ? (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-green-600">
+                      <div className="flex items-center gap-2 text-primary">
                         <CheckCircle className="w-5 h-5" />
                         <span className="font-medium">Migration Complete!</span>
                       </div>
+                      {migrationProgress !== null && (
+                        <Progress value={100} className="h-3" />
+                      )}
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="p-2 bg-secondary/50 rounded text-center">
+                          <p className="text-muted-foreground text-xs">Migrated</p>
+                          <p className="font-bold text-lg">{migrateMutation.data.summary.total_migrated}</p>
+                        </div>
+                        <div className="p-2 bg-secondary/50 rounded text-center">
+                          <p className="text-muted-foreground text-xs">Skipped</p>
+                          <p className="font-bold text-lg">{migrateMutation.data.summary.total_skipped}</p>
+                        </div>
+                        <div className="p-2 bg-secondary/50 rounded text-center">
+                          <p className="text-muted-foreground text-xs">Deduped</p>
+                          <p className="font-bold text-lg">{migrateMutation.data.summary.deduplicated_uploads}</p>
+                        </div>
+                        <div className="p-2 bg-secondary/50 rounded text-center">
+                          <p className="text-muted-foreground text-xs">Errors</p>
+                          <p className="font-bold text-lg text-destructive">{migrateMutation.data.summary.total_errors}</p>
+                        </div>
+                      </div>
                       {migrateMutation.data.results.map((r, i) => (
-                        <div key={i} className="text-sm p-2 bg-secondary/50 rounded">
-                          <span className="font-medium">{r.table}</span>: {r.migrated} migrated
-                          {r.errors.length > 0 && (
-                            <span className="text-destructive ml-2">({r.errors.length} errors)</span>
-                          )}
+                        <div key={i} className="text-sm p-2 bg-secondary/30 rounded flex justify-between">
+                          <span className="font-medium">{r.table}</span>
+                          <span className="text-muted-foreground">
+                            {r.migrated} migrated, {r.skipped} skipped
+                            {r.errors.length > 0 && (
+                              <span className="text-destructive ml-1">({r.errors.length} errors)</span>
+                            )}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -167,32 +311,68 @@ export default function AdminMedia() {
         {/* Usage Stats */}
         <FoundifMediaUsage />
 
-        {/* Filters */}
+        {/* Filters + Actions Bar */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search images..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search images..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={selectedFolder} onValueChange={setSelectedFolder}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="All Folders" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FOLDERS.map(folder => (
+                      <SelectItem key={folder.value} value={folder.value}>
+                        {folder.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={selectedFolder} onValueChange={setSelectedFolder}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="All Folders" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FOLDERS.map(folder => (
-                    <SelectItem key={folder.value} value={folder.value}>
-                      {folder.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+              {/* Select / Delete actions */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant={selectMode ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => {
+                    setSelectMode(!selectMode);
+                    setSelectedIds(new Set());
+                  }}
+                >
+                  {selectMode ? <X className="w-4 h-4 mr-1" /> : <CheckSquare className="w-4 h-4 mr-1" />}
+                  {selectMode ? 'Cancel' : 'Select'}
+                </Button>
+                
+                {selectMode && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={selectAll}>
+                      {selectedIds.size === filteredImages.length ? 'Deselect All' : 'Select All'}
+                    </Button>
+                    {selectedIds.size > 0 && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBulkDelete}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete {selectedIds.size} image{selectedIds.size > 1 ? 's' : ''}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -229,44 +409,84 @@ export default function AdminMedia() {
               <div className="text-center py-12 text-muted-foreground">
                 <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>No images found</p>
-                {selectedFolder && (
+                {selectedFolder !== 'all' && (
                   <p className="text-sm mt-1">Try selecting a different folder</p>
                 )}
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredImages.map((image) => (
-                  <div
-                    key={image.public_id}
-                    className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-secondary/30 cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => setSelectedImage(image)}
-                  >
-                    <img
-                      src={image.secure_url}
-                      alt={image.public_id}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute bottom-2 left-2 right-2">
-                        <p className="text-white text-xs truncate">{image.public_id.split('/').pop()}</p>
-                        <p className="text-white/70 text-[10px]">{formatBytes(image.bytes)}</p>
+                {filteredImages.map((image) => {
+                  const isSelected = selectedIds.has(image.public_id);
+                  return (
+                    <div
+                      key={image.public_id}
+                      className={`group relative aspect-square rounded-lg overflow-hidden border-2 bg-secondary/30 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-primary ring-2 ring-primary/30'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => {
+                        if (selectMode) {
+                          toggleSelect(image.public_id);
+                        } else {
+                          setSelectedImage(image);
+                        }
+                      }}
+                    >
+                      <img
+                        src={image.secure_url}
+                        alt={image.public_id}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      
+                      {/* Checkbox overlay in select mode */}
+                      {selectMode && (
+                        <div className="absolute top-2 left-2 z-10">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? 'bg-primary border-primary text-primary-foreground'
+                              : 'bg-background/80 border-muted-foreground/50'
+                          }`}>
+                            {isSelected && <CheckCircle className="w-3 h-3" />}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <p className="text-white text-xs truncate">{image.public_id.split('/').pop()}</p>
+                          <p className="text-white/70 text-[10px]">{formatBytes(image.bytes)}</p>
+                        </div>
+                        {/* Single delete button on hover */}
+                        {!selectMode && (
+                          <button
+                            className="absolute top-2 right-2 p-1.5 rounded-md bg-destructive/90 text-destructive-foreground hover:bg-destructive transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSingleDelete(image);
+                            }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
+                      {image.folder && (
+                        <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5" variant="secondary">
+                          {image.folder}
+                        </Badge>
+                      )}
                     </div>
-                    {image.folder && (
-                      <Badge className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5" variant="secondary">
-                        {image.folder}
-                      </Badge>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Image Detail Modal */}
-        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <Dialog open={!!selectedImage && !selectMode} onOpenChange={() => setSelectedImage(null)}>
           <DialogContent className="max-w-2xl">
             {selectedImage && (
               <>
@@ -320,12 +540,75 @@ export default function AdminMedia() {
                         Download
                       </a>
                     </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setSelectedImage(null);
+                        handleSingleDelete(selectedImage);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </>
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={cancelDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                Confirm Delete
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  Are you sure you want to permanently delete{' '}
+                  <span className="font-bold text-foreground">{deleteCount} image{deleteCount > 1 ? 's' : ''}</span>?
+                </p>
+                <p className="text-destructive font-medium">
+                  This action cannot be undone. Images will be permanently removed from Cloudinary.
+                </p>
+                {singleDeleteTarget && (
+                  <div className="mt-3 p-3 bg-secondary/30 rounded-lg flex items-center gap-3">
+                    <img
+                      src={singleDeleteTarget.secure_url}
+                      alt={singleDeleteTarget.public_id}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                    <div className="text-sm">
+                      <p className="font-medium truncate max-w-[250px]">{singleDeleteTarget.public_id.split('/').pop()}</p>
+                      <p className="text-muted-foreground">{formatBytes(singleDeleteTarget.bytes)}</p>
+                    </div>
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );

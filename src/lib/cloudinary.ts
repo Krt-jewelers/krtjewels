@@ -15,7 +15,6 @@ export async function compressImage(file: File): Promise<File> {
 
   const originalSizeMB = file.size / (1024 * 1024);
 
-  // Only compress if > 1MB
   if (originalSizeMB <= 1) {
     return file;
   }
@@ -28,7 +27,6 @@ export async function compressImage(file: File): Promise<File> {
 }
 
 export async function uploadToCloudinary(file: File, folder = 'products'): Promise<string> {
-  // Compress before upload
   const compressed = await compressImage(file);
 
   const formData = new FormData();
@@ -127,8 +125,8 @@ export async function listCloudinaryImages(folder?: string, nextCursor?: string)
 
 export interface MigrationResult {
   success: boolean;
-  results: { table: string; field: string; migrated: number; errors: string[] }[];
-  summary: { total_migrated: number; total_errors: number };
+  results: { table: string; field: string; migrated: number; skipped: number; total: number; errors: string[] }[];
+  summary: { total_items: number; total_migrated: number; total_skipped: number; total_errors: number; deduplicated_uploads: number };
 }
 
 export async function migrateToCloudinary(): Promise<MigrationResult> {
@@ -144,6 +142,32 @@ export async function migrateToCloudinary(): Promise<MigrationResult> {
 
   if (!response.ok) {
     throw new Error(result.error || 'Migration failed');
+  }
+
+  return result;
+}
+
+export interface DeleteResult {
+  success: boolean;
+  deleted: string[];
+  failed: { public_id: string; error: string }[];
+  summary: { total_requested: number; total_deleted: number; total_failed: number };
+}
+
+export async function deleteCloudinaryImages(publicIds: string[]): Promise<DeleteResult> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-delete`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ public_ids: publicIds }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Delete failed');
   }
 
   return result;
