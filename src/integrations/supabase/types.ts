@@ -1010,11 +1010,18 @@ export type Database = {
           order_number: string
           payment_id: string | null
           payment_method: string | null
+          payment_proof_url: string | null
+          payment_utr: string | null
+          payment_verified: boolean | null
+          payment_verified_at: string | null
+          payment_verified_by: string | null
           shipping_address: Json
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total_amount: number
           updated_at: string
+          upi_phone: string | null
+          upi_provider: string | null
           user_id: string | null
         }
         Insert: {
@@ -1027,11 +1034,18 @@ export type Database = {
           order_number: string
           payment_id?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
+          payment_utr?: string | null
+          payment_verified?: boolean | null
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
           shipping_address: Json
           status?: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total_amount: number
           updated_at?: string
+          upi_phone?: string | null
+          upi_provider?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1044,11 +1058,18 @@ export type Database = {
           order_number?: string
           payment_id?: string | null
           payment_method?: string | null
+          payment_proof_url?: string | null
+          payment_utr?: string | null
+          payment_verified?: boolean | null
+          payment_verified_at?: string | null
+          payment_verified_by?: string | null
           shipping_address?: Json
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total_amount?: number
           updated_at?: string
+          upi_phone?: string | null
+          upi_provider?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -1607,6 +1628,39 @@ export type Database = {
           pincode?: string
           state?: string
           timings?: string | null
+        }
+        Relationships: []
+      }
+      upi_payment_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          merchant_name: string | null
+          qr_code_url: string | null
+          updated_at: string | null
+          updated_by: string | null
+          upi_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          merchant_name?: string | null
+          qr_code_url?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          upi_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          merchant_name?: string | null
+          qr_code_url?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          upi_id?: string | null
         }
         Relationships: []
       }

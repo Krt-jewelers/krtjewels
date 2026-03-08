@@ -26,7 +26,9 @@ import {
   Circle,
   Layers,
   FileText,
-  ImageIcon
+  ImageIcon,
+  QrCode,
+  CheckCircle2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -53,6 +55,8 @@ const menuItems = [
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Payment Settings', href: '/admin/payment-settings', icon: QrCode },
+  { name: 'Payment Verification', href: '/admin/payment-verification', icon: CheckCircle2 },
   { name: 'Media', href: '/admin/media', icon: ImageIcon },
   { name: 'Usage', href: '/admin/media-usage', icon: BarChart3 },
   { name: 'Admin Users', href: '/admin/users', icon: Users },

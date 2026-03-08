@@ -57,6 +57,8 @@ import AdminAttributes from "./pages/admin/Attributes";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminMediaUsage from "./pages/admin/MediaUsage";
 import AdminMedia from "./pages/admin/Media";
+import AdminPaymentSettings from "./pages/admin/PaymentSettings";
+import AdminPaymentVerification from "./pages/admin/PaymentVerification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,6 +165,8 @@ const App = () => {
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/media-usage" element={<AdminMediaUsage />} />
             <Route path="/admin/media" element={<AdminMedia />} />
+            <Route path="/admin/payment-settings" element={<AdminPaymentSettings />} />
+            <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
