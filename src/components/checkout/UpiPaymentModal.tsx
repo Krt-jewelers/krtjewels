@@ -73,7 +73,7 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
     if (open) {
       setStep('qr');
       setUtr('');
-      setScreenshotUrl(null);
+      
       setUpiPhone('');
       setUpiProvider('');
     }
