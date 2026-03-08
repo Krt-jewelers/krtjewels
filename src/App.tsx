@@ -57,6 +57,8 @@ import AdminAttributes from "./pages/admin/Attributes";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminMediaUsage from "./pages/admin/MediaUsage";
 import AdminMedia from "./pages/admin/Media";
+import AdminPaymentSettings from "./pages/admin/PaymentSettings";
+import AdminPaymentVerification from "./pages/admin/PaymentVerification";
 
 const queryClient = new QueryClient({
   defaultOptions: {
