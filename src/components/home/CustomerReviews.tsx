@@ -172,10 +172,10 @@ export function CustomerReviews() {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-2 md:-ml-4">
+          <CarouselContent className="-ml-2 md:-ml-4 py-2">
             {reviews.map((review) => (
               <CarouselItem key={review.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                <div className="bg-card rounded-xl p-6 h-full flex flex-col shadow-soft">
+                <div className="bg-card rounded-xl p-6 h-full flex flex-col shadow-soft border border-border/50">
                   {/* Quote Icon */}
                   <Quote className="w-8 h-8 text-primary/20 mb-4" />
 
