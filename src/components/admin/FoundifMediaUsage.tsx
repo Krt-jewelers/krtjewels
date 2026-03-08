@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getCloudinaryUsage } from '@/lib/cloudinary';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCloudinaryUsage, listCloudinaryImages } from '@/lib/cloudinary';
 import { Card, CardContent } from '@/components/ui/card';
 import { HardDrive, Wifi, Zap, RefreshCw, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
