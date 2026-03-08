@@ -30,12 +30,6 @@ export function CategoryCarousel() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
   const [showArrows, setShowArrows] = useState(false);
-  const isDraggingRef = useRef(false);
-  const didDragRef = useRef(false);
-  const dragStartXRef = useRef(0);
-  const dragStartYRef = useRef(0);
-  const dragScrollLeftRef = useRef(0);
-  const dragAxisRef = useRef<'x' | 'y' | null>(null);
 
   const { data: categories = defaultCategories } = useQuery({
     queryKey: ['carouselCategories'],
