@@ -49,6 +49,7 @@ const menuItems = [
   { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
   { name: 'Product Categories', href: '/admin/menu-categories', icon: ListTree },
   { name: 'Homepage Carousel', href: '/admin/carousel-categories', icon: Circle },
+  { name: 'Hero Slides', href: '/admin/hero-slides', icon: ImageIcon },
   { name: 'Megamenu', href: '/admin/megamenu', icon: Grid2X2 },
   { name: 'Attributes', href: '/admin/attributes', icon: Layers },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },

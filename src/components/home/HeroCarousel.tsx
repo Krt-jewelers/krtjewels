@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
+// Static fallback imports
 import heroSlide1 from '@/assets/hero-slide-1.png';
 import heroSlide1Mobile from '@/assets/hero-slide-1-mobile.jpg';
 import heroSlide2 from '@/assets/hero-slide-2.png';
@@ -13,17 +15,49 @@ import heroSlide4Mobile from '@/assets/hero-slide-4-mobile.png';
 import heroSlide5 from '@/assets/hero-slide-5.png';
 import heroSlide5Mobile from '@/assets/hero-slide-5-mobile.png';
 
-const slides = [
-  { id: 1, desktop: heroSlide1, mobile: heroSlide1Mobile, alt: 'KRT Jewellers – Timeless. Graceful. Distinctive. Diamond chokers and earrings.', href: '/shop' },
-  { id: 2, desktop: heroSlide2, mobile: heroSlide2Mobile, alt: 'KRT Jewellery – Elegant traditional chokers crafted to highlight your beauty.', href: '/shop' },
-  { id: 3, desktop: heroSlide3, mobile: heroSlide3Mobile, alt: 'KRT Jewellery – Timeless Gold. Exquisite Diamonds. Curated Collections.', href: '/shop' },
-  { id: 4, desktop: heroSlide4, mobile: heroSlide4Mobile, alt: 'KRT Jewellery – Heritage. Tradition. Legacy. Temple jewellery collection.', href: '/shop' },
-  { id: 5, desktop: heroSlide5, mobile: heroSlide5Mobile, alt: 'KRT Jewellery – Sparkle. Shine. Celebrate. Bangles and rings collection.', href: '/shop' },
+interface Slide {
+  id: string;
+  desktop: string;
+  mobile: string;
+  alt: string;
+  href: string;
+}
+
+const fallbackSlides: Slide[] = [
+  { id: '1', desktop: heroSlide1, mobile: heroSlide1Mobile, alt: 'KRT Jewellery – Timeless. Graceful. Distinctive.', href: '/shop' },
+  { id: '2', desktop: heroSlide2, mobile: heroSlide2Mobile, alt: 'KRT Jewellery – Elevate your style with intricate chokers.', href: '/shop' },
+  { id: '3', desktop: heroSlide3, mobile: heroSlide3Mobile, alt: 'KRT Jewellery – Timeless Gold. Exquisite Diamonds.', href: '/shop' },
+  { id: '4', desktop: heroSlide4, mobile: heroSlide4Mobile, alt: 'KRT Jewellery – Heritage. Tradition. Legacy.', href: '/shop' },
+  { id: '5', desktop: heroSlide5, mobile: heroSlide5Mobile, alt: 'KRT Jewellery – Sparkle. Shine. Celebrate.', href: '/shop' },
 ];
 
 export function HeroCarousel() {
+  const [slides, setSlides] = useState<Slide[]>(fallbackSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Fetch dynamic slides from DB
+  useEffect(() => {
+    const fetchSlides = async () => {
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        setSlides(data.map((s: any) => ({
+          id: s.id,
+          desktop: s.desktop_image_url,
+          mobile: s.mobile_image_url || s.desktop_image_url,
+          alt: s.alt_text || 'KRT Jewellery',
+          href: s.link_url || '/shop',
+        })));
+      }
+      // If no DB slides, keep fallback
+    };
+    fetchSlides();
+  }, []);
 
   const goToSlide = useCallback((index: number) => {
     if (isAnimating) return;
@@ -34,20 +68,21 @@ export function HeroCarousel() {
 
   const nextSlide = useCallback(() => {
     goToSlide((currentSlide + 1) % slides.length);
-  }, [currentSlide, goToSlide]);
+  }, [currentSlide, goToSlide, slides.length]);
 
   const prevSlide = useCallback(() => {
     goToSlide((currentSlide - 1 + slides.length) % slides.length);
-  }, [currentSlide, goToSlide]);
+  }, [currentSlide, goToSlide, slides.length]);
 
   useEffect(() => {
     const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
   }, [nextSlide]);
 
+  if (slides.length === 0) return null;
+
   return (
     <section className="relative w-full overflow-hidden bg-background">
-      {/* Responsive container: tall on mobile, wide on desktop */}
       <div className="relative w-full aspect-[9/14] md:aspect-[16/6]">
         <div className="absolute inset-0">
           {slides.map((slide, index) => (
