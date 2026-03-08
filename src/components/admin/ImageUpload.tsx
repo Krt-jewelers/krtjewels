@@ -94,21 +94,8 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
   };
 
   const removeImage = async (index: number) => {
-    const imageUrl = images[index];
     const newImages = images.filter((_, i) => i !== index);
     onImagesChange(newImages);
-
-    // Try to delete from storage (optional - might fail if URL is external)
-    try {
-      const url = new URL(imageUrl);
-      const pathParts = url.pathname.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      const filePath = `products/${fileName}`;
-
-      await supabase.storage.from('product-images').remove([filePath]);
-    } catch (e) {
-      // Ignore errors - might be an external URL
-    }
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
