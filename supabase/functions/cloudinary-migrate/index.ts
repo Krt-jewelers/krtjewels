@@ -37,8 +37,8 @@ serve(async (req) => {
     async function migrateImage(imageUrl: string, folder: string): Promise<string | null> {
       if (!imageUrl) return null;
       
-      // Skip if already on Cloudinary
-      if (imageUrl.includes('cloudinary.com') || imageUrl.includes('res.cloudinary')) {
+      // Only skip if already on the NEW Cloudinary account
+      if (imageUrl.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) {
         return imageUrl;
       }
 
