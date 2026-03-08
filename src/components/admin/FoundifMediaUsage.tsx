@@ -131,7 +131,7 @@ export function FoundifMediaUsage() {
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{metric.format(metric.used)}</span>
-                      <span>{metric.limit > 0 ? metric.format(metric.limit) : 'N/A'}</span>
+                      <span>{metric.limit > 0 ? metric.format(metric.limit) : 'Unlimited'}</span>
                     </div>
                   </div>
                 </div>
