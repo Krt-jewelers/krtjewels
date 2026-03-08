@@ -110,6 +110,10 @@ export default function AdminHeroSlides() {
           .eq('id', editing.id);
         if (error) throw error;
         toast({ title: 'Slide updated' });
+      } else if (slides.length >= 5) {
+        toast({ title: 'Maximum 5 slides allowed', variant: 'destructive' });
+        setSaving(false);
+        return;
       } else {
         const { error } = await supabase
           .from('hero_slides')
@@ -172,8 +176,8 @@ export default function AdminHeroSlides() {
             <h1 className="text-2xl font-serif font-semibold">Hero Slides</h1>
             <p className="text-muted-foreground">Manage homepage banner images</p>
           </div>
-          <Button onClick={openAdd} className="gap-2">
-            <Plus className="w-4 h-4" /> Add Slide
+          <Button onClick={openAdd} className="gap-2" disabled={slides.length >= 5}>
+            <Plus className="w-4 h-4" /> Add Slide {slides.length >= 5 ? '(Max 5)' : `(${slides.length}/5)`}
           </Button>
         </div>
 
