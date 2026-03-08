@@ -138,6 +138,15 @@ export function FoundifMediaUsage() {
             })}
           </div>
         )}
+
+        {data?.limited && (
+          <Alert className="border-amber-200 bg-amber-50">
+            <Info className="w-4 h-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 text-xs">
+              Detailed usage stats require Admin API access. Enable "Admin API" read permissions in your Cloudinary console under Settings → Access Keys to see full metrics.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   );
