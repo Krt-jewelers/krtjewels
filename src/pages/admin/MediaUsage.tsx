@@ -6,7 +6,7 @@ export default function AdminMediaUsage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="font-serif text-3xl font-semibold mb-1">Foundif Media</h1>
+          <h1 className="font-serif text-3xl font-semibold mb-1">Usage</h1>
           <p className="text-muted-foreground">Monitor your media storage usage and limits</p>
         </div>
         <FoundifMediaUsage />

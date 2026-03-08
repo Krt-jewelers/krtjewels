@@ -19,32 +19,64 @@ serve(async (req) => {
       throw new Error('CLOUDINARY_API_SECRET not configured');
     }
 
-    // Fetch usage from Cloudinary Admin API
     const auth = btoa(`${API_KEY}:${API_SECRET}`);
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/usage`,
-      {
-        headers: {
-          'Authorization': `Basic ${auth}`,
-        },
+
+    // Try usage endpoint first
+    let usageData: any = null;
+    try {
+      const usageRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/usage`,
+        { headers: { 'Authorization': `Basic ${auth}` } }
+      );
+      if (usageRes.ok) {
+        usageData = await usageRes.json();
       }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Failed to fetch Cloudinary usage');
+    } catch (_) {
+      // Usage API may not be available on all plans
     }
 
+    // Fallback: get resource count via resources endpoint
+    let resourceCount = 0;
+    try {
+      const resRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/resources/image?max_results=1`,
+        { headers: { 'Authorization': `Basic ${auth}` } }
+      );
+      if (resRes.ok) {
+        const resData = await resRes.json();
+        resourceCount = resData.total_count || resData.resources?.length || 0;
+      }
+    } catch (_) {
+      // Ignore
+    }
+
+    if (usageData) {
+      const result = {
+        storage_used_bytes: usageData.storage?.used_bytes || usageData.storage?.usage || 0,
+        storage_limit_bytes: usageData.storage?.limit || 0,
+        bandwidth_used_bytes: usageData.bandwidth?.used_bytes || usageData.bandwidth?.usage || 0,
+        bandwidth_limit_bytes: usageData.bandwidth?.limit || 0,
+        transformations_used: usageData.transformations?.usage || 0,
+        transformations_limit: usageData.transformations?.limit || 0,
+        resources: usageData.resources || resourceCount,
+        plan: usageData.plan || 'Free',
+      };
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // If usage API is not available, return minimal data
     const result = {
-      storage_used_bytes: data.storage?.used_bytes || 0,
-      storage_limit_bytes: data.storage?.limit || 0,
-      bandwidth_used_bytes: data.bandwidth?.used_bytes || 0,
-      bandwidth_limit_bytes: data.bandwidth?.limit || 0,
-      transformations_used: data.transformations?.usage || 0,
-      transformations_limit: data.transformations?.limit || 0,
-      resources: data.resources || 0,
-      plan: data.plan || 'Free',
+      storage_used_bytes: 0,
+      storage_limit_bytes: 0,
+      bandwidth_used_bytes: 0,
+      bandwidth_limit_bytes: 0,
+      transformations_used: 0,
+      transformations_limit: 0,
+      resources: resourceCount,
+      plan: 'Free',
+      limited: true,
     };
 
     return new Response(JSON.stringify(result), {

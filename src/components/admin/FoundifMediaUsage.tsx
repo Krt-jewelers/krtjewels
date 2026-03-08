@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getCloudinaryUsage } from '@/lib/cloudinary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { HardDrive, Wifi, ImageIcon, Sparkles, RefreshCw } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { HardDrive, Wifi, ImageIcon, Sparkles, RefreshCw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -136,6 +137,15 @@ export function FoundifMediaUsage() {
               );
             })}
           </div>
+        )}
+
+        {data?.limited && (
+          <Alert className="border-amber-200 bg-amber-50">
+            <Info className="w-4 h-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 text-xs">
+              Detailed usage stats require Admin API access. Enable "Admin API" read permissions in your Cloudinary console under Settings → Access Keys to see full metrics.
+            </AlertDescription>
+          </Alert>
         )}
       </CardContent>
     </Card>
