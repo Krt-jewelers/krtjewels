@@ -212,6 +212,9 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
+        {/* Foundif Media Usage */}
+        <FoundifMediaUsage />
+
         {/* Recent Orders */}
         {orders && orders.length > 0 && (
           <Card>

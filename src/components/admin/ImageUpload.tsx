@@ -134,7 +134,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
             </div>
             <p className="text-sm font-medium">Click to upload images</p>
             <p className="text-xs text-muted-foreground">
-              PNG, JPG, WEBP up to 5MB each • Max {maxImages} images
+              PNG, JPG, WEBP • Auto-compressed • Max {maxImages} images
             </p>
           </div>
         )}
