@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
