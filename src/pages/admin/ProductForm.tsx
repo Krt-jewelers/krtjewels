@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { METAL_TYPE_NAMES, MetalType } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +38,16 @@ interface MenuSubcategory {
   slug: string;
 }
 
+interface CertificateItem {
+  title: string;
+  desc: string;
+}
+
+interface ManufacturerItem {
+  label: string;
+  value: string;
+}
+
 interface ProductFormData {
   name: string;
   slug: string;
@@ -57,7 +68,23 @@ interface ProductFormData {
   is_new_arrival: boolean;
   is_bridal: boolean;
   is_active: boolean;
+  certificate_items: CertificateItem[];
+  manufacturer_info: ManufacturerItem[];
 }
+
+const defaultCertificateItems: CertificateItem[] = [
+  { title: 'BIS Hallmark Certified', desc: 'Guaranteeing purity and authenticity of the gold.' },
+  { title: 'Certificate of Authenticity', desc: 'Includes weight, purity, and making charges.' },
+  { title: 'Detailed Invoice', desc: 'Itemized breakdown for gold, making charges, and taxes.' },
+  { title: 'Lifetime Exchange', desc: '100% gold value buyback and lifetime exchange.' },
+];
+
+const defaultManufacturerInfo: ManufacturerItem[] = [
+  { label: 'Manufacturer', value: 'KRT Jewels' },
+  { label: 'Country', value: 'India' },
+  { label: 'Imported By', value: 'N/A (Domestic)' },
+  { label: 'Packer', value: 'KRT Jewels' },
+];
 
 const defaultFormData: ProductFormData = {
   name: '',
@@ -79,6 +106,8 @@ const defaultFormData: ProductFormData = {
   is_new_arrival: false,
   is_bridal: false,
   is_active: true,
+  certificate_items: defaultCertificateItems,
+  manufacturer_info: defaultManufacturerInfo,
 };
 
 export default function AdminProductForm() {
@@ -156,6 +185,7 @@ export default function AdminProductForm() {
 
       if (error) throw error;
 
+      const specs = (data.specifications || {}) as Record<string, any>;
       setFormData({
         name: data.name,
         slug: data.slug,
@@ -176,6 +206,12 @@ export default function AdminProductForm() {
         is_new_arrival: data.is_new_arrival || false,
         is_bridal: data.is_bridal || false,
         is_active: data.is_active ?? true,
+        certificate_items: Array.isArray(specs.certificate_items) && specs.certificate_items.length > 0
+          ? specs.certificate_items
+          : defaultCertificateItems,
+        manufacturer_info: Array.isArray(specs.manufacturer_info) && specs.manufacturer_info.length > 0
+          ? specs.manufacturer_info
+          : defaultManufacturerInfo,
       });
 
     } catch (error: any) {
@@ -230,6 +266,10 @@ export default function AdminProductForm() {
         is_new_arrival: formData.is_new_arrival,
         is_bridal: formData.is_bridal,
         is_active: formData.is_active,
+        specifications: {
+          certificate_items: formData.certificate_items.map(i => ({ title: i.title, desc: i.desc })),
+          manufacturer_info: formData.manufacturer_info.map(i => ({ label: i.label, value: i.value })),
+        } as unknown as Json,
       };
 
       if (isEditing) {
@@ -627,6 +667,120 @@ export default function AdminProductForm() {
                       ))}
                   </SelectContent>
                 </Select>
+              </CardContent>
+            </Card>
+
+            {/* Certificate & Authenticity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Certificate & Authenticity</CardTitle>
+                <CardDescription>Edit the certification badges shown on product page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.certificate_items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start">
+                    <Input
+                      value={item.title}
+                      onChange={(e) => {
+                        const updated = [...formData.certificate_items];
+                        updated[idx] = { ...updated[idx], title: e.target.value };
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                      placeholder="Title"
+                    />
+                    <Input
+                      value={item.desc}
+                      onChange={(e) => {
+                        const updated = [...formData.certificate_items];
+                        updated[idx] = { ...updated[idx], desc: e.target.value };
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                      placeholder="Description"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => {
+                        const updated = formData.certificate_items.filter((_, i) => i !== idx);
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      certificate_items: [...prev.certificate_items, { title: '', desc: '' }],
+                    }))
+                  }
+                >
+                  + Add Item
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Manufacturer & Origin */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Manufacturer & Origin</CardTitle>
+                <CardDescription>Edit manufacturer details shown on product page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.manufacturer_info.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
+                    <Input
+                      value={item.label}
+                      onChange={(e) => {
+                        const updated = [...formData.manufacturer_info];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                      placeholder="Label (e.g. Manufacturer)"
+                    />
+                    <Input
+                      value={item.value}
+                      onChange={(e) => {
+                        const updated = [...formData.manufacturer_info];
+                        updated[idx] = { ...updated[idx], value: e.target.value };
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                      placeholder="Value (e.g. KRT Jewels)"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => {
+                        const updated = formData.manufacturer_info.filter((_, i) => i !== idx);
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      manufacturer_info: [...prev.manufacturer_info, { label: '', value: '' }],
+                    }))
+                  }
+                >
+                  + Add Row
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
