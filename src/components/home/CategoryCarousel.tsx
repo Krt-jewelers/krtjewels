@@ -31,7 +31,7 @@ export function CategoryCarousel() {
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
   const [showArrows, setShowArrows] = useState(false);
 
-  const { data: categories = defaultCategories } = useQuery({
+  const { data: categories, isLoading } = useQuery({
     queryKey: ['carouselCategories'],
     queryFn: async () => {
       const { data, error } = await (supabase as unknown as { from: (table: string) => any })
@@ -43,11 +43,12 @@ export function CategoryCarousel() {
         console.error('Error fetching carousel categories:', error);
         return defaultCategories;
       }
-      // Return default categories if none found in database
       return (data && data.length > 0 ? data : defaultCategories) as Category[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
+
+  const displayCategories = categories || [];
 
   // Check if scrolling is needed
   useEffect(() => {
