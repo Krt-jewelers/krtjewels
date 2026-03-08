@@ -44,8 +44,6 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
   const [upiPhone, setUpiPhone] = useState('');
   const [upiProvider, setUpiProvider] = useState('');
   const [utr, setUtr] = useState('');
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
