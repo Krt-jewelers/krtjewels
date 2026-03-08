@@ -1,33 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+import heroSlide1 from '@/assets/hero-slide-1.png';
+import heroSlide1Mobile from '@/assets/hero-slide-1-mobile.jpg';
+import heroSlide2 from '@/assets/hero-slide-2.png';
+import heroSlide2Mobile from '@/assets/hero-slide-2-mobile.png';
+import heroSlide3 from '@/assets/hero-slide-3.png';
+import heroSlide3Mobile from '@/assets/hero-slide-3-mobile.png';
+import heroSlide4 from '@/assets/hero-slide-4.png';
+import heroSlide4Mobile from '@/assets/hero-slide-4-mobile.png';
+import heroSlide5 from '@/assets/hero-slide-5.png';
+import heroSlide5Mobile from '@/assets/hero-slide-5-mobile.png';
+
 const slides = [
-  {
-    id: 1,
-    title: 'Timeless Elegance',
-    subtitle: 'Wedding Collection 2025',
-    description: 'Discover our exquisite bridal sets, handcrafted with love and tradition for your most special day.',
-    image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&h=1080&fit=crop',
-    cta: { text: 'Explore Bridal', href: '/collections/wedding-sets' },
-  },
-  {
-    id: 2,
-    title: 'Pure Gold Craftsmanship',
-    subtitle: '22K Gold Collection',
-    description: 'Every piece tells a story of heritage and mastery, passed down through generations of master artisans.',
-    image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1920&h=1080&fit=crop',
-    cta: { text: 'Shop Gold', href: '/collections/necklaces' },
-  },
-  {
-    id: 3,
-    title: 'Diamond Dreams',
-    subtitle: 'Certified Diamond Jewellery',
-    description: 'Brilliant cuts, exceptional clarity. Our diamonds are hand-selected for their unmatched brilliance.',
-    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=1920&h=1080&fit=crop',
-    cta: { text: 'View Diamonds', href: '/collections/diamond-jewellery' },
-  },
+  { id: 1, desktop: heroSlide1, mobile: heroSlide1Mobile, alt: 'KRT Jewellers – Timeless. Graceful. Distinctive. Diamond chokers and earrings.', href: '/shop' },
+  { id: 2, desktop: heroSlide2, mobile: heroSlide2Mobile, alt: 'KRT Jewellery – Elegant traditional chokers crafted to highlight your beauty.', href: '/shop' },
+  { id: 3, desktop: heroSlide3, mobile: heroSlide3Mobile, alt: 'KRT Jewellery – Timeless Gold. Exquisite Diamonds. Curated Collections.', href: '/shop' },
+  { id: 4, desktop: heroSlide4, mobile: heroSlide4Mobile, alt: 'KRT Jewellery – Heritage. Tradition. Legacy. Temple jewellery collection.', href: '/shop' },
+  { id: 5, desktop: heroSlide5, mobile: heroSlide5Mobile, alt: 'KRT Jewellery – Sparkle. Shine. Celebrate. Bangles and rings collection.', href: '/shop' },
 ];
 
 export function HeroCarousel() {
@@ -50,130 +41,74 @@ export function HeroCarousel() {
   }, [currentSlide, goToSlide]);
 
   useEffect(() => {
-    const timer = setInterval(nextSlide, 6000);
+    const timer = setInterval(nextSlide, 5000);
     return () => clearInterval(timer);
   }, [nextSlide]);
 
-  const slide = slides[currentSlide];
-
   return (
-    <section className="relative h-[50vh] md:h-[70vh] overflow-hidden">
-      {/* Background Images */}
-      {slides.map((s, index) => (
-        <div
-          key={s.id}
-          className={`absolute inset-0 transition-all duration-1000 ${
-            index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
-          }`}
-        >
-          <img 
-            src={s.image}
-            alt={s.title}
-            loading={index === 0 ? 'eager' : 'lazy'}
-            className={`absolute inset-0 w-full h-full object-cover transform transition-transform duration-[8000ms] ease-out ${
-              index === currentSlide ? 'scale-105' : 'scale-100'
-            }`}
-          />
-          {/* Premium Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-rich-black/90 via-rich-black/60 to-rich-black/20" />
-          <div className="absolute inset-0 bg-gradient-to-t from-rich-black/50 via-transparent to-transparent" />
-        </div>
-      ))}
-
-      {/* Decorative Elements */}
-      <div className="absolute top-20 right-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse hidden lg:block" />
-      <div className="absolute bottom-20 left-10 w-48 h-48 bg-primary/10 rounded-full blur-2xl hidden lg:block" />
-
-      {/* Content */}
-      <div className="relative h-full container mx-auto px-4 flex items-center">
-        <div className="max-w-2xl">
-          {/* Premium Label */}
-          <div 
-            key={`subtitle-${currentSlide}`}
-            className="inline-flex items-center gap-3 mb-6 animate-fade-in-up"
-          >
-            <div className="h-px w-8 bg-primary" />
-            <span className="text-primary text-sm md:text-base uppercase tracking-[0.3em] font-medium">
-              {slide.subtitle}
-            </span>
-          </div>
-          
-          <h1 
-            key={`title-${currentSlide}`}
-            className="font-serif text-3xl sm:text-4xl md:text-6xl lg:text-7xl text-ivory font-medium mb-4 md:mb-6 animate-fade-in-up leading-tight"
-            style={{ animationDelay: '100ms' }}
-          >
-            <span className="text-glow">{slide.title}</span>
-          </h1>
-          
-          <p 
-            key={`desc-${currentSlide}`}
-            className="text-ivory/80 text-sm sm:text-base md:text-xl mb-6 md:mb-10 max-w-lg animate-fade-in-up leading-relaxed"
-            style={{ animationDelay: '200ms' }}
-          >
-            {slide.description}
-          </p>
-          
-          <div 
-            key={`cta-${currentSlide}`}
-            className="flex flex-wrap gap-4 animate-fade-in-up"
-            style={{ animationDelay: '300ms' }}
-          >
-            <Link to={slide.cta.href}>
-              <Button className="btn-premium text-sm sm:text-base md:text-lg px-5 sm:px-7 md:px-10 py-3 sm:py-4 md:py-7 rounded-full font-medium shadow-xl hover:shadow-2xl transition-all">
-                {slide.cta.text}
-              </Button>
+    <section className="relative w-full overflow-hidden bg-background">
+      {/* Aspect ratio container: 16:6 desktop, 9:16 mobile */}
+      <div className="relative w-full" style={{ paddingBottom: 'clamp(120%, 50vw, 37.5%)' }}>
+        {/* Use CSS to handle responsive aspect ratio */}
+        <div className="absolute inset-0">
+          {slides.map((slide, index) => (
+            <Link
+              key={slide.id}
+              to={slide.href}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+              aria-hidden={index !== currentSlide}
+            >
+              {/* Desktop image */}
+              <img
+                src={slide.desktop}
+                alt={slide.alt}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                className="hidden md:block w-full h-full object-cover object-center"
+              />
+              {/* Mobile image */}
+              <img
+                src={slide.mobile}
+                alt={slide.alt}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                className="block md:hidden w-full h-full object-cover object-top"
+              />
             </Link>
-            <Link to="/gold-rate">
-              <Button 
-                variant="outline" 
-                className="text-sm sm:text-base md:text-lg px-5 sm:px-7 md:px-10 py-3 sm:py-4 md:py-7 rounded-full border-2 border-ivory/40 text-ivory bg-ivory/5 backdrop-blur-sm hover:bg-ivory/15 hover:border-ivory/70 transition-all"
-              >
-                Today's Rate
-              </Button>
-            </Link>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
+        className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-11 md:h-11 rounded-full bg-background/30 backdrop-blur-sm border border-foreground/10 flex items-center justify-center text-foreground/70 hover:bg-background/50 transition-colors"
         aria-label="Previous slide"
       >
-        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 rounded-full bg-ivory/10 backdrop-blur-sm border border-ivory/20 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-colors"
+        className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-9 h-9 md:w-11 md:h-11 rounded-full bg-background/30 backdrop-blur-sm border border-foreground/10 flex items-center justify-center text-foreground/70 hover:bg-background/50 transition-colors"
         aria-label="Next slide"
       >
-        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+        <ChevronRight className="w-5 h-5" />
       </button>
 
       {/* Slide Indicators */}
-      <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+      <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2.5">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
             className={`h-1.5 rounded-full transition-all duration-300 ${
-              index === currentSlide 
-                ? 'w-10 md:w-12 bg-primary' 
-                : 'w-5 md:w-6 bg-ivory/40 hover:bg-ivory/60'
+              index === currentSlide
+                ? 'w-8 md:w-10 bg-primary'
+                : 'w-4 md:w-5 bg-foreground/25 hover:bg-foreground/40'
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 right-8 hidden lg:flex flex-col items-center gap-2 text-ivory/60 text-xs">
-        <span className="writing-vertical tracking-widest uppercase">Scroll</span>
-        <div className="w-px h-12 bg-ivory/30 relative overflow-hidden">
-          <div className="absolute top-0 w-full h-1/2 bg-ivory animate-pulse" />
-        </div>
       </div>
     </section>
   );
