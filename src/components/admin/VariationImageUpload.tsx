@@ -23,10 +23,6 @@ export function VariationImageUpload({ imageUrl, onImageChange }: VariationImage
       toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'File too large', description: 'Max 5MB allowed', variant: 'destructive' });
-      return;
-    }
 
     setIsUploading(true);
     try {

@@ -55,15 +55,6 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
           continue;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          toast({
-            title: 'File too large',
-            description: `${file.name} exceeds 5MB limit`,
-            variant: 'destructive',
-          });
-          continue;
-        }
 
         const url = await uploadImage(file);
         uploadedUrls.push(url);
@@ -143,7 +134,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
             </div>
             <p className="text-sm font-medium">Click to upload images</p>
             <p className="text-xs text-muted-foreground">
-              PNG, JPG, WEBP up to 5MB each • Max {maxImages} images
+              PNG, JPG, WEBP • Auto-compressed • Max {maxImages} images
             </p>
           </div>
         )}

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { FoundifMediaUsage } from '@/components/admin/FoundifMediaUsage';
 import { 
   Package, 
   ShoppingCart, 
@@ -210,6 +211,9 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Foundif Media Usage */}
+        <FoundifMediaUsage />
 
         {/* Recent Orders */}
         {orders && orders.length > 0 && (
