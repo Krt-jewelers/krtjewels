@@ -669,6 +669,120 @@ export default function AdminProductForm() {
                 </Select>
               </CardContent>
             </Card>
+
+            {/* Certificate & Authenticity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Certificate & Authenticity</CardTitle>
+                <CardDescription>Edit the certification badges shown on product page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.certificate_items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto] gap-2 items-start">
+                    <Input
+                      value={item.title}
+                      onChange={(e) => {
+                        const updated = [...formData.certificate_items];
+                        updated[idx] = { ...updated[idx], title: e.target.value };
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                      placeholder="Title"
+                    />
+                    <Input
+                      value={item.desc}
+                      onChange={(e) => {
+                        const updated = [...formData.certificate_items];
+                        updated[idx] = { ...updated[idx], desc: e.target.value };
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                      placeholder="Description"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => {
+                        const updated = formData.certificate_items.filter((_, i) => i !== idx);
+                        setFormData((prev) => ({ ...prev, certificate_items: updated }));
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      certificate_items: [...prev.certificate_items, { title: '', desc: '' }],
+                    }))
+                  }
+                >
+                  + Add Item
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Manufacturer & Origin */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Manufacturer & Origin</CardTitle>
+                <CardDescription>Edit manufacturer details shown on product page</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formData.manufacturer_info.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-start">
+                    <Input
+                      value={item.label}
+                      onChange={(e) => {
+                        const updated = [...formData.manufacturer_info];
+                        updated[idx] = { ...updated[idx], label: e.target.value };
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                      placeholder="Label (e.g. Manufacturer)"
+                    />
+                    <Input
+                      value={item.value}
+                      onChange={(e) => {
+                        const updated = [...formData.manufacturer_info];
+                        updated[idx] = { ...updated[idx], value: e.target.value };
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                      placeholder="Value (e.g. KRT Jewels)"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive"
+                      onClick={() => {
+                        const updated = formData.manufacturer_info.filter((_, i) => i !== idx);
+                        setFormData((prev) => ({ ...prev, manufacturer_info: updated }));
+                      }}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      manufacturer_info: [...prev.manufacturer_info, { label: '', value: '' }],
+                    }))
+                  }
+                >
+                  + Add Row
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Pricing Tab */}
