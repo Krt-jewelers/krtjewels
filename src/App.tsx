@@ -163,6 +163,7 @@ const App = () => {
             <Route path="/admin/megamenu" element={<AdminMegamenu />} />
             <Route path="/admin/menu-categories" element={<AdminMenuCategories />} />
             <Route path="/admin/carousel-categories" element={<AdminCarouselCategories />} />
+            <Route path="/admin/collection-banners" element={<AdminCollectionBanners />} />
             <Route path="/admin/attributes" element={<AdminAttributes />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
             <Route path="/admin/media-usage" element={<AdminMediaUsage />} />
