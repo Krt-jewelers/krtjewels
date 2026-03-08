@@ -90,19 +90,6 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
-  const handleUploadScreenshot = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const url = await uploadToCloudinary(file, 'payment-proofs');
-      setScreenshotUrl(url);
-    } catch {
-      toast({ title: 'Upload failed', variant: 'destructive' });
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!utr && !screenshotUrl) {
