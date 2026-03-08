@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      carousel_categories: {
-        Row: {
-          created_at: string
-          display_order: number
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          is_view_all: boolean | null
-          name: string
-          slug: string
-        }
-        Insert: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_view_all?: boolean | null
-          name: string
-          slug: string
-        }
-        Update: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_view_all?: boolean | null
-          name?: string
-          slug?: string
-        }
-        Relationships: []
-      }
       addresses: {
         Row: {
           address_line1: string
@@ -92,27 +59,167 @@ export type Database = {
         }
         Relationships: []
       }
+      attribute_template_options: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_default: boolean | null
+          label: string
+          metal_type: string | null
+          price_adjustment: number | null
+          template_id: string
+          updated_at: string | null
+          value: string
+          weight_adjustment: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label: string
+          metal_type?: string | null
+          price_adjustment?: number | null
+          template_id: string
+          updated_at?: string | null
+          value: string
+          weight_adjustment?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_default?: boolean | null
+          label?: string
+          metal_type?: string | null
+          price_adjustment?: number | null
+          template_id?: string
+          updated_at?: string | null
+          value?: string
+          weight_adjustment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_template_options_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "attribute_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attribute_templates: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          selection_mode: string
+          slug: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          selection_mode?: string
+          slug: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          selection_mode?: string
+          slug?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      carousel_categories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_view_all: boolean | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_view_all?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_view_all?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string
           id: string
           product_id: string
           quantity: number
+          selected_variations: Json | null
           user_id: string
+          variation_price_adjustment: number
+          variation_signature: string
+          variation_weight_adjustment: number
         }
         Insert: {
           created_at?: string
           id?: string
           product_id: string
           quantity?: number
+          selected_variations?: Json | null
           user_id: string
+          variation_price_adjustment?: number
+          variation_signature?: string
+          variation_weight_adjustment?: number
         }
         Update: {
           created_at?: string
           id?: string
           product_id?: string
           quantity?: number
+          selected_variations?: Json | null
           user_id?: string
+          variation_price_adjustment?: number
+          variation_signature?: string
+          variation_weight_adjustment?: number
         }
         Relationships: [
           {
@@ -419,6 +526,364 @@ export type Database = {
         }
         Relationships: []
       }
+      megamenu_categories: {
+        Row: {
+          category_name: string
+          category_slug: string
+          created_at: string | null
+          display_order: number | null
+          featured_limit: number | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_name: string
+          category_slug: string
+          created_at?: string | null
+          display_order?: number | null
+          featured_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_name?: string
+          category_slug?: string
+          created_at?: string | null
+          display_order?: number | null
+          featured_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      megamenu_featured_products: {
+        Row: {
+          created_at: string | null
+          id: string
+          megamenu_category_id: string
+          product_id: string
+          product_image_url: string | null
+          product_order: number | null
+          product_title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          megamenu_category_id: string
+          product_id: string
+          product_image_url?: string | null
+          product_order?: number | null
+          product_title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          megamenu_category_id?: string
+          product_id?: string
+          product_image_url?: string | null
+          product_order?: number | null
+          product_title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "megamenu_featured_products_megamenu_category_id_fkey"
+            columns: ["megamenu_category_id"]
+            isOneToOne: false
+            referencedRelation: "megamenu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "megamenu_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "megamenu_featured_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      megamenu_item_products: {
+        Row: {
+          created_at: string | null
+          id: string
+          megamenu_item_id: string
+          product_id: string
+          product_image_url: string | null
+          product_order: number | null
+          product_title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          megamenu_item_id: string
+          product_id: string
+          product_image_url?: string | null
+          product_order?: number | null
+          product_title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          megamenu_item_id?: string
+          product_id?: string
+          product_image_url?: string | null
+          product_order?: number | null
+          product_title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "megamenu_item_products_megamenu_item_id_fkey"
+            columns: ["megamenu_item_id"]
+            isOneToOne: false
+            referencedRelation: "megamenu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "megamenu_item_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "megamenu_item_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      megamenu_item_rules: {
+        Row: {
+          created_at: string | null
+          id: string
+          megamenu_item_id: string
+          rule_order: number | null
+          rule_type: string
+          rule_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          megamenu_item_id: string
+          rule_order?: number | null
+          rule_type: string
+          rule_value?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          megamenu_item_id?: string
+          rule_order?: number | null
+          rule_type?: string
+          rule_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "megamenu_item_rules_megamenu_item_id_fkey"
+            columns: ["megamenu_item_id"]
+            isOneToOne: false
+            referencedRelation: "megamenu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      megamenu_items: {
+        Row: {
+          created_at: string | null
+          icon_emoji: string | null
+          id: string
+          is_active: boolean | null
+          item_name: string
+          item_order: number | null
+          item_slug: string | null
+          megamenu_section_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon_emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          item_name: string
+          item_order?: number | null
+          item_slug?: string | null
+          megamenu_section_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          icon_emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          item_name?: string
+          item_order?: number | null
+          item_slug?: string | null
+          megamenu_section_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "megamenu_items_megamenu_section_id_fkey"
+            columns: ["megamenu_section_id"]
+            isOneToOne: false
+            referencedRelation: "megamenu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      megamenu_sections: {
+        Row: {
+          column: number | null
+          created_at: string | null
+          id: string
+          is_featured: boolean | null
+          megamenu_category_id: string
+          section_name: string
+          section_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          column?: number | null
+          created_at?: string | null
+          id?: string
+          is_featured?: boolean | null
+          megamenu_category_id: string
+          section_name: string
+          section_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          column?: number | null
+          created_at?: string | null
+          id?: string
+          is_featured?: boolean | null
+          megamenu_category_id?: string
+          section_name?: string
+          section_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "megamenu_sections_megamenu_category_id_fkey"
+            columns: ["megamenu_category_id"]
+            isOneToOne: false
+            referencedRelation: "megamenu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      megamenu_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      menu_categories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      menu_subcategories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          menu_category_id: string
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          menu_category_id: string
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          menu_category_id?: string
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_subcategories_menu_category_id_fkey"
+            columns: ["menu_category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_queue: {
         Row: {
           body: string
@@ -466,9 +931,12 @@ export type Database = {
           product_image: string | null
           product_name: string
           quantity: number
+          selected_variations: Json | null
           stone_cost: number | null
           total_price: number
           unit_price: number
+          variation_price_adjustment: number
+          variation_weight_adjustment: number
           weight_grams: number
         }
         Insert: {
@@ -481,9 +949,12 @@ export type Database = {
           product_image?: string | null
           product_name: string
           quantity?: number
+          selected_variations?: Json | null
           stone_cost?: number | null
           total_price: number
           unit_price: number
+          variation_price_adjustment?: number
+          variation_weight_adjustment?: number
           weight_grams: number
         }
         Update: {
@@ -496,9 +967,12 @@ export type Database = {
           product_image?: string | null
           product_name?: string
           quantity?: number
+          selected_variations?: Json | null
           stone_cost?: number | null
           total_price?: number
           unit_price?: number
+          variation_price_adjustment?: number
+          variation_weight_adjustment?: number
           weight_grams?: number
         }
         Relationships: [
@@ -579,6 +1053,182 @@ export type Database = {
         }
         Relationships: []
       }
+      product_attribute_templates: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_enabled: boolean | null
+          product_id: string
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          product_id: string
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          product_id?: string
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_attribute_templates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_attribute_templates_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_attribute_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "attribute_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_categories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      product_menu_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          menu_category_id: string
+          menu_subcategory_id: string | null
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          menu_category_id: string
+          menu_subcategory_id?: string | null
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          menu_category_id?: string
+          menu_subcategory_id?: string | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_menu_categories_menu_category_id_fkey"
+            columns: ["menu_category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_menu_categories_menu_subcategory_id_fkey"
+            columns: ["menu_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "menu_subcategories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_menu_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "low_stock_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_menu_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_subcategories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          product_category_id: string
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          product_category_id: string
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          product_category_id?: string
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_subcategories_product_category_id_fkey"
+            columns: ["product_category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variations: {
         Row: {
           created_at: string
@@ -586,14 +1236,17 @@ export type Database = {
           image_url: string | null
           is_available: boolean | null
           is_default: boolean | null
+          metal_label: string | null
           metal_type: Database["public"]["Enums"]["metal_type"] | null
           price_adjustment: number | null
           product_id: string
+          selection_mode: string | null
           size_label: string | null
           size_value: string | null
           sku_suffix: string | null
           stock_quantity: number | null
           updated_at: string
+          variation_group: string | null
           variation_type: string
           weight_adjustment: number | null
         }
@@ -603,14 +1256,17 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean | null
           is_default?: boolean | null
+          metal_label?: string | null
           metal_type?: Database["public"]["Enums"]["metal_type"] | null
           price_adjustment?: number | null
           product_id: string
+          selection_mode?: string | null
           size_label?: string | null
           size_value?: string | null
           sku_suffix?: string | null
           stock_quantity?: number | null
           updated_at?: string
+          variation_group?: string | null
           variation_type: string
           weight_adjustment?: number | null
         }
@@ -620,14 +1276,17 @@ export type Database = {
           image_url?: string | null
           is_available?: boolean | null
           is_default?: boolean | null
+          metal_label?: string | null
           metal_type?: Database["public"]["Enums"]["metal_type"] | null
           price_adjustment?: number | null
           product_id?: string
+          selection_mode?: string | null
           size_label?: string | null
           size_value?: string | null
           sku_suffix?: string | null
           stock_quantity?: number | null
           updated_at?: string
+          variation_group?: string | null
           variation_type?: string
           weight_adjustment?: number | null
         }
@@ -650,7 +1309,7 @@ export type Database = {
       }
       products: {
         Row: {
-          category: Database["public"]["Enums"]["product_category"]
+          category: Database["public"]["Enums"]["product_category"] | null
           created_at: string
           description: string | null
           diamond_cost: number | null
@@ -665,6 +1324,8 @@ export type Database = {
           making_charge_percent: number | null
           metal_type: Database["public"]["Enums"]["metal_type"]
           name: string
+          product_category_id: string | null
+          product_subcategory_id: string | null
           short_description: string | null
           sku: string | null
           slug: string
@@ -677,7 +1338,7 @@ export type Database = {
           weight_grams: number
         }
         Insert: {
-          category: Database["public"]["Enums"]["product_category"]
+          category?: Database["public"]["Enums"]["product_category"] | null
           created_at?: string
           description?: string | null
           diamond_cost?: number | null
@@ -692,6 +1353,8 @@ export type Database = {
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
           name: string
+          product_category_id?: string | null
+          product_subcategory_id?: string | null
           short_description?: string | null
           sku?: string | null
           slug: string
@@ -704,7 +1367,7 @@ export type Database = {
           weight_grams: number
         }
         Update: {
-          category?: Database["public"]["Enums"]["product_category"]
+          category?: Database["public"]["Enums"]["product_category"] | null
           created_at?: string
           description?: string | null
           diamond_cost?: number | null
@@ -719,6 +1382,8 @@ export type Database = {
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
           name?: string
+          product_category_id?: string | null
+          product_subcategory_id?: string | null
           short_description?: string | null
           sku?: string | null
           slug?: string
@@ -730,7 +1395,22 @@ export type Database = {
           video_url?: string | null
           weight_grams?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_product_category_id_fkey"
+            columns: ["product_category_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_product_subcategory_id_fkey"
+            columns: ["product_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "product_subcategories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
