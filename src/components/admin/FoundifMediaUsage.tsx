@@ -26,12 +26,20 @@ function formatNumber(num: number): string {
 }
 
 export function FoundifMediaUsage() {
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ['foundif-media-usage'],
     queryFn: getCloudinaryUsage,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always refetch when invalidated
+    gcTime: 2 * 60 * 1000,
     retry: 1,
   });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['foundif-media-usage'] });
+    queryClient.invalidateQueries({ queryKey: ['cloudinary-images'] });
+  };
 
   if (error) {
     return (
