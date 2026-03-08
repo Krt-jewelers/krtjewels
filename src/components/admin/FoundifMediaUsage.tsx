@@ -33,7 +33,7 @@ export function FoundifMediaUsage() {
     return (
       <Card className="border-destructive/30">
         <CardContent className="p-4">
-          <p className="text-sm text-destructive">Failed to load Foundif Media usage</p>
+          <p className="text-sm text-destructive">Failed to load media usage</p>
         </CardContent>
       </Card>
     );
@@ -46,9 +46,9 @@ export function FoundifMediaUsage() {
       limit: data.storage_limit_bytes,
       format: formatBytes,
       icon: HardDrive,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-      progressColor: 'bg-blue-500',
+      iconClass: 'text-primary',
+      iconBgClass: 'bg-primary/10',
+      progressClass: 'bg-primary',
     },
     {
       label: 'Bandwidth',
@@ -56,9 +56,9 @@ export function FoundifMediaUsage() {
       limit: data.bandwidth_limit_bytes,
       format: formatBytes,
       icon: Wifi,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
-      progressColor: 'bg-emerald-500',
+      iconClass: 'text-accent-foreground',
+      iconBgClass: 'bg-accent/30',
+      progressClass: 'bg-accent',
     },
     {
       label: 'Transformations',
@@ -66,9 +66,9 @@ export function FoundifMediaUsage() {
       limit: data.transformations_limit,
       format: formatNumber,
       icon: Sparkles,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
-      progressColor: 'bg-purple-500',
+      iconClass: 'text-foreground',
+      iconBgClass: 'bg-secondary',
+      progressClass: 'bg-foreground/70',
     },
   ] : [];
 
