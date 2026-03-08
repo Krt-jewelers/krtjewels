@@ -15,15 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2 } from 'lucide-react';
-
-type RazorpayResponse = {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-};
-
-type RazorpayCtor = new (options: Record<string, unknown>) => { open: () => void };
+import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2, QrCode } from 'lucide-react';
+import { UpiPaymentModal } from '@/components/checkout/UpiPaymentModal';
 
 interface AddressForm {
   full_name: string;
@@ -33,6 +26,13 @@ interface AddressForm {
   city: string;
   state: string;
   pincode: string;
+}
+
+interface UpiSettings {
+  qr_code_url: string | null;
+  upi_id: string | null;
+  merchant_name: string | null;
+  is_active: boolean;
 }
 
 export default function CheckoutPage() {
@@ -46,6 +46,8 @@ export default function CheckoutPage() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const [upiSettings, setUpiSettings] = useState<UpiSettings | null>(null);
   const [address, setAddress] = useState<AddressForm>({
     full_name: '',
     phone: '',
@@ -57,23 +59,24 @@ export default function CheckoutPage() {
   });
   const [notes, setNotes] = useState('');
 
-  // Load Razorpay script
+  // Fetch UPI settings
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
-    
-    return () => {
-      document.body.removeChild(script);
+    const fetchUpiSettings = async () => {
+      const { data } = await supabase
+        .from('upi_payment_settings')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      if (data) setUpiSettings(data as unknown as UpiSettings);
     };
+    fetchUpiSettings();
   }, []);
 
   // Fetch saved addresses
   useEffect(() => {
     const fetchDefaultAddress = async () => {
       if (!user) return;
-      
       const { data } = await supabase
         .from('addresses')
         .select('*')
@@ -93,13 +96,9 @@ export default function CheckoutPage() {
         });
       }
     };
-    
-    if (user) {
-      fetchDefaultAddress();
-    }
+    if (user) fetchDefaultAddress();
   }, [user]);
 
-  // Show loading state while auth is loading
   if (authLoading || cartLoading) {
     return (
       <Layout>
@@ -123,10 +122,18 @@ export default function CheckoutPage() {
     return `KRT${year}${month}${random}`;
   };
 
-  const createOrder = async (orderNumber: string, paymentId?: string) => {
+  const createOrder = async (orderNumber: string, opts?: {
+    paymentMethod?: string;
+    paymentId?: string;
+    paymentProofUrl?: string;
+    paymentUtr?: string;
+    upiPhone?: string;
+    upiProvider?: string;
+    status?: string;
+  }) => {
     if (!goldRate) return null;
+    const method = opts?.paymentMethod || paymentMethod;
 
-    // Create order
     if (!user) {
       const orderItems = items.map((item) => ({
         product_id: item.product.id,
@@ -139,9 +146,7 @@ export default function CheckoutPage() {
         stone_cost: item.product.stone_cost || 0,
         quantity: item.quantity,
         unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
-        total_price:
-          (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
-          item.quantity,
+        total_price: (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) * item.quantity,
         selected_variations: item.selected_variations || {},
         variation_price_adjustment: item.variation_price_adjustment || 0,
         variation_weight_adjustment: item.variation_weight_adjustment || 0,
@@ -155,13 +160,12 @@ export default function CheckoutPage() {
           total_amount: total,
           gold_rate_at_order: goldRate.rate_22k,
           shipping_address: address as unknown as Json,
-          payment_method: paymentMethod,
-          payment_id: paymentId || null,
+          payment_method: method,
+          payment_id: opts?.paymentId || null,
           notes: notes || null,
           items: orderItems,
         },
       });
-
       if (guestError) throw new Error(guestError.message);
       return guestData;
     }
@@ -171,14 +175,18 @@ export default function CheckoutPage() {
       .insert([{
         order_number: orderNumber,
         user_id: user.id,
-        status: paymentId ? 'confirmed' : 'pending' as const,
+        status: (opts?.status || 'pending') as 'pending' | 'confirmed',
         gold_rate_at_order: goldRate.rate_22k,
-        subtotal: subtotal,
+        subtotal,
         gst_amount: gstTotal,
         total_amount: total,
         shipping_address: address as unknown as Json,
-        payment_method: paymentMethod,
-        payment_id: paymentId || null,
+        payment_method: method,
+        payment_id: opts?.paymentId || null,
+        payment_proof_url: opts?.paymentProofUrl || null,
+        payment_utr: opts?.paymentUtr || null,
+        upi_phone: opts?.upiPhone || null,
+        upi_provider: opts?.upiProvider || null,
         notes: notes || null,
       }])
       .select()
@@ -186,7 +194,6 @@ export default function CheckoutPage() {
 
     if (orderError) throw orderError;
 
-    // Create order items
     const orderItems = items.map((item) => ({
       order_id: order.id,
       product_id: item.product.id,
@@ -199,21 +206,15 @@ export default function CheckoutPage() {
       stone_cost: item.product.stone_cost || 0,
       quantity: item.quantity,
       unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
-      total_price:
-        (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
-        item.quantity,
+      total_price: (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) * item.quantity,
       selected_variations: item.selected_variations || {},
       variation_price_adjustment: item.variation_price_adjustment || 0,
       variation_weight_adjustment: item.variation_weight_adjustment || 0,
     }));
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
-
+    const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
     if (itemsError) throw itemsError;
 
-    // Update stock quantities
     for (const item of items) {
       if (item.product.stock_quantity !== null) {
         await supabase
@@ -226,134 +227,60 @@ export default function CheckoutPage() {
     return order;
   };
 
-  const handleRazorpayPayment = async () => {
+  const handleUpiSubmit = async (data: { utr: string; screenshotUrl: string | null; upiPhone: string; upiProvider: string }) => {
     setIsSubmitting(true);
-
     try {
       const orderNumber = generateOrderNumber();
-
-      // Create Razorpay order via edge function
-      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
-        body: {
-          amount: total,
-          currency: 'INR',
-          receipt: orderNumber,
-          notes: { order_number: orderNumber },
-        },
+      await createOrder(orderNumber, {
+        paymentMethod: 'upi',
+        paymentUtr: data.utr || undefined,
+        paymentProofUrl: data.screenshotUrl || undefined,
+        upiPhone: data.upiPhone || undefined,
+        upiProvider: data.upiProvider || undefined,
+        status: 'pending',
       });
 
-      if (error) throw new Error(error.message);
-
-      const options = {
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency,
-        name: 'KRT Jewels',
-        description: `Order #${orderNumber}`,
-        order_id: data.orderId,
-        handler: async (response: RazorpayResponse) => {
-          try {
-            // Verify payment
-            const { error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
-              body: {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-            });
-
-            if (verifyError) throw new Error(verifyError.message);
-
-            // Create order in database
-            await createOrder(orderNumber, response.razorpay_payment_id);
-            
-            clearCart();
-            toast({
-              title: 'Payment Successful!',
-              description: `Your order #${orderNumber} has been confirmed.`,
-            });
-            navigate(`/order-success?order=${orderNumber}`);
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Payment verification failed';
-            toast({
-              title: 'Payment verification failed',
-              description: message,
-              variant: 'destructive',
-            });
-          }
-        },
-        prefill: {
-          name: address.full_name,
-          email: user?.email,
-          contact: address.phone,
-        },
-        theme: {
-          color: '#C9A54D',
-        },
-        modal: {
-          ondismiss: () => {
-            setIsSubmitting(false);
-          },
-        },
-      };
-
-      const Razorpay = (window as unknown as { Razorpay: RazorpayCtor }).Razorpay;
-      const razorpay = new Razorpay(options as Record<string, unknown>);
-      razorpay.open();
+      clearCart();
+      setShowUpiModal(false);
+      toast({ title: 'Order Placed!', description: 'We will verify your payment and process your order.' });
+      navigate(`/order-success?order=${orderNumber}&upi=1`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-      console.error('Payment error:', error);
-      toast({
-        title: 'Payment failed',
-        description: message,
-        variant: 'destructive',
-      });
+      const message = error instanceof Error ? error.message : 'Something went wrong';
+      toast({ title: 'Failed to place order', description: message, variant: 'destructive' });
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!goldRate) return;
 
-    // Validate address
     if (!address.full_name || !address.phone || !address.address_line1 || !address.city || !address.pincode) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please fill in all required address fields.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Missing Information', description: 'Please fill in all required address fields.', variant: 'destructive' });
       return;
     }
 
-    if (paymentMethod === 'online') {
-      await handleRazorpayPayment();
+    if (paymentMethod === 'upi') {
+      if (!upiSettings?.qr_code_url) {
+        toast({ title: 'UPI not available', description: 'UPI payment is not configured yet.', variant: 'destructive' });
+        return;
+      }
+      setShowUpiModal(true);
       return;
     }
 
     // COD order
     setIsSubmitting(true);
-
     try {
       const orderNumber = generateOrderNumber();
       await createOrder(orderNumber);
-      
       clearCart();
-      toast({
-        title: 'Order Placed Successfully!',
-        description: `Your order #${orderNumber} has been confirmed.`,
-      });
+      toast({ title: 'Order Placed Successfully!', description: `Your order #${orderNumber} has been confirmed.` });
       navigate(`/order-success?order=${orderNumber}`);
-
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-      console.error('Order error:', error);
-      toast({
-        title: 'Failed to place order',
-        description: message,
-        variant: 'destructive',
-      });
+      const message = error instanceof Error ? error.message : 'Something went wrong';
+      toast({ title: 'Failed to place order', description: message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -366,7 +293,6 @@ export default function CheckoutPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Address & Payment */}
             <div className="lg:col-span-2 space-y-6">
               {/* Shipping Address */}
               <Card>
@@ -380,70 +306,33 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="full_name">Full Name *</Label>
-                      <Input
-                        id="full_name"
-                        value={address.full_name}
-                        onChange={(e) => setAddress(prev => ({ ...prev, full_name: e.target.value }))}
-                        required
-                      />
+                      <Input id="full_name" value={address.full_name} onChange={(e) => setAddress(prev => ({ ...prev, full_name: e.target.value }))} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number *</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={address.phone}
-                        onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))}
-                        required
-                      />
+                      <Input id="phone" type="tel" value={address.phone} onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))} required />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_line1">Address Line 1 *</Label>
-                    <Input
-                      id="address_line1"
-                      value={address.address_line1}
-                      onChange={(e) => setAddress(prev => ({ ...prev, address_line1: e.target.value }))}
-                      placeholder="House/Flat No., Building, Street"
-                      required
-                    />
+                    <Input id="address_line1" value={address.address_line1} onChange={(e) => setAddress(prev => ({ ...prev, address_line1: e.target.value }))} placeholder="House/Flat No., Building, Street" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_line2">Address Line 2</Label>
-                    <Input
-                      id="address_line2"
-                      value={address.address_line2}
-                      onChange={(e) => setAddress(prev => ({ ...prev, address_line2: e.target.value }))}
-                      placeholder="Landmark, Area (optional)"
-                    />
+                    <Input id="address_line2" value={address.address_line2} onChange={(e) => setAddress(prev => ({ ...prev, address_line2: e.target.value }))} placeholder="Landmark, Area (optional)" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        value={address.city}
-                        onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))}
-                        required
-                      />
+                      <Input id="city" value={address.city} onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
-                        value={address.state}
-                        onChange={(e) => setAddress(prev => ({ ...prev, state: e.target.value }))}
-                        required
-                      />
+                      <Input id="state" value={address.state} onChange={(e) => setAddress(prev => ({ ...prev, state: e.target.value }))} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pincode">Pincode *</Label>
-                      <Input
-                        id="pincode"
-                        value={address.pincode}
-                        onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))}
-                        required
-                      />
+                      <Input id="pincode" value={address.pincode} onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))} required />
                     </div>
                   </div>
                 </CardContent>
@@ -469,17 +358,20 @@ export default function CheckoutPage() {
                         <p className="text-sm text-muted-foreground mt-1">Pay when you receive your order</p>
                       </Label>
                     </div>
-                    <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all mt-3 ${paymentMethod === 'online' ? 'border-primary bg-primary/5' : 'hover:bg-secondary/30'}`}>
-                      <RadioGroupItem value="online" id="online" />
-                      <Label htmlFor="online" className="flex-1 cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-5 h-5 text-muted-foreground" />
-                          <span className="font-medium">Pay Online (Razorpay)</span>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Secure</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">Cards, UPI, Net Banking, Wallets</p>
-                      </Label>
-                    </div>
+
+                    {upiSettings?.is_active && upiSettings.qr_code_url && (
+                      <div className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-all mt-3 ${paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'hover:bg-secondary/30'}`}>
+                        <RadioGroupItem value="upi" id="upi" />
+                        <Label htmlFor="upi" className="flex-1 cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <QrCode className="w-5 h-5 text-muted-foreground" />
+                            <span className="font-medium">Pay via UPI</span>
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">GPay / PhonePe / UPI</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">Scan QR code and pay using any UPI app</p>
+                        </Label>
+                      </div>
+                    )}
                   </RadioGroup>
                 </CardContent>
               </Card>
@@ -490,12 +382,7 @@ export default function CheckoutPage() {
                   <CardTitle className="font-medium">Order Notes (Optional)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Any special instructions for your order..."
-                    rows={3}
-                  />
+                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special instructions for your order..." rows={3} />
                 </CardContent>
               </Card>
             </div>
@@ -510,21 +397,14 @@ export default function CheckoutPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Items */}
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {items.map((item) => (
                       <div key={item.id} className="flex gap-3">
-                        <img
-                          src={item.product.images[0] || '/placeholder.svg'}
-                          alt={item.product.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
+                        <img src={item.product.images[0] || '/placeholder.svg'} alt={item.product.name} className="w-16 h-16 object-cover rounded-lg" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium line-clamp-1">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                          <p className="text-sm font-semibold text-primary">
-                            {formatPrice(item.product.calculated_price.total * item.quantity)}
-                          </p>
+                          <p className="text-sm font-semibold text-primary">{formatPrice(item.product.calculated_price.total * item.quantity)}</p>
                         </div>
                       </div>
                     ))}
@@ -549,32 +429,22 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    className="w-full btn-premium py-6 text-lg"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" className="w-full btn-premium py-6 text-lg" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : paymentMethod === 'online' ? (
-                      'Pay Now'
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+                    ) : paymentMethod === 'upi' ? (
+                      'Pay with UPI'
                     ) : (
                       'Place Order'
                     )}
                   </Button>
 
-                  {/* Trust badges */}
                   <div className="grid grid-cols-2 gap-2 text-center pt-4 border-t">
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                      <Truck className="w-4 h-4" />
-                      <span>Free Shipping</span>
+                      <Truck className="w-4 h-4" /><span>Free Shipping</span>
                     </div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                      <Shield className="w-4 h-4" />
-                      <span>Secure Payment</span>
+                      <Shield className="w-4 h-4" /><span>Secure Payment</span>
                     </div>
                   </div>
                 </CardContent>
@@ -583,6 +453,19 @@ export default function CheckoutPage() {
           </div>
         </form>
       </div>
+
+      {/* UPI Payment Modal */}
+      {upiSettings?.qr_code_url && (
+        <UpiPaymentModal
+          open={showUpiModal}
+          onClose={() => setShowUpiModal(false)}
+          onSubmit={handleUpiSubmit}
+          amount={total}
+          qrCodeUrl={upiSettings.qr_code_url}
+          upiId={upiSettings.upi_id || undefined}
+          merchantName={upiSettings.merchant_name || undefined}
+        />
+      )}
     </Layout>
   );
 }
