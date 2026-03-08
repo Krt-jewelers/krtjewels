@@ -92,13 +92,13 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
 
 
   const handleSubmit = async () => {
-    if (!utr && !screenshotUrl) {
-      toast({ title: 'Please enter UTR number or upload screenshot', variant: 'destructive' });
+    if (!utr) {
+      toast({ title: 'Please enter UTR / Transaction Reference Number', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
     try {
-      await onSubmit({ utr, screenshotUrl, upiPhone, upiProvider });
+      await onSubmit({ utr, screenshotUrl: null, upiPhone, upiProvider });
     } finally {
       setSubmitting(false);
     }
