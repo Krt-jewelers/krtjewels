@@ -30,21 +30,8 @@ export function VariationImageUpload({ imageUrl, onImageChange }: VariationImage
 
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `variations/${fileName}`;
-
-      const { error } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('product-images')
-        .getPublicUrl(filePath);
-
-      onImageChange(publicUrl);
+      const url = await uploadToCloudinary(file, 'variations');
+      onImageChange(url);
     } catch (error: any) {
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
     } finally {
