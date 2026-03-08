@@ -4,6 +4,8 @@ import { ProductGrid } from '@/components/products/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
 import { CATEGORY_NAMES, type ProductCategory, formatPrice } from '@/lib/types';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -24,6 +26,19 @@ const categoryRouteMap: Record<string, ProductCategory> = {
   'mens-jewellery': 'mens_jewellery',
 };
 
+const defaultBannerMap: Record<string, string> = {
+  necklaces: '/collection-banners/necklaces.jpg',
+  earrings: '/collection-banners/earrings.jpg',
+  rings: '/collection-banners/rings.jpg',
+  bangles: '/collection-banners/bangles.jpg',
+  bracelets: '/collection-banners/bracelets.jpg',
+  chains: '/collection-banners/chains.jpg',
+  pendants: '/collection-banners/pendants.jpg',
+  wedding_sets: '/collection-banners/wedding-sets.jpg',
+  diamond_jewellery: '/collection-banners/diamond-jewellery.jpg',
+  mens_jewellery: '/collection-banners/mens-jewellery.jpg',
+};
+
 export default function CollectionPage() {
   const { category: categorySlug } = useParams<{ category: string }>();
   const category = categorySlug ? categoryRouteMap[categorySlug] : undefined;
@@ -32,6 +47,25 @@ export default function CollectionPage() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [sortBy, setSortBy] = useState<string>('newest');
   const [metalFilter, setMetalFilter] = useState<string>('all');
+
+  // Fetch banner image from product_categories
+  const { data: categoryData } = useQuery({
+    queryKey: ['collection-banner', category],
+    queryFn: async () => {
+      if (!category) return null;
+      const { data } = await supabase
+        .from('product_categories')
+        .select('banner_image_url')
+        .eq('slug', category)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!category,
+  });
+
+  const bannerImage = (categoryData as any)?.banner_image_url
+    || (category ? defaultBannerMap[category] : null)
+    || '/collection-banners/necklaces.jpg';
 
   const { data: products, isLoading } = useProducts({
     category,
@@ -74,7 +108,7 @@ export default function CollectionPage() {
       <section className="relative h-64 md:h-80 overflow-hidden">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1920&h=400&fit=crop"
+            src={bannerImage}
             alt={categoryName}
             className="w-full h-full object-cover"
           />
