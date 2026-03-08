@@ -108,7 +108,7 @@ export function FoundifMediaUsage() {
                 variant="ghost"
                 size="icon"
                 className="w-7 h-7"
-                onClick={() => refetch()}
+                onClick={handleRefresh}
                 disabled={isFetching}
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
