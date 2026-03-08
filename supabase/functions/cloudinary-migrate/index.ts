@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const DEFAULT_CLOUD_NAME = 'dy6mjjky3';
-const DEFAULT_API_KEY = '144956732892888';
+const DEFAULT_API_KEY = '975362951629998';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
