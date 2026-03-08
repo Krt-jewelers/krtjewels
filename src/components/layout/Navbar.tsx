@@ -34,12 +34,12 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
   const { isAuthenticated, user, signOut, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const { data: goldRate } = useGoldRate();
-  const { data: megamenu } = useMegamenu();
+  const { data: megamenu, isLoading: isMegamenuLoading } = useMegamenu();
   const { data: megamenuSettings } = useMegamenuSettings();
   const navigate = useNavigate();
   const isMegamenuEnabled = megamenuSettings?.is_enabled !== false;
   const megamenuData =
-    megamenu && megamenu.length > 0 ? megamenu : buildFallbackMegamenu();
+    isMegamenuLoading ? [] : (megamenu && megamenu.length > 0 ? megamenu : buildFallbackMegamenu());
   const activeMegamenuCategory = megamenuData.find(
     (category) => category.category_slug === hoveredCategory
   );
