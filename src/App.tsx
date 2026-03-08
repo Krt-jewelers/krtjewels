@@ -56,6 +56,7 @@ import AdminCarouselCategories from "./pages/admin/CarouselCategories";
 import AdminAttributes from "./pages/admin/Attributes";
 import AdminAnalytics from "./pages/admin/Analytics";
 import AdminMediaUsage from "./pages/admin/MediaUsage";
+import AdminMedia from "./pages/admin/Media";
 
 const queryClient = new QueryClient({
   defaultOptions: {
