@@ -19,26 +19,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
   const { toast } = useToast();
 
   const uploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `products/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    return await uploadToCloudinary(file, 'products');
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
