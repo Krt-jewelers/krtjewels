@@ -222,10 +222,10 @@ export default function AdminMedia() {
     toast({ title: 'Copied!', description: 'Image URL copied to clipboard' });
   };
 
-  const filteredImages = data?.resources.filter(img => 
+  const filteredImages = allImages.filter(img => 
     searchQuery === '' || 
     img.public_id.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
 
   const toggleSelect = (publicId: string) => {
     setSelectedIds(prev => {
