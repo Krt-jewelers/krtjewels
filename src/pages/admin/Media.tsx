@@ -448,8 +448,10 @@ export default function AdminMedia() {
                 <ImageIcon className="w-5 h-5" />
                 Images
               </span>
-              {data && (
-                <Badge variant="secondary">{filteredImages.length} images</Badge>
+              {allImages.length > 0 && (
+                <Badge variant="secondary">
+                  {filteredImages.length}{totalCount > allImages.length ? ` of ${totalCount}` : ''} images
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
