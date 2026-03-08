@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { FoundifMediaUsage } from '@/components/admin/FoundifMediaUsage';
@@ -22,7 +22,8 @@ import {
   CheckSquare,
   Square,
   X,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -81,14 +82,76 @@ export default function AdminMedia() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [singleDeleteTarget, setSingleDeleteTarget] = useState<CloudinaryImage | null>(null);
   const [migrationProgress, setMigrationProgress] = useState<number | null>(null);
+  const [allImages, setAllImages] = useState<CloudinaryImage[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const folderParam = selectedFolder === 'all' ? '' : selectedFolder;
+
+  // Initial load
+  const { isLoading, error, isFetching, refetch } = useQuery({
     queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: () => listCloudinaryImages(selectedFolder === 'all' ? '' : selectedFolder),
+    queryFn: async () => {
+      const result = await listCloudinaryImages(folderParam);
+      setAllImages(result.resources);
+      setNextCursor(result.next_cursor);
+      setTotalCount(result.total_count);
+      return result;
+    },
     staleTime: 2 * 60 * 1000,
   });
+
+  // Reset when folder changes
+  useEffect(() => {
+    setAllImages([]);
+    setNextCursor(null);
+    setTotalCount(0);
+  }, [selectedFolder]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      const result = await listCloudinaryImages(folderParam, nextCursor);
+      setAllImages(prev => [...prev, ...result.resources]);
+      setNextCursor(result.next_cursor);
+      setTotalCount(result.total_count);
+    } catch (e) {
+      toast({ title: 'Error', description: 'Failed to load more images', variant: 'destructive' });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, isLoadingMore, folderParam, toast]);
+
+  const loadAll = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    let cursor: string | null = nextCursor;
+    let accumulated: CloudinaryImage[] = [];
+    try {
+      while (cursor) {
+        const result = await listCloudinaryImages(folderParam, cursor);
+        accumulated = [...accumulated, ...result.resources];
+        cursor = result.next_cursor;
+        setTotalCount(result.total_count);
+        // Small delay to avoid rate limiting
+        if (cursor) await new Promise(r => setTimeout(r, 300));
+      }
+      setAllImages(prev => [...prev, ...accumulated]);
+      setNextCursor(null);
+    } catch (e) {
+      // Save what we got so far
+      if (accumulated.length > 0) {
+        setAllImages(prev => [...prev, ...accumulated]);
+      }
+      toast({ title: 'Error', description: 'Failed to load all images', variant: 'destructive' });
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, isLoadingMore, folderParam, toast]);
 
   const migrateMutation = useMutation({
     mutationFn: async () => {
@@ -159,10 +222,10 @@ export default function AdminMedia() {
     toast({ title: 'Copied!', description: 'Image URL copied to clipboard' });
   };
 
-  const filteredImages = data?.resources.filter(img => 
+  const filteredImages = allImages.filter(img => 
     searchQuery === '' || 
     img.public_id.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
 
   const toggleSelect = (publicId: string) => {
     setSelectedIds(prev => {
@@ -385,8 +448,10 @@ export default function AdminMedia() {
                 <ImageIcon className="w-5 h-5" />
                 Images
               </span>
-              {data && (
-                <Badge variant="secondary">{filteredImages.length} images</Badge>
+              {allImages.length > 0 && (
+                <Badge variant="secondary">
+                  {filteredImages.length}{totalCount > allImages.length ? ` of ${totalCount}` : ''} images
+                </Badge>
               )}
             </CardTitle>
           </CardHeader>
@@ -414,73 +479,104 @@ export default function AdminMedia() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredImages.map((image) => {
-                  const isSelected = selectedIds.has(image.public_id);
-                  return (
-                    <div
-                      key={image.public_id}
-                      className={`group relative aspect-square rounded-lg overflow-hidden border-2 bg-secondary/30 cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-primary ring-2 ring-primary/30'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => {
-                        if (selectMode) {
-                          toggleSelect(image.public_id);
-                        } else {
-                          setSelectedImage(image);
-                        }
-                      }}
-                    >
-                      <img
-                        src={image.secure_url}
-                        alt={image.public_id}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      
-                      {/* Checkbox overlay in select mode */}
-                      {selectMode && (
-                        <div className="absolute top-2 left-2 z-10">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? 'bg-primary border-primary text-primary-foreground'
-                              : 'bg-background/80 border-muted-foreground/50'
-                          }`}>
-                            {isSelected && <CheckCircle className="w-3 h-3" />}
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {filteredImages.map((image) => {
+                    const isSelected = selectedIds.has(image.public_id);
+                    return (
+                      <div
+                        key={image.public_id}
+                        className={`group relative aspect-square rounded-lg overflow-hidden border-2 bg-secondary/30 cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-primary ring-2 ring-primary/30'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        onClick={() => {
+                          if (selectMode) {
+                            toggleSelect(image.public_id);
+                          } else {
+                            setSelectedImage(image);
+                          }
+                        }}
+                      >
+                        <img
+                          src={image.secure_url}
+                          alt={image.public_id}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        
+                        {selectMode && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? 'bg-primary border-primary text-primary-foreground'
+                                : 'bg-background/80 border-muted-foreground/50'
+                            }`}>
+                              {isSelected && <CheckCircle className="w-3 h-3" />}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <p className="text-white text-xs truncate">{image.public_id.split('/').pop()}</p>
-                          <p className="text-white/70 text-[10px]">{formatBytes(image.bytes)}</p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute bottom-2 left-2 right-2">
+                            <p className="text-white text-xs truncate">{image.public_id.split('/').pop()}</p>
+                            <p className="text-white/70 text-[10px]">{formatBytes(image.bytes)}</p>
+                          </div>
+                          {!selectMode && (
+                            <button
+                              className="absolute top-2 right-2 p-1.5 rounded-md bg-destructive/90 text-destructive-foreground hover:bg-destructive transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSingleDelete(image);
+                              }}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
-                        {/* Single delete button on hover */}
-                        {!selectMode && (
-                          <button
-                            className="absolute top-2 right-2 p-1.5 rounded-md bg-destructive/90 text-destructive-foreground hover:bg-destructive transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSingleDelete(image);
-                            }}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {image.folder && (
+                          <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5" variant="secondary">
+                            {image.folder}
+                          </Badge>
                         )}
                       </div>
-                      {image.folder && (
-                        <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5" variant="secondary">
-                          {image.folder}
-                        </Badge>
+                    );
+                  })}
+                </div>
+
+                {nextCursor && (
+                  <div className="flex items-center justify-center gap-3 pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={loadMore}
+                      disabled={isLoadingMore}
+                    >
+                      {isLoadingMore ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 mr-2" />
                       )}
-                    </div>
-                  );
-                })}
-              </div>
+                      Load More
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={loadAll}
+                      disabled={isLoadingMore}
+                    >
+                      {isLoadingMore ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
+                      Load All
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Showing {allImages.length} of {totalCount}
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
