@@ -62,18 +62,9 @@ export interface CloudinaryUsage {
   resources: number;
   plan: string;
   limited?: boolean;
-}
-
-export interface CloudinaryUsage {
-  storage_used_bytes: number;
-  storage_limit_bytes: number;
-  bandwidth_used_bytes: number;
-  bandwidth_limit_bytes: number;
-  transformations_used: number;
-  transformations_limit: number;
-  resources: number;
-  plan: string;
-  limited?: boolean;
+  usage_api_status?: number | null;
+  usage_api_error?: string | null;
+  api_key_hint?: string;
 }
 
 export async function getCloudinaryUsage(): Promise<CloudinaryUsage> {
