@@ -146,7 +146,7 @@ serve(async (req) => {
     const variationErrors: string[] = [];
 
     for (const item of (variations || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { variationsSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { variationsSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'variations');
       if (newUrl) {
         await supabase.from('product_variations').update({ image_url: newUrl }).eq('id', item.id);
