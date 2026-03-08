@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const CLOUD_NAME = 'dy6mjjky3';
-    const API_KEY = '975362951629998';
+    const CLOUD_NAME = 'dhaglwzta';
+    const API_KEY = '312797188237582';
     const API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET');
 
     if (!API_SECRET) {

@@ -5,8 +5,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const DEFAULT_CLOUD_NAME = 'dy6mjjky3';
-const DEFAULT_API_KEY = '975362951629998';
+const DEFAULT_CLOUD_NAME = 'dhaglwzta';
+const DEFAULT_API_KEY = '312797188237582';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
