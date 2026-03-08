@@ -63,7 +63,7 @@ export default function AdminMedia() {
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['cloudinary-images', selectedFolder],
-    queryFn: () => listCloudinaryImages(selectedFolder),
+    queryFn: () => listCloudinaryImages(selectedFolder === 'all' ? '' : selectedFolder),
     staleTime: 2 * 60 * 1000,
   });
 
