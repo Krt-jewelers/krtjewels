@@ -546,6 +546,39 @@ export default function AdminMedia() {
                   );
                 })}
               </div>
+              
+              {/* Load More / Load All */}
+              {nextCursor && (
+                <div className="flex items-center justify-center gap-3 pt-6">
+                  <Button
+                    variant="outline"
+                    onClick={loadMore}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 mr-2" />
+                    )}
+                    Load More
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={loadAll}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    Load All
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Showing {allImages.length} of {totalCount}
+                  </span>
+                </div>
+              )}
             )}
           </CardContent>
         </Card>
