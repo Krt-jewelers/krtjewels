@@ -200,7 +200,7 @@ serve(async (req) => {
     const featuredErrors: string[] = [];
 
     for (const item of (featuredItems || [])) {
-      if (!item.product_image_url || item.product_image_url.includes('cloudinary.com')) { featuredSkipped++; continue; }
+      if (!item.product_image_url || item.product_image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { featuredSkipped++; continue; }
       const newUrl = await migrateImage(item.product_image_url, 'megamenu');
       if (newUrl) {
         await supabase.from('megamenu_featured_products').update({ product_image_url: newUrl }).eq('id', item.id);
