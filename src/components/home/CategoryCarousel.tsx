@@ -126,7 +126,16 @@ export function CategoryCarousel() {
             className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-center lg:gap-4 lg:overflow-x-auto touch-pan-y"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
           >
-            {categories.filter((category) => !category.is_view_all).map((category) => (
+            {isLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex-shrink-0 lg:flex-shrink snap-start">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 rounded-2xl bg-muted animate-pulse" />
+                    <div className="w-12 h-3 bg-muted animate-pulse rounded" />
+                  </div>
+                </div>
+              ))
+            ) : displayCategories.filter((category) => !category.is_view_all).map((category) => (
               <Link
                 key={category.slug}
                 to={`/collections/${category.slug}`}
