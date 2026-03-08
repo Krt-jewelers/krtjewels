@@ -48,7 +48,25 @@ export default function CollectionPage() {
   const [sortBy, setSortBy] = useState<string>('newest');
   const [metalFilter, setMetalFilter] = useState<string>('all');
 
-  const { data: products, isLoading } = useProducts({
+  // Fetch banner image from product_categories
+  const { data: categoryData } = useQuery({
+    queryKey: ['collection-banner', category],
+    queryFn: async () => {
+      if (!category) return null;
+      const { data } = await supabase
+        .from('product_categories')
+        .select('banner_image_url')
+        .eq('slug', category)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!category,
+  });
+
+  const bannerImage = (categoryData as any)?.banner_image_url
+    || (category ? defaultBannerMap[category] : null)
+    || '/collection-banners/necklaces.jpg';
+
     category,
     metalType: metalFilter !== 'all' ? metalFilter as any : undefined,
     minWeight: weightRange[0] > 0 ? weightRange[0] : undefined,
