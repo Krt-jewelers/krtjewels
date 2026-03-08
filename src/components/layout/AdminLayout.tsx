@@ -53,6 +53,7 @@ const menuItems = [
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { name: 'Foundif Media', href: '/admin/media-usage', icon: ImageIcon },
   { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];
 

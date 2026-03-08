@@ -160,6 +160,7 @@ const App = () => {
             <Route path="/admin/carousel-categories" element={<AdminCarouselCategories />} />
             <Route path="/admin/attributes" element={<AdminAttributes />} />
             <Route path="/admin/analytics" element={<AdminAnalytics />} />
+            <Route path="/admin/media-usage" element={<AdminMediaUsage />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
