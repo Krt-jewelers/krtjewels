@@ -195,7 +195,7 @@ export function UpiPaymentModal({ open, onClose, onSubmit, amount, qrCodeUrl, up
             <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/20 dark:border-green-800">
               <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto mb-1" />
               <p className="text-sm font-medium">Now verify your payment</p>
-              <p className="text-xs text-muted-foreground">Enter your UTR number or upload payment screenshot</p>
+              <p className="text-xs text-muted-foreground">Enter your UTR / Transaction Reference Number to verify</p>
             </div>
 
             <div className="space-y-2">
