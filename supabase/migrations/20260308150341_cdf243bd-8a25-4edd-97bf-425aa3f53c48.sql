@@ -1,0 +1,1 @@
+ALTER TABLE public.product_categories ADD COLUMN IF NOT EXISTS banner_image_url text DEFAULT NULL;
