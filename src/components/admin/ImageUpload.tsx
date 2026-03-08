@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -19,26 +19,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
   const { toast } = useToast();
 
   const uploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `products/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    return await uploadToCloudinary(file, 'products');
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,21 +94,8 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
   };
 
   const removeImage = async (index: number) => {
-    const imageUrl = images[index];
     const newImages = images.filter((_, i) => i !== index);
     onImagesChange(newImages);
-
-    // Try to delete from storage (optional - might fail if URL is external)
-    try {
-      const url = new URL(imageUrl);
-      const pathParts = url.pathname.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      const filePath = `products/${fileName}`;
-
-      await supabase.storage.from('product-images').remove([filePath]);
-    } catch (e) {
-      // Ignore errors - might be an external URL
-    }
   };
 
   const moveImage = (fromIndex: number, toIndex: number) => {
