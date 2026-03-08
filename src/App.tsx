@@ -59,6 +59,7 @@ import AdminMediaUsage from "./pages/admin/MediaUsage";
 import AdminMedia from "./pages/admin/Media";
 import AdminPaymentSettings from "./pages/admin/PaymentSettings";
 import AdminPaymentVerification from "./pages/admin/PaymentVerification";
+import AdminHeroSlides from "./pages/admin/HeroSlides";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -167,6 +168,7 @@ const App = () => {
             <Route path="/admin/media" element={<AdminMedia />} />
             <Route path="/admin/payment-settings" element={<AdminPaymentSettings />} />
             <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
+            <Route path="/admin/hero-slides" element={<AdminHeroSlides />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

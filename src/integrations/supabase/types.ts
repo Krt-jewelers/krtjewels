@@ -526,6 +526,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_slides: {
+        Row: {
+          alt_text: string | null
+          created_at: string | null
+          desktop_image_url: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          link_url: string | null
+          mobile_image_url: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string | null
+          desktop_image_url: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          link_url?: string | null
+          mobile_image_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string | null
+          desktop_image_url?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          link_url?: string | null
+          mobile_image_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       megamenu_categories: {
         Row: {
           category_name: string
