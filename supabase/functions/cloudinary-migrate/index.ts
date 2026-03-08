@@ -164,7 +164,7 @@ serve(async (req) => {
     const attrErrors: string[] = [];
 
     for (const item of (attrOptions || [])) {
-      if (!item.image_url || item.image_url.includes('cloudinary.com')) { attrSkipped++; continue; }
+      if (!item.image_url || item.image_url.includes(`res.cloudinary.com/${CLOUD_NAME}/`)) { attrSkipped++; continue; }
       const newUrl = await migrateImage(item.image_url, 'attributes');
       if (newUrl) {
         await supabase.from('attribute_template_options').update({ image_url: newUrl }).eq('id', item.id);
