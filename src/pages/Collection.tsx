@@ -26,6 +26,19 @@ const categoryRouteMap: Record<string, ProductCategory> = {
   'mens-jewellery': 'mens_jewellery',
 };
 
+const defaultBannerMap: Record<string, string> = {
+  necklaces: '/collection-banners/necklaces.jpg',
+  earrings: '/collection-banners/earrings.jpg',
+  rings: '/collection-banners/rings.jpg',
+  bangles: '/collection-banners/bangles.jpg',
+  bracelets: '/collection-banners/bracelets.jpg',
+  chains: '/collection-banners/chains.jpg',
+  pendants: '/collection-banners/pendants.jpg',
+  wedding_sets: '/collection-banners/wedding-sets.jpg',
+  diamond_jewellery: '/collection-banners/diamond-jewellery.jpg',
+  mens_jewellery: '/collection-banners/mens-jewellery.jpg',
+};
+
 export default function CollectionPage() {
   const { category: categorySlug } = useParams<{ category: string }>();
   const category = categorySlug ? categoryRouteMap[categorySlug] : undefined;
