@@ -273,7 +273,8 @@ export default function AdminProducts() {
               Manage your jewellery catalog ({products?.length || 0} products)
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ProductImportExport onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['adminProducts'] })} />
             <Link to="/admin/products/new">
               <Button className="btn-premium gap-2">
                 <Plus className="w-4 h-4" />
