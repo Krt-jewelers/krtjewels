@@ -50,7 +50,7 @@ export function useCreateMetalType() {
     mutationFn: async (metalType: Partial<MetalType>) => {
       const { data, error } = await supabase
         .from('metal_types')
-        .insert(metalType)
+        .insert(metalType as any)
         .select()
         .single();
       if (error) throw error;
