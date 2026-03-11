@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ProductImportExport } from '@/components/admin/ProductImportExport';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatPrice, CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
 import { useGoldRate } from '@/hooks/useGoldRate';
