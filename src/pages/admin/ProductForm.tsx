@@ -552,23 +552,10 @@ export default function AdminProductForm() {
                     </div>
                     <div className="space-y-2">
                       <Label>Metal Type *</Label>
-                      <Select
+                      <MetalTypeSelector
                         value={formData.metal_type}
-                        onValueChange={(value: MetalType) =>
-                          setFormData((prev) => ({ ...prev, metal_type: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
-                            <SelectItem key={key} value={key}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(value) => setFormData((prev) => ({ ...prev, metal_type: value as MetalType }))}
+                      />
                     </div>
                   </div>
                 </CardContent>
