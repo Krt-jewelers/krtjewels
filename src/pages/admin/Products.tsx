@@ -38,10 +38,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 function useAdminProducts() {
   const { data: goldRate } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
   
   return useQuery({
-    queryKey: ['adminProducts', gstRate],
+    queryKey: ['adminProducts', gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -58,10 +59,10 @@ function useAdminProducts() {
       return (data || []).map((product) => ({
         ...product,
         specifications: (product.specifications as Record<string, any>) || {},
-        calculated_price: calculateProductPrice(product as any, goldRate || null, undefined, gstRate),
+        calculated_price: calculateProductPrice(product as any, goldRate || null, undefined, gstRate, metalTypes || []),
       }));
     },
-    staleTime: 0, // Always refetch for admin
+    staleTime: 0,
   });
 }
 
