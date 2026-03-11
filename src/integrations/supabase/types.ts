@@ -923,6 +923,39 @@ export type Database = {
           },
         ]
       }
+      metal_types: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rate_per_gram: number
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rate_per_gram?: number
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rate_per_gram?: number
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notification_queue: {
         Row: {
           body: string
@@ -1386,6 +1419,7 @@ export type Database = {
           low_stock_threshold: number | null
           making_charge_percent: number | null
           metal_type: Database["public"]["Enums"]["metal_type"]
+          metal_type_id: string | null
           name: string
           product_category_id: string | null
           product_subcategory_id: string | null
@@ -1415,6 +1449,7 @@ export type Database = {
           low_stock_threshold?: number | null
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
+          metal_type_id?: string | null
           name: string
           product_category_id?: string | null
           product_subcategory_id?: string | null
@@ -1444,6 +1479,7 @@ export type Database = {
           low_stock_threshold?: number | null
           making_charge_percent?: number | null
           metal_type?: Database["public"]["Enums"]["metal_type"]
+          metal_type_id?: string | null
           name?: string
           product_category_id?: string | null
           product_subcategory_id?: string | null
@@ -1459,6 +1495,13 @@ export type Database = {
           weight_grams?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "products_metal_type_id_fkey"
+            columns: ["metal_type_id"]
+            isOneToOne: false
+            referencedRelation: "metal_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_product_category_id_fkey"
             columns: ["product_category_id"]
