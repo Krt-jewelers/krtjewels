@@ -98,7 +98,7 @@ const defaultFormData: VariationFormData = {
   image_url: null,
 };
 
-export function ProductVariationsForm({ productId, category }: ProductVariationsFormProps) {
+export function ProductVariationsForm({ productId, category, productImages = [] }: ProductVariationsFormProps) {
   const { toast } = useToast();
   const { data: variations = [], isLoading } = useProductVariations(productId);
   const createVariation = useCreateVariation();
