@@ -158,7 +158,7 @@ export function useProducts(filters?: ProductFilters) {
         };
         return {
           ...normalizedProduct,
-          calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
+          calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate, metalTypes || []),
         };
       }) as ProductWithPrice[];
 
