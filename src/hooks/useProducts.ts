@@ -224,7 +224,7 @@ export function useProduct(slug: string) {
 
       return {
         ...normalizedProduct,
-        calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
+        calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate, metalTypes || []),
       } as ProductWithPrice;
     },
     enabled: !!slug,
