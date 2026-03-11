@@ -88,10 +88,11 @@ export function calculateProductPrice(
 export function useProducts(filters?: ProductFilters) {
   const { data: goldRate, isLoading: goldRateLoading } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['products', filters, goldRate?.id, gstRate],
+    queryKey: ['products', filters, goldRate?.id, gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<ProductWithPrice[]> => {
       let query = supabase
         .from('products')
