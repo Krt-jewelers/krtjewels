@@ -187,10 +187,11 @@ export function useProducts(filters?: ProductFilters) {
 export function useProduct(slug: string) {
   const { data: goldRate } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['product', slug, goldRate?.id, gstRate],
+    queryKey: ['product', slug, goldRate?.id, gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<ProductWithPrice | null> => {
       const { data, error } = await supabase
         .from('products')
