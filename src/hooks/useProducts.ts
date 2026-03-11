@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, ProductCategory, MetalType, CalculatedPrice, ProductWithPrice } from '@/lib/types';
 import { useGoldRate } from './useGoldRate';
 import { useGstSettings } from './useSiteSettings';
+import { useMetalTypes, type MetalType as MetalTypeRecord } from './useMetalTypes';
 
 interface ProductFilters {
   category?: ProductCategory;
