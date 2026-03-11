@@ -912,7 +912,7 @@ export default function AdminProductForm() {
                   </CardContent>
                 </Card>
 
-                <ProductVariationsForm productId={id} category={(formData as any).category} />
+                <ProductVariationsForm productId={id} category={(formData as any).category} productImages={formData.images} />
               </div>
             ) : (
               <Card>
