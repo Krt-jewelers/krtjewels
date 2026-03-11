@@ -588,10 +588,37 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                     </div>
                   </div>
 
-                  {/* Variation Image Upload */}
+                  {/* Variation Image - Pick from gallery or upload */}
                   <div className="space-y-2">
                     <Label>Variation Image (optional)</Label>
-                    <p className="text-xs text-muted-foreground">Upload an image showing the product in this variation (e.g., different metal color)</p>
+                    {productImages.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">Select from product gallery:</p>
+                        <div className="grid grid-cols-5 gap-2 mb-2">
+                          {productImages.map((imgUrl, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              className={`relative rounded border-2 overflow-hidden aspect-square ${formData.image_url === imgUrl ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-primary/50'}`}
+                              onClick={() => setFormData(prev => ({ ...prev, image_url: imgUrl }))}
+                            >
+                              <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                              {formData.image_url === imgUrl && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-primary bg-background/80 px-1 rounded">✓</span>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {formData.image_url && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => setFormData(prev => ({ ...prev, image_url: null }))}>
+                            Clear selection
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">Or upload a custom image:</p>
                     <VariationImageUpload
                       imageUrl={formData.image_url}
                       onImageChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
