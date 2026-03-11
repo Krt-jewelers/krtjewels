@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { METAL_TYPE_NAMES, MetalType } from '@/lib/types';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,25 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon } from 'lucide-react';
+
+function MetalTypeSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: metalTypes = [] } = useMetalTypes();
+  // Combine dynamic + static fallback
+  const options = metalTypes.length > 0
+    ? metalTypes.map(mt => ({ key: mt.slug, name: mt.name }))
+    : Object.entries(METAL_TYPE_NAMES).map(([key, name]) => ({ key, name }));
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>
+        {options.map(opt => (
+          <SelectItem key={opt.key} value={opt.key}>{opt.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 interface MenuCategory {
   id: string;
@@ -551,23 +571,10 @@ export default function AdminProductForm() {
                     </div>
                     <div className="space-y-2">
                       <Label>Metal Type *</Label>
-                      <Select
+                      <MetalTypeSelector
                         value={formData.metal_type}
-                        onValueChange={(value: MetalType) =>
-                          setFormData((prev) => ({ ...prev, metal_type: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(METAL_TYPE_NAMES).map(([key, name]) => (
-                            <SelectItem key={key} value={key}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(value) => setFormData((prev) => ({ ...prev, metal_type: value as MetalType }))}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -924,7 +931,7 @@ export default function AdminProductForm() {
                   </CardContent>
                 </Card>
 
-                <ProductVariationsForm productId={id} category={(formData as any).category} />
+                <ProductVariationsForm productId={id} category={(formData as any).category} productImages={formData.images} />
               </div>
             ) : (
               <Card>

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ProductImportExport } from '@/components/admin/ProductImportExport';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatPrice, CATEGORY_NAMES, METAL_TYPE_NAMES, ProductCategory, MetalType } from '@/lib/types';
 import { useGoldRate } from '@/hooks/useGoldRate';
@@ -36,10 +38,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 function useAdminProducts() {
   const { data: goldRate } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
   
   return useQuery({
-    queryKey: ['adminProducts', gstRate],
+    queryKey: ['adminProducts', gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -56,10 +59,10 @@ function useAdminProducts() {
       return (data || []).map((product) => ({
         ...product,
         specifications: (product.specifications as Record<string, any>) || {},
-        calculated_price: calculateProductPrice(product as any, goldRate || null, undefined, gstRate),
+        calculated_price: calculateProductPrice(product as any, goldRate || null, undefined, gstRate, metalTypes || []),
       }));
     },
-    staleTime: 0, // Always refetch for admin
+    staleTime: 0,
   });
 }
 
@@ -272,7 +275,8 @@ export default function AdminProducts() {
               Manage your jewellery catalog ({products?.length || 0} products)
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ProductImportExport onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['adminProducts'] })} />
             <Link to="/admin/products/new">
               <Button className="btn-premium gap-2">
                 <Plus className="w-4 h-4" />

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Product, ProductCategory, MetalType, CalculatedPrice, ProductWithPrice } from '@/lib/types';
 import { useGoldRate } from './useGoldRate';
 import { useGstSettings } from './useSiteSettings';
+import { useMetalTypes, type MetalType as MetalTypeRecord } from './useMetalTypes';
 
 interface ProductFilters {
   category?: ProductCategory;
@@ -24,7 +25,8 @@ export function calculateProductPrice(
   product: Product,
   goldRate: { rate_22k: number; rate_24k: number; rate_18k: number | null } | null,
   categoryMakingCharge?: number,
-  gstRatePercent?: number
+  gstRatePercent?: number,
+  metalTypes?: MetalTypeRecord[]
 ): CalculatedPrice {
   if (!goldRate) {
     return {
@@ -37,19 +39,24 @@ export function calculateProductPrice(
     };
   }
 
-  // Get the applicable gold rate based on metal type
-  let goldRatePerGram: number;
-  switch (product.metal_type) {
-    case 'gold_24k':
-      goldRatePerGram = goldRate.rate_24k;
-      break;
-    case 'gold_18k':
-      goldRatePerGram = goldRate.rate_18k || goldRate.rate_22k * 0.75;
-      break;
-    case 'gold_22k':
-    default:
-      goldRatePerGram = goldRate.rate_22k;
-      break;
+  // Try to get rate from metal_types first (dynamic), fall back to gold_rates
+  let goldRatePerGram: number = 0;
+  const metalTypeRecord = metalTypes?.find(mt => mt.slug === product.metal_type);
+  if (metalTypeRecord && metalTypeRecord.rate_per_gram > 0) {
+    goldRatePerGram = metalTypeRecord.rate_per_gram;
+  } else if (goldRate) {
+    switch (product.metal_type) {
+      case 'gold_24k':
+        goldRatePerGram = goldRate.rate_24k;
+        break;
+      case 'gold_18k':
+        goldRatePerGram = goldRate.rate_18k || goldRate.rate_22k * 0.75;
+        break;
+      case 'gold_22k':
+      default:
+        goldRatePerGram = goldRate.rate_22k;
+        break;
+    }
   }
 
   // Calculate gold value
@@ -81,10 +88,11 @@ export function calculateProductPrice(
 export function useProducts(filters?: ProductFilters) {
   const { data: goldRate, isLoading: goldRateLoading } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['products', filters, goldRate?.id, gstRate],
+    queryKey: ['products', filters, goldRate?.id, gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<ProductWithPrice[]> => {
       let query = supabase
         .from('products')
@@ -150,7 +158,7 @@ export function useProducts(filters?: ProductFilters) {
         };
         return {
           ...normalizedProduct,
-          calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
+          calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate, metalTypes || []),
         };
       }) as ProductWithPrice[];
 
@@ -179,10 +187,11 @@ export function useProducts(filters?: ProductFilters) {
 export function useProduct(slug: string) {
   const { data: goldRate } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes } = useMetalTypes();
   const gstRate = gstSettings?.rate ?? 3;
 
   return useQuery({
-    queryKey: ['product', slug, goldRate?.id, gstRate],
+    queryKey: ['product', slug, goldRate?.id, gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<ProductWithPrice | null> => {
       const { data, error } = await supabase
         .from('products')
@@ -215,7 +224,7 @@ export function useProduct(slug: string) {
 
       return {
         ...normalizedProduct,
-        calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate),
+        calculated_price: calculateProductPrice(normalizedProduct as Product, goldRate || null, undefined, gstRate, metalTypes || []),
       } as ProductWithPrice;
     },
     enabled: !!slug,
