@@ -25,7 +25,8 @@ export function calculateProductPrice(
   product: Product,
   goldRate: { rate_22k: number; rate_24k: number; rate_18k: number | null } | null,
   categoryMakingCharge?: number,
-  gstRatePercent?: number
+  gstRatePercent?: number,
+  metalTypes?: MetalTypeRecord[]
 ): CalculatedPrice {
   if (!goldRate) {
     return {
