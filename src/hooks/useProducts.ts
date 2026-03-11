@@ -39,19 +39,24 @@ export function calculateProductPrice(
     };
   }
 
-  // Get the applicable gold rate based on metal type
-  let goldRatePerGram: number;
-  switch (product.metal_type) {
-    case 'gold_24k':
-      goldRatePerGram = goldRate.rate_24k;
-      break;
-    case 'gold_18k':
-      goldRatePerGram = goldRate.rate_18k || goldRate.rate_22k * 0.75;
-      break;
-    case 'gold_22k':
-    default:
-      goldRatePerGram = goldRate.rate_22k;
-      break;
+  // Try to get rate from metal_types first (dynamic), fall back to gold_rates
+  let goldRatePerGram: number = 0;
+  const metalTypeRecord = metalTypes?.find(mt => mt.slug === product.metal_type);
+  if (metalTypeRecord && metalTypeRecord.rate_per_gram > 0) {
+    goldRatePerGram = metalTypeRecord.rate_per_gram;
+  } else if (goldRate) {
+    switch (product.metal_type) {
+      case 'gold_24k':
+        goldRatePerGram = goldRate.rate_24k;
+        break;
+      case 'gold_18k':
+        goldRatePerGram = goldRate.rate_18k || goldRate.rate_22k * 0.75;
+        break;
+      case 'gold_22k':
+      default:
+        goldRatePerGram = goldRate.rate_22k;
+        break;
+    }
   }
 
   // Calculate gold value
