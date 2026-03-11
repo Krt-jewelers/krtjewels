@@ -61,6 +61,7 @@ const SIZE_LABELS: Record<string, string> = {
 interface ProductVariationsFormProps {
   productId: string;
   category: ProductCategory;
+  productImages?: string[];
 }
 
 interface VariationFormData {

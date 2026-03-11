@@ -26,6 +26,25 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon } from 'lucide-react';
 
+function MetalTypeSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: metalTypes = [] } = useMetalTypes();
+  // Combine dynamic + static fallback
+  const options = metalTypes.length > 0
+    ? metalTypes.map(mt => ({ key: mt.slug, name: mt.name }))
+    : Object.entries(METAL_TYPE_NAMES).map(([key, name]) => ({ key, name }));
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>
+        {options.map(opt => (
+          <SelectItem key={opt.key} value={opt.key}>{opt.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 interface MenuCategory {
   id: string;
   name: string;
