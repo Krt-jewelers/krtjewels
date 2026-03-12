@@ -14,8 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
-import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
-import { useAttributeTemplates } from '@/hooks/useAttributeTemplates';
 import { listCloudinaryImages, type CloudinaryImage } from '@/lib/cloudinary';
 import {
   Select,
@@ -32,44 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
-
-function MetalTypeSelector({
-  value,
-  valueId,
-  onChange,
-}: {
-  value: string;
-  valueId: string | null;
-  onChange: (v: { id: string | null; slug: string }) => void;
-}) {
-  const { data: metalTypes = [] } = useMetalTypes();
-  // Combine dynamic + static fallback
-  const options = metalTypes.length > 0
-    ? metalTypes.map(mt => ({ key: mt.id, name: mt.name, slug: mt.slug }))
-    : Object.entries(METAL_TYPE_NAMES).map(([key, name]) => ({ key, name, slug: key }));
-
-  return (
-    <Select
-      value={valueId || value}
-      onValueChange={(val) => {
-        const mt = metalTypes.find(m => m.id === val);
-        if (mt) {
-          onChange({ id: mt.id, slug: mt.slug });
-        } else {
-          onChange({ id: null, slug: val });
-        }
-      }}
-    >
-      <SelectTrigger><SelectValue /></SelectTrigger>
-      <SelectContent>
-        {options.map(opt => (
-          <SelectItem key={opt.key} value={opt.key}>{opt.name}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
+import { ArrowLeft, Save, Loader2, Package, Settings, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
 
 interface MenuCategory {
   id: string;
@@ -100,6 +61,12 @@ interface StoneItem {
   carat_weight: number;
   per_carat_price: number;
   quantity: number;
+  source?: 'diamond_options';
+}
+
+interface DiamondQualityItem {
+  label: string;
+  rate_per_carat: number;
 }
 
 interface ProductFormData {
@@ -116,6 +83,10 @@ interface ProductFormData {
   diamond_cost: number;
   stone_cost: number;
   stones: StoneItem[];
+  pricing_metals: string[];
+  diamond_qualities: DiamondQualityItem[];
+  carat_weights: number[];
+  auto_fill_stones_from_diamond: boolean;
   images: string[];
   sku: string;
   stock_quantity: number;
@@ -156,6 +127,10 @@ const defaultFormData: ProductFormData = {
   diamond_cost: 0,
   stone_cost: 0,
   stones: [],
+  pricing_metals: ['gold_22k'],
+  diamond_qualities: [],
+  carat_weights: [],
+  auto_fill_stones_from_diamond: true,
   images: [],
   sku: '',
   stock_quantity: 1,
@@ -180,25 +155,43 @@ export default function AdminProductForm() {
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
   const [productCategories, setProductCategories] = useState<MenuCategory[]>([]);
   const [productSubcategories, setProductSubcategories] = useState<MenuSubcategory[]>([]);
-  const { data: attributeTemplates = [] } = useAttributeTemplates();
-  const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [mediaSearch, setMediaSearch] = useState('');
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
 
-  const { data: productTemplates = [] } = useQuery({
-    queryKey: ['productAttributeTemplates', id],
-    queryFn: async () => {
-      if (!id) return [];
-      const { data, error } = await supabase
-        .from('product_attribute_templates')
-        .select('template_id')
-        .eq('product_id', id);
-      if (error) throw error;
-      return (data || []).map((row) => row.template_id as string);
-    },
-    enabled: !!id,
-  });
+  const metalOptions = metalTypes.length > 0
+    ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
+    : Object.entries(METAL_TYPE_NAMES).map(([slug, name]) => ({ id: slug, slug, name }));
+
+  const togglePricingMetal = (slug: string) => {
+    setFormData((prev) => {
+      const exists = prev.pricing_metals.includes(slug);
+      const nextMetals = exists
+        ? prev.pricing_metals.filter((m) => m !== slug)
+        : [...prev.pricing_metals, slug];
+
+      let nextMetalTypeId = prev.metal_type_id;
+      let nextMetalType = prev.metal_type;
+
+      if (nextMetals.length > 0 && !nextMetals.includes(prev.metal_type)) {
+        const preferredSlug = nextMetals[0];
+        const mt = metalTypes.find(m => m.slug === preferredSlug);
+        if (mt) {
+          nextMetalTypeId = mt.id;
+        }
+        if (Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, preferredSlug)) {
+          nextMetalType = preferredSlug as MetalType;
+        }
+      }
+
+      return {
+        ...prev,
+        pricing_metals: nextMetals,
+        metal_type_id: nextMetalTypeId,
+        metal_type: nextMetalType,
+      };
+    });
+  };
 
   const { data: mediaLibrary, isLoading: isMediaLoading } = useQuery({
     queryKey: ['media-library-products'],
@@ -218,19 +211,30 @@ export default function AdminProductForm() {
   }, []);
 
   useEffect(() => {
-    if (productTemplates.length > 0) {
-      setSelectedTemplateIds(productTemplates);
-    }
-  }, [productTemplates]);
+    if (metalTypes.length === 0) return;
 
-  useEffect(() => {
-    if (metalTypes.length > 0 && !formData.metal_type_id) {
+    if (formData.pricing_metals.length > 0) {
+      const preferredSlug = formData.pricing_metals[0];
+      const preferred = metalTypes.find(m => m.slug === preferredSlug);
+      if (preferred) {
+        setFormData((prev) => ({
+          ...prev,
+          metal_type_id: preferred.id,
+          metal_type: Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, preferred.slug)
+            ? (preferred.slug as MetalType)
+            : prev.metal_type,
+        }));
+        return;
+      }
+    }
+
+    if (!formData.metal_type_id) {
       const mt = metalTypes.find(m => m.slug === formData.metal_type);
       if (mt) {
         setFormData((prev) => ({ ...prev, metal_type_id: mt.id }));
       }
     }
-  }, [metalTypes, formData.metal_type, formData.metal_type_id]);
+  }, [metalTypes, formData.metal_type, formData.metal_type_id, formData.pricing_metals]);
 
   const fetchProductCategories = async () => {
     const { data: categories, error: catError } = await supabase
@@ -264,6 +268,26 @@ export default function AdminProductForm() {
       if (error) throw error;
 
       const specs = (data.specifications || {}) as Record<string, any>;
+      const pricingOptions = (specs.pricing_options || {}) as Record<string, any>;
+      const pricingMetals = Array.isArray(pricingOptions.metals)
+        ? pricingOptions.metals.filter((m: any) => typeof m === 'string')
+        : [];
+      const resolvedPricingMetals = pricingMetals.length > 0
+        ? pricingMetals
+        : [data.metal_type].filter(Boolean);
+      const diamondQualities = Array.isArray(pricingOptions.diamond_qualities)
+        ? pricingOptions.diamond_qualities
+            .filter((q: any) => q && typeof q.label === 'string')
+            .map((q: any) => ({
+              label: q.label,
+              rate_per_carat: Number(q.rate_per_carat) || 0,
+            }))
+        : [];
+      const caratWeights = Array.isArray(pricingOptions.carat_weights)
+        ? pricingOptions.carat_weights
+            .map((w: any) => Number(w))
+            .filter((w: number) => Number.isFinite(w) && w > 0)
+        : [];
       setFormData({
         name: data.name,
         slug: data.slug,
@@ -278,6 +302,9 @@ export default function AdminProductForm() {
         diamond_cost: data.diamond_cost || 0,
         stone_cost: data.stone_cost || 0,
         stones: Array.isArray((data as any).stones) ? (data as any).stones : [],
+        pricing_metals: resolvedPricingMetals,
+        diamond_qualities: diamondQualities,
+        carat_weights: caratWeights,
         images: data.images || [],
         sku: data.sku || '',
         stock_quantity: data.stock_quantity || 1,
@@ -353,6 +380,15 @@ export default function AdminProductForm() {
         specifications: {
           certificate_items: formData.certificate_items.map(i => ({ title: i.title, desc: i.desc })),
           manufacturer_info: formData.manufacturer_info.map(i => ({ label: i.label, value: i.value })),
+          pricing_options: {
+            metals: formData.pricing_metals,
+            diamond_qualities: formData.diamond_qualities
+              .filter(q => q.label.trim() !== '' && Number.isFinite(q.rate_per_carat))
+              .map(q => ({ label: q.label.trim(), rate_per_carat: q.rate_per_carat })),
+            carat_weights: formData.carat_weights
+              .map(w => Number(w))
+              .filter(w => Number.isFinite(w) && w > 0),
+          },
         } as unknown as Json,
       };
 
@@ -385,10 +421,9 @@ export default function AdminProductForm() {
 
         toast({
           title: 'Success',
-          description: 'Product created! You can now add variations.',
+          description: 'Product created successfully.',
         });
 
-        // Redirect to edit mode so variations tab is available
         navigate(`/admin/products/${data.id}`);
       }
     } catch (error: any) {
@@ -397,112 +432,6 @@ export default function AdminProductForm() {
         description: error.message || 'Failed to save product',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const applyTemplatesToProduct = async () => {
-    if (!id) return;
-    setIsLoading(true);
-    try {
-      const selectedSet = new Set(selectedTemplateIds);
-      const existing = productTemplates;
-
-      // Upsert product_attribute_templates
-      const upsertPayload = selectedTemplateIds.map((templateId, index) => ({
-        product_id: id,
-        template_id: templateId,
-        display_order: index,
-        is_enabled: true,
-      }));
-
-      if (upsertPayload.length > 0) {
-        const { error: upsertError } = await supabase
-          .from('product_attribute_templates')
-          .upsert(upsertPayload, { onConflict: 'product_id,template_id' });
-        if (upsertError) throw upsertError;
-      }
-
-      // Remove unselected templates
-      const toRemove = existing.filter((templateId) => !selectedSet.has(templateId));
-      if (toRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('product_attribute_templates')
-          .delete()
-          .eq('product_id', id)
-          .in('template_id', toRemove);
-        if (deleteError) throw deleteError;
-      }
-
-      // Fetch selected templates + options
-      const { data: templates, error: templateError } = await supabase
-        .from('attribute_templates')
-        .select('*')
-        .in('id', selectedTemplateIds);
-      if (templateError) throw templateError;
-
-      const { data: options, error: optionsError } = await supabase
-        .from('attribute_template_options')
-        .select('*')
-        .in('template_id', selectedTemplateIds);
-      if (optionsError) throw optionsError;
-
-      // Remove existing variations for these templates
-      for (const template of templates || []) {
-        await supabase
-          .from('product_variations')
-          .delete()
-          .eq('product_id', id)
-          .eq('variation_group', template.name);
-      }
-
-      const variationsToInsert = (options || []).map((opt) => {
-        const template = (templates || []).find((t) => t.id === opt.template_id);
-        const templateType = template?.template_type || 'custom';
-        const variationType =
-          templateType === 'add_on' ? 'custom' : templateType;
-
-        return {
-          product_id: id,
-          variation_type: variationType,
-          size_value: templateType === 'size' ? opt.value : opt.value,
-          size_label:
-            templateType === 'size'
-              ? opt.label
-              : templateType === 'gemstone_quality'
-              ? opt.label
-              : templateType === 'carat_weight'
-              ? opt.label
-              : templateType === 'certificate'
-              ? opt.label
-              : templateType === 'add_on'
-              ? opt.label
-              : null,
-          metal_type: templateType === 'metal_type' ? opt.metal_type : null,
-          metal_label: templateType === 'metal_type' ? opt.label : null,
-          selection_mode: template?.selection_mode || 'single',
-          variation_group: template?.name || null,
-          price_adjustment: opt.price_adjustment || 0,
-          weight_adjustment: opt.weight_adjustment || 0,
-          stock_quantity: 1,
-          is_available: opt.is_active ?? true,
-          is_default: opt.is_default ?? false,
-          sku_suffix: null,
-          image_url: opt.image_url || null,
-        };
-      });
-
-      if (variationsToInsert.length > 0) {
-        const { error: insertError } = await supabase
-          .from('product_variations')
-          .insert(variationsToInsert as any);
-        if (insertError) throw insertError;
-      }
-
-      toast({ title: 'Applied', description: 'Attributes applied to product variations' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to apply templates', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -558,7 +487,7 @@ export default function AdminProductForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="details" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
             <TabsTrigger value="details" className="gap-2">
               <Package className="w-4 h-4" />
               <span className="hidden sm:inline">Details</span>
@@ -570,10 +499,6 @@ export default function AdminProductForm() {
             <TabsTrigger value="images" className="gap-2">
               <ImageIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Images</span>
-            </TabsTrigger>
-            <TabsTrigger value="variations" className="gap-2">
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">Variations</span>
             </TabsTrigger>
           </TabsList>
 
@@ -658,21 +583,6 @@ export default function AdminProductForm() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                    <Label>Metal Type *</Label>
-                    <MetalTypeSelector
-                      value={formData.metal_type}
-                      valueId={formData.metal_type_id}
-                      onChange={({ id, slug }) => {
-                        const isEnum = Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, slug);
-                        setFormData((prev) => ({
-                          ...prev,
-                          metal_type_id: id,
-                          metal_type: isEnum ? (slug as MetalType) : prev.metal_type,
-                        }));
-                      }}
-                    />
-                  </div>
                   </div>
                 </CardContent>
               </Card>
@@ -891,28 +801,182 @@ export default function AdminProductForm() {
 
           {/* Pricing Tab */}
           <TabsContent value="pricing" className="space-y-6">
+            {/* Pricing Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-primary text-sm uppercase tracking-wide">Pricing Options</CardTitle>
+                <CardDescription>Configure metals, diamond qualities, and carat weights shown on the product page.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <Label>Available Metals</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {metalOptions.map((metal) => {
+                      const selected = formData.pricing_metals.includes(metal.slug);
+                      return (
+                        <Button
+                          key={metal.slug}
+                          type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => togglePricingMetal(metal.slug)}
+                          className={selected ? 'btn-premium' : ''}
+                        >
+                          {metal.name}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    If empty, the product will fall back to its default metal only.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Diamond Quality (₹ per carat)</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          diamond_qualities: [...prev.diamond_qualities, { label: '', rate_per_carat: 0 }],
+                        }))
+                      }
+                    >
+                      + Add Quality
+                    </Button>
+                  </div>
+                  {formData.diamond_qualities.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No diamond qualities added yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.diamond_qualities.map((quality, idx) => (
+                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-2 items-center">
+                          <Input
+                            value={quality.label}
+                            onChange={(e) => {
+                              const updated = [...formData.diamond_qualities];
+                              updated[idx] = { ...updated[idx], label: e.target.value };
+                              setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
+                            }}
+                            placeholder="e.g. VVS1 EF"
+                          />
+                          <Input
+                            type="number"
+                            value={quality.rate_per_carat || ''}
+                            onChange={(e) => {
+                              const updated = [...formData.diamond_qualities];
+                              updated[idx] = { ...updated[idx], rate_per_carat: parseFloat(e.target.value) || 0 };
+                              setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
+                            }}
+                            placeholder="₹/ct"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => {
+                              const updated = formData.diamond_qualities.filter((_, i) => i !== idx);
+                              setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
+                            }}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Total Carat Weights</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          carat_weights: [...prev.carat_weights, 0],
+                        }))
+                      }
+                    >
+                      + Add Carat
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[0.25, 0.5, 0.75, 1, 1.5, 2].map((preset) => {
+                      const selected = formData.carat_weights.includes(preset);
+                      return (
+                        <Button
+                          key={preset}
+                          type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              carat_weights: selected
+                                ? prev.carat_weights.filter((w) => w !== preset)
+                                : [...prev.carat_weights, preset],
+                            }))
+                          }
+                          className={selected ? 'btn-premium' : ''}
+                        >
+                          {preset} ct
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  {formData.carat_weights.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No carat weights added yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.carat_weights.map((carat, idx) => (
+                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={carat || ''}
+                            onChange={(e) => {
+                              const updated = [...formData.carat_weights];
+                              updated[idx] = parseFloat(e.target.value) || 0;
+                              setFormData((prev) => ({ ...prev, carat_weights: updated }));
+                            }}
+                            placeholder="e.g. 0.50"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => {
+                              const updated = formData.carat_weights.filter((_, i) => i !== idx);
+                              setFormData((prev) => ({ ...prev, carat_weights: updated }));
+                            }}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Metal Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-primary text-sm uppercase tracking-wide">Metal</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label>Metal Type *</Label>
-                    <MetalTypeSelector
-                      value={formData.metal_type}
-                      valueId={formData.metal_type_id}
-                      onChange={({ id, slug }) => {
-                        const isEnum = Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, slug);
-                        setFormData((prev) => ({
-                          ...prev,
-                          metal_type_id: id,
-                          metal_type: isEnum ? (slug as MetalType) : prev.metal_type,
-                        }));
-                      }}
-                    />
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Metal Weight (g) *</Label>
                     <Input
@@ -933,13 +997,14 @@ export default function AdminProductForm() {
                     <p className="text-xs text-muted-foreground">Leave blank for category default</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Diamond Cost (₹)</Label>
+                    <Label>Base Diamond Cost (₹)</Label>
                     <Input
                       type="number"
                       value={formData.diamond_cost || ''}
                       onChange={(e) => setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))}
                       placeholder="0"
                     />
+                    <p className="text-xs text-muted-foreground">Leave 0 if using diamond quality + carat options above</p>
                   </div>
                 </div>
               </CardContent>
@@ -1169,53 +1234,6 @@ export default function AdminProductForm() {
             </Dialog>
           </TabsContent>
 
-          {/* Variations Tab */}
-          <TabsContent value="variations" className="space-y-6">
-            {isEditing && id ? (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Global Attributes</CardTitle>
-                    <CardDescription>Select attributes to apply to this product.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {attributeTemplates.map((attr) => (
-                        <label key={attr.id} className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={selectedTemplateIds.includes(attr.id)}
-                            onChange={(e) => {
-                              setSelectedTemplateIds((prev) => {
-                                if (e.target.checked) return [...prev, attr.id];
-                                return prev.filter((id) => id !== attr.id);
-                              });
-                            }}
-                          />
-                          <span>{attr.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <Button type="button" className="btn-premium" onClick={applyTemplatesToProduct}>
-                      Apply Attributes to Product
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <ProductVariationsForm productId={id} category={(formData as any).category} productImages={formData.images} />
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Sparkles className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
-                  <p className="text-muted-foreground font-medium">Save the product first</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    You can add variations after creating the product.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
         </Tabs>
 
         {/* Submit */}
