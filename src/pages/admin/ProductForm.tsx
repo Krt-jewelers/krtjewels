@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
 import { useAttributeTemplates } from '@/hooks/useAttributeTemplates';
+import { listCloudinaryImages, type CloudinaryImage } from '@/lib/cloudinary';
 import {
   Select,
   SelectContent,
@@ -24,17 +25,42 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
 
-function MetalTypeSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function MetalTypeSelector({
+  value,
+  valueId,
+  onChange,
+}: {
+  value: string;
+  valueId: string | null;
+  onChange: (v: { id: string | null; slug: string }) => void;
+}) {
   const { data: metalTypes = [] } = useMetalTypes();
   // Combine dynamic + static fallback
   const options = metalTypes.length > 0
-    ? metalTypes.map(mt => ({ key: mt.slug, name: mt.name }))
-    : Object.entries(METAL_TYPE_NAMES).map(([key, name]) => ({ key, name }));
+    ? metalTypes.map(mt => ({ key: mt.id, name: mt.name, slug: mt.slug }))
+    : Object.entries(METAL_TYPE_NAMES).map(([key, name]) => ({ key, name, slug: key }));
 
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select
+      value={valueId || value}
+      onValueChange={(val) => {
+        const mt = metalTypes.find(m => m.id === val);
+        if (mt) {
+          onChange({ id: mt.id, slug: mt.slug });
+        } else {
+          onChange({ id: null, slug: val });
+        }
+      }}
+    >
       <SelectTrigger><SelectValue /></SelectTrigger>
       <SelectContent>
         {options.map(opt => (
@@ -84,6 +110,7 @@ interface ProductFormData {
   category_id: string;
   subcategory_id: string;
   metal_type: MetalType;
+  metal_type_id: string | null;
   weight_grams: number;
   making_charge_percent: number | null;
   diamond_cost: number;
@@ -123,6 +150,7 @@ const defaultFormData: ProductFormData = {
   category_id: '',
   subcategory_id: '',
   metal_type: 'gold_22k',
+  metal_type_id: null,
   weight_grams: 0,
   making_charge_percent: null,
   diamond_cost: 0,
@@ -146,6 +174,7 @@ export default function AdminProductForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: metalTypes = [] } = useMetalTypes();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
@@ -153,6 +182,9 @@ export default function AdminProductForm() {
   const [productSubcategories, setProductSubcategories] = useState<MenuSubcategory[]>([]);
   const { data: attributeTemplates = [] } = useAttributeTemplates();
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
+  const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
 
   const { data: productTemplates = [] } = useQuery({
     queryKey: ['productAttributeTemplates', id],
@@ -166,6 +198,13 @@ export default function AdminProductForm() {
       return (data || []).map((row) => row.template_id as string);
     },
     enabled: !!id,
+  });
+
+  const { data: mediaLibrary, isLoading: isMediaLoading } = useQuery({
+    queryKey: ['media-library-products'],
+    queryFn: () => listCloudinaryImages('products'),
+    enabled: mediaDialogOpen,
+    staleTime: 2 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -183,6 +222,15 @@ export default function AdminProductForm() {
       setSelectedTemplateIds(productTemplates);
     }
   }, [productTemplates]);
+
+  useEffect(() => {
+    if (metalTypes.length > 0 && !formData.metal_type_id) {
+      const mt = metalTypes.find(m => m.slug === formData.metal_type);
+      if (mt) {
+        setFormData((prev) => ({ ...prev, metal_type_id: mt.id }));
+      }
+    }
+  }, [metalTypes, formData.metal_type, formData.metal_type_id]);
 
   const fetchProductCategories = async () => {
     const { data: categories, error: catError } = await supabase
@@ -224,6 +272,7 @@ export default function AdminProductForm() {
         category_id: data.product_category_id || '',
         subcategory_id: data.product_subcategory_id || '',
         metal_type: data.metal_type as MetalType,
+        metal_type_id: data.metal_type_id || null,
         weight_grams: data.weight_grams,
         making_charge_percent: data.making_charge_percent,
         diamond_cost: data.diamond_cost || 0,
@@ -287,6 +336,7 @@ export default function AdminProductForm() {
         product_category_id: formData.category_id || null,
         product_subcategory_id: formData.subcategory_id || null,
         metal_type: formData.metal_type,
+        metal_type_id: formData.metal_type_id,
         weight_grams: formData.weight_grams,
         making_charge_percent: formData.making_charge_percent,
         diamond_cost: formData.diamond_cost,
@@ -458,6 +508,31 @@ export default function AdminProductForm() {
     }
   };
 
+  const toggleMediaSelect = (publicId: string) => {
+    setSelectedMediaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(publicId)) next.delete(publicId);
+      else next.add(publicId);
+      return next;
+    });
+  };
+
+  const addSelectedMedia = () => {
+    const selectedUrls = (mediaLibrary?.resources || [])
+      .filter((img) => selectedMediaIds.has(img.public_id))
+      .map((img) => img.secure_url);
+    if (selectedUrls.length === 0) {
+      setMediaDialogOpen(false);
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      images: Array.from(new Set([...prev.images, ...selectedUrls])),
+    }));
+    setSelectedMediaIds(new Set());
+    setMediaDialogOpen(false);
+  };
+
   if (isFetching) {
     return (
       <AdminLayout>
@@ -584,12 +659,20 @@ export default function AdminProductForm() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Metal Type *</Label>
-                      <MetalTypeSelector
-                        value={formData.metal_type}
-                        onChange={(value) => setFormData((prev) => ({ ...prev, metal_type: value as MetalType }))}
-                      />
-                    </div>
+                    <Label>Metal Type *</Label>
+                    <MetalTypeSelector
+                      value={formData.metal_type}
+                      valueId={formData.metal_type_id}
+                      onChange={({ id, slug }) => {
+                        const isEnum = Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, slug);
+                        setFormData((prev) => ({
+                          ...prev,
+                          metal_type_id: id,
+                          metal_type: isEnum ? (slug as MetalType) : prev.metal_type,
+                        }));
+                      }}
+                    />
+                  </div>
                   </div>
                 </CardContent>
               </Card>
@@ -819,7 +902,15 @@ export default function AdminProductForm() {
                     <Label>Metal Type *</Label>
                     <MetalTypeSelector
                       value={formData.metal_type}
-                      onChange={(value) => setFormData((prev) => ({ ...prev, metal_type: value as MetalType }))}
+                      valueId={formData.metal_type_id}
+                      onChange={({ id, slug }) => {
+                        const isEnum = Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, slug);
+                        setFormData((prev) => ({
+                          ...prev,
+                          metal_type_id: id,
+                          metal_type: isEnum ? (slug as MetalType) : prev.metal_type,
+                        }));
+                      }}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1004,6 +1095,12 @@ export default function AdminProductForm() {
                 <CardTitle>Product Images</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(true)}>
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    Add From Media Library
+                  </Button>
+                </div>
                 <ImageUpload
                   images={formData.images}
                   onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
@@ -1011,6 +1108,65 @@ export default function AdminProductForm() {
                 />
               </CardContent>
             </Card>
+
+            <Dialog open={mediaDialogOpen} onOpenChange={(open) => {
+              setMediaDialogOpen(open);
+              if (!open) setSelectedMediaIds(new Set());
+            }}>
+              <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                  <DialogTitle>Select Images From Media Library</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search images..."
+                      value={mediaSearch}
+                      onChange={(e) => setMediaSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {isMediaLoading ? (
+                    <div className="text-sm text-muted-foreground">Loading images...</div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[420px] overflow-y-auto pr-1">
+                      {(mediaLibrary?.resources || [])
+                        .filter((img: CloudinaryImage) =>
+                          mediaSearch === '' || img.public_id.toLowerCase().includes(mediaSearch.toLowerCase())
+                        )
+                        .map((img: CloudinaryImage) => {
+                          const isSelected = selectedMediaIds.has(img.public_id);
+                          return (
+                            <div
+                              key={img.public_id}
+                              className={`relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer ${
+                                isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border hover:border-primary/50'
+                              }`}
+                              onClick={() => toggleMediaSelect(img.public_id)}
+                            >
+                              <img src={img.secure_url} alt={img.public_id} className="w-full h-full object-cover" />
+                              {isSelected && (
+                                <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full p-1">
+                                  <CheckCircle className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="button" className="btn-premium" onClick={addSelectedMedia}>
+                    Add Selected
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Variations Tab */}
