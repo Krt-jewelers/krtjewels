@@ -61,7 +61,6 @@ interface StoneItem {
   carat_weight: number;
   per_carat_price: number;
   quantity: number;
-  source?: 'diamond_options';
 }
 
 interface DiamondQualityItem {
@@ -100,7 +99,6 @@ interface ProductFormData {
   diamond_qualities: DiamondQualityItem[];
   carat_weights: CaratWeightItem[];
   certificates: CertificateOptionItem[];
-  auto_fill_stones_from_diamond: boolean;
   images: string[];
   sku: string;
   stock_quantity: number;
@@ -145,7 +143,6 @@ const defaultFormData: ProductFormData = {
   diamond_qualities: [],
   carat_weights: [],
   certificates: [],
-  auto_fill_stones_from_diamond: true,
   images: [],
   sku: '',
   stock_quantity: 1,
@@ -251,39 +248,6 @@ export default function AdminProductForm() {
     }
   }, [metalTypes, formData.metal_type, formData.metal_type_id, formData.pricing_metals]);
 
-  useEffect(() => {
-    if (!formData.auto_fill_stones_from_diamond) return;
-
-    const manualStones = formData.stones.filter((s) => s.source !== 'diamond_options');
-    const hasDiamondInputs = formData.diamond_qualities.length > 0 && formData.carat_weights.length > 0;
-
-    if (!hasDiamondInputs) {
-      if (manualStones.length !== formData.stones.length) {
-        setFormData((prev) => ({ ...prev, stones: manualStones }));
-      }
-      return;
-    }
-
-    const autoStones: StoneItem[] = [];
-    formData.diamond_qualities.forEach((quality) => {
-      formData.carat_weights.forEach((carat) => {
-        autoStones.push({
-          name: `Diamond - ${quality.label}`,
-          shape: '',
-          carat_weight: carat.value,
-          per_carat_price: quality.rate_per_carat,
-          quantity: 1,
-          source: 'diamond_options',
-        });
-      });
-    });
-
-    const nextStones = [...manualStones, ...autoStones];
-    if (JSON.stringify(nextStones) !== JSON.stringify(formData.stones)) {
-      setFormData((prev) => ({ ...prev, stones: nextStones }));
-    }
-  }, [formData.auto_fill_stones_from_diamond, formData.diamond_qualities, formData.carat_weights, formData.stones]);
-
   const fetchProductCategories = async () => {
     const { data: categories, error: catError } = await supabase
       .from('product_categories')
@@ -353,9 +317,6 @@ export default function AdminProductForm() {
               is_default: !!c.is_default,
             }))
         : [];
-      const autoFillFromDiamond = typeof pricingOptions.auto_fill_stones === 'boolean'
-        ? pricingOptions.auto_fill_stones
-        : true;
       setFormData({
         name: data.name,
         slug: data.slug,
@@ -374,7 +335,6 @@ export default function AdminProductForm() {
         diamond_qualities: diamondQualities,
         carat_weights: caratWeights,
         certificates,
-        auto_fill_stones_from_diamond: autoFillFromDiamond,
         images: data.images || [],
         sku: data.sku || '',
         stock_quantity: data.stock_quantity || 1,
@@ -466,7 +426,6 @@ export default function AdminProductForm() {
             certificates: formData.certificates
               .filter(c => c.label.trim() !== '' && Number.isFinite(c.price))
               .map(c => ({ label: c.label.trim(), price: c.price, is_default: c.is_default })),
-            auto_fill_stones: formData.auto_fill_stones_from_diamond,
           },
         } as unknown as Json,
       };
@@ -1215,18 +1174,6 @@ export default function AdminProductForm() {
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <Label>Auto-fill diamonds from Quality + Carat</Label>
-                    <p className="text-xs text-muted-foreground">Generates stone rows from the diamond options above.</p>
-                  </div>
-                  <Switch
-                    checked={formData.auto_fill_stones_from_diamond}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, auto_fill_stones_from_diamond: checked }))
-                    }
-                  />
-                </div>
                 {formData.stones.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No stones added. Click "Add Stone" to add gemstone details.</p>
                 ) : (
