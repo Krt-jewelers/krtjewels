@@ -1429,6 +1429,7 @@ export type Database = {
           specifications: Json | null
           stock_quantity: number | null
           stone_cost: number | null
+          stones: Json | null
           tags: string[] | null
           updated_at: string
           video_url: string | null
@@ -1459,6 +1460,7 @@ export type Database = {
           specifications?: Json | null
           stock_quantity?: number | null
           stone_cost?: number | null
+          stones?: Json | null
           tags?: string[] | null
           updated_at?: string
           video_url?: string | null
@@ -1489,6 +1491,7 @@ export type Database = {
           specifications?: Json | null
           stock_quantity?: number | null
           stone_cost?: number | null
+          stones?: Json | null
           tags?: string[] | null
           updated_at?: string
           video_url?: string | null

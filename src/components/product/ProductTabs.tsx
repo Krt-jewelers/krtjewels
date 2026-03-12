@@ -70,44 +70,104 @@ export function ProductTabs({ product }: ProductTabsProps) {
       id: 'price-breakdown',
       icon: Award,
       title: 'Price Breakdown',
-      content: (
-        <div className="space-y-2.5 max-w-sm">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Gold Value ({product.weight_grams}g)</span>
-            <span>₹{product.calculated_price.gold_value.toLocaleString('en-IN')}</span>
+      content: (() => {
+        const stones = Array.isArray((product as any).stones) ? (product as any).stones : [];
+        const hasStones = stones.length > 0;
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="text-left p-3 font-medium text-muted-foreground uppercase text-xs">Component</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground uppercase text-xs">Rate</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground uppercase text-xs">Weight</th>
+                  <th className="text-right p-3 font-medium text-muted-foreground uppercase text-xs">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Metal */}
+                <tr className="border-t border-border">
+                  <td colSpan={4} className="p-3 text-primary font-semibold text-xs uppercase">Metals</td>
+                </tr>
+                <tr className="border-t border-border/50">
+                  <td className="p-3">{product.metal_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</td>
+                  <td className="p-3">₹{product.calculated_price.gold_rate_applied.toLocaleString('en-IN')}</td>
+                  <td className="p-3">{product.weight_grams} g</td>
+                  <td className="p-3 text-right">₹{product.calculated_price.gold_value.toLocaleString('en-IN')}</td>
+                </tr>
+
+                {/* Stones */}
+                {(hasStones || product.stone_cost > 0 || product.diamond_cost > 0) && (
+                  <>
+                    <tr className="border-t border-border">
+                      <td colSpan={4} className="p-3 text-primary font-semibold text-xs uppercase">Stones</td>
+                    </tr>
+                    {hasStones ? stones.map((stone: any, idx: number) => (
+                      <tr key={idx} className="border-t border-border/50">
+                        <td className="p-3">{stone.name}{stone.quantity > 1 ? ` x ${stone.quantity}` : ''}{stone.shape ? ` (${stone.shape})` : ''}</td>
+                        <td className="p-3">₹{Number(stone.per_carat_price).toLocaleString('en-IN')}/ct</td>
+                        <td className="p-3">{stone.carat_weight} ct.w</td>
+                        <td className="p-3 text-right">₹{Math.round(stone.carat_weight * stone.per_carat_price * stone.quantity).toLocaleString('en-IN')}</td>
+                      </tr>
+                    )) : (
+                      <>
+                        {product.diamond_cost > 0 && (
+                          <tr className="border-t border-border/50">
+                            <td className="p-3">Diamond</td>
+                            <td className="p-3">–</td>
+                            <td className="p-3">–</td>
+                            <td className="p-3 text-right">₹{product.diamond_cost.toLocaleString('en-IN')}</td>
+                          </tr>
+                        )}
+                        {product.stone_cost > 0 && (
+                          <tr className="border-t border-border/50">
+                            <td className="p-3">Other Stones</td>
+                            <td className="p-3">–</td>
+                            <td className="p-3">–</td>
+                            <td className="p-3 text-right">₹{product.stone_cost.toLocaleString('en-IN')}</td>
+                          </tr>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* Making Charges */}
+                <tr className="border-t border-border bg-muted/30">
+                  <td className="p-3 text-primary font-semibold text-xs uppercase">Making Charges</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3 text-right">₹{product.calculated_price.making_charges.toLocaleString('en-IN')}</td>
+                </tr>
+
+                {/* Subtotal */}
+                <tr className="border-t border-border bg-muted/30">
+                  <td className="p-3 text-primary font-semibold text-xs uppercase">Subtotal</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3 text-right font-medium">₹{product.calculated_price.subtotal.toLocaleString('en-IN')}</td>
+                </tr>
+
+                {/* GST */}
+                <tr className="border-t border-border bg-muted/30">
+                  <td className="p-3 text-primary font-semibold text-xs uppercase">GST ({gstRate}%)</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3 text-right">₹{product.calculated_price.gst.toLocaleString('en-IN')}</td>
+                </tr>
+
+                {/* Total */}
+                <tr className="border-t-2 border-primary/30 bg-primary/5">
+                  <td className="p-3 font-bold uppercase text-xs">Total</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3">–</td>
+                  <td className="p-3 text-right text-lg font-serif font-bold text-primary">₹{product.calculated_price.total.toLocaleString('en-IN')}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Making Charges ({product.making_charge_percent || 12}%)</span>
-            <span>₹{product.calculated_price.making_charges.toLocaleString('en-IN')}</span>
-          </div>
-          {product.diamond_cost > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Diamond Cost</span>
-              <span>₹{product.diamond_cost.toLocaleString('en-IN')}</span>
-            </div>
-          )}
-          {product.stone_cost > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Stone Cost</span>
-              <span>₹{product.stone_cost.toLocaleString('en-IN')}</span>
-            </div>
-          )}
-          <div className="flex justify-between text-sm pt-2 border-t border-border">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span>₹{product.calculated_price.subtotal.toLocaleString('en-IN')}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">GST ({gstRate}%)</span>
-            <span>₹{product.calculated_price.gst.toLocaleString('en-IN')}</span>
-          </div>
-          <div className="flex justify-between pt-2 border-t border-primary/30">
-            <span className="font-semibold">Total</span>
-            <span className="text-lg font-serif font-bold text-primary">
-              ₹{product.calculated_price.total.toLocaleString('en-IN')}
-            </span>
-          </div>
-        </div>
-      ),
+        );
+      })(),
     },
     {
       id: 'certificate',

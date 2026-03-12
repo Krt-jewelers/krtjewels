@@ -39,8 +39,7 @@ interface AdminLayoutProps {
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Gold Rates', href: '/admin/gold-rates', icon: TrendingUp },
-  { name: 'Metal Types', href: '/admin/metal-types', icon: Circle },
+  { name: 'Rates & Metals', href: '/admin/gold-rates', icon: TrendingUp },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Inventory Alerts', href: '/admin/inventory', icon: AlertTriangle },
   { name: 'Making Charges', href: '/admin/making-charges', icon: Settings },

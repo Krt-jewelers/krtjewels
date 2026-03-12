@@ -61,7 +61,7 @@ import AdminPaymentSettings from "./pages/admin/PaymentSettings";
 import AdminPaymentVerification from "./pages/admin/PaymentVerification";
 import AdminHeroSlides from "./pages/admin/HeroSlides";
 import AdminCollectionBanners from "./pages/admin/CollectionBanners";
-import AdminMetalTypes from "./pages/admin/MetalTypes";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -147,7 +147,7 @@ const App = () => {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/gold-rates" element={<AdminGoldRates />} />
-            <Route path="/admin/metal-types" element={<AdminMetalTypes />} />
+            
             <Route path="/admin/products" element={<AdminProducts />} />
             <Route path="/admin/products/new" element={<AdminProductForm />} />
             <Route path="/admin/products/:id" element={<AdminProductForm />} />
