@@ -113,6 +113,8 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
   const hasSizes = SIZE_OPTIONS[category] !== undefined;
   const sizeOptions = SIZE_OPTIONS[category] || [];
   const sizeLabel = SIZE_LABELS[category] || 'Size';
+  const isGemstoneQuality = formData.variation_type === 'gemstone_quality';
+  const isCaratWeight = formData.variation_type === 'carat_weight';
 
   // Group variations by type
   const sizeVariations = variations.filter(v => v.variation_type === 'size');
@@ -457,18 +459,21 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                           onChange={(e) =>
                             setFormData(prev => ({ ...prev, size_label: e.target.value }))
                           }
-                          placeholder="e.g., Good / 1.50 cts / IGI"
+                          placeholder={isCaratWeight ? 'e.g., 0.50 ct' : 'e.g., VVS1 EF / IGI'}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Option Value</Label>
+                        <Label>{isCaratWeight ? 'Carat Weight (ct)' : 'Option Value'}</Label>
                         <Input
                           value={formData.size_value}
                           onChange={(e) =>
                             setFormData(prev => ({ ...prev, size_value: e.target.value }))
                           }
-                          placeholder="e.g., good / 1.50 / igi"
+                          placeholder={isCaratWeight ? 'e.g., 0.50' : 'e.g., vvs1_ef / igi'}
                         />
+                        {isCaratWeight && (
+                          <p className="text-xs text-muted-foreground">Use a numeric value like 0.25, 0.50, 1.00</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -507,7 +512,7 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Price Adjustment (₹)</Label>
+                      <Label>{isGemstoneQuality ? 'Price / Carat (₹)' : 'Price Adjustment (₹)'}</Label>
                       <Input
                         type="number"
                         value={formData.price_adjustment}
@@ -517,10 +522,10 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                             price_adjustment: parseFloat(e.target.value) || 0,
                           }))
                         }
-                        placeholder="0"
+                        placeholder={isGemstoneQuality ? '₹ per carat' : '0'}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Use negative for discount
+                        {isGemstoneQuality ? 'Used as per-carat rate for diamond pricing' : 'Use negative for discount'}
                       </p>
                     </div>
                     <div className="space-y-2">
