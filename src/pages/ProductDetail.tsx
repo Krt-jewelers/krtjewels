@@ -128,7 +128,17 @@ export default function ProductDetail() {
     goldRate || null,
     undefined,
     gstRate,
-    metalTypes || []
+    metalTypes || [],
+    variationState
+      ? {
+          selection: {
+            metalSlug: selectedMetalSlug,
+            diamondCost: selectedDiamondCost,
+            attributeExtra: 0,
+          },
+          usePricingOptionsDefaults: false,
+        }
+      : undefined
   );
 
   const extraTotal = variationState?.pricing?.extraTotal || 0;
