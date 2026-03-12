@@ -160,6 +160,7 @@ export default function ProductDetail() {
               category={product.category}
               baseMetalType={product.metal_type}
               baseWeightGrams={product.weight_grams}
+              baseRatePerGram={product.calculated_price.gold_rate_applied}
               specifications={product.specifications}
               onVariationChange={setVariationState}
             />
