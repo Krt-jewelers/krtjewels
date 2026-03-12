@@ -68,6 +68,14 @@ interface ManufacturerItem {
   value: string;
 }
 
+interface StoneItem {
+  name: string;
+  shape: string;
+  carat_weight: number;
+  per_carat_price: number;
+  quantity: number;
+}
+
 interface ProductFormData {
   name: string;
   slug: string;
@@ -80,6 +88,7 @@ interface ProductFormData {
   making_charge_percent: number | null;
   diamond_cost: number;
   stone_cost: number;
+  stones: StoneItem[];
   images: string[];
   sku: string;
   stock_quantity: number;
