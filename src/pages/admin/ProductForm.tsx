@@ -66,7 +66,20 @@ interface StoneItem {
 
 interface DiamondQualityItem {
   label: string;
+  subtitle: string;
   rate_per_carat: number;
+  is_default: boolean;
+}
+
+interface CaratWeightItem {
+  value: number;
+  is_default: boolean;
+}
+
+interface CertificateOptionItem {
+  label: string;
+  price: number;
+  is_default: boolean;
 }
 
 interface ProductFormData {
@@ -85,7 +98,8 @@ interface ProductFormData {
   stones: StoneItem[];
   pricing_metals: string[];
   diamond_qualities: DiamondQualityItem[];
-  carat_weights: number[];
+  carat_weights: CaratWeightItem[];
+  certificates: CertificateOptionItem[];
   auto_fill_stones_from_diamond: boolean;
   images: string[];
   sku: string;
@@ -130,6 +144,7 @@ const defaultFormData: ProductFormData = {
   pricing_metals: ['gold_22k'],
   diamond_qualities: [],
   carat_weights: [],
+  certificates: [],
   auto_fill_stones_from_diamond: true,
   images: [],
   sku: '',
@@ -236,6 +251,39 @@ export default function AdminProductForm() {
     }
   }, [metalTypes, formData.metal_type, formData.metal_type_id, formData.pricing_metals]);
 
+  useEffect(() => {
+    if (!formData.auto_fill_stones_from_diamond) return;
+
+    const manualStones = formData.stones.filter((s) => s.source !== 'diamond_options');
+    const hasDiamondInputs = formData.diamond_qualities.length > 0 && formData.carat_weights.length > 0;
+
+    if (!hasDiamondInputs) {
+      if (manualStones.length !== formData.stones.length) {
+        setFormData((prev) => ({ ...prev, stones: manualStones }));
+      }
+      return;
+    }
+
+    const autoStones: StoneItem[] = [];
+    formData.diamond_qualities.forEach((quality) => {
+      formData.carat_weights.forEach((carat) => {
+        autoStones.push({
+          name: `Diamond - ${quality.label}`,
+          shape: '',
+          carat_weight: carat.value,
+          per_carat_price: quality.rate_per_carat,
+          quantity: 1,
+          source: 'diamond_options',
+        });
+      });
+    });
+
+    const nextStones = [...manualStones, ...autoStones];
+    if (JSON.stringify(nextStones) !== JSON.stringify(formData.stones)) {
+      setFormData((prev) => ({ ...prev, stones: nextStones }));
+    }
+  }, [formData.auto_fill_stones_from_diamond, formData.diamond_qualities, formData.carat_weights, formData.stones]);
+
   const fetchProductCategories = async () => {
     const { data: categories, error: catError } = await supabase
       .from('product_categories')
@@ -280,14 +328,34 @@ export default function AdminProductForm() {
             .filter((q: any) => q && typeof q.label === 'string')
             .map((q: any) => ({
               label: q.label,
+              subtitle: typeof q.subtitle === 'string' ? q.subtitle : '',
               rate_per_carat: Number(q.rate_per_carat) || 0,
+              is_default: !!q.is_default,
             }))
         : [];
       const caratWeights = Array.isArray(pricingOptions.carat_weights)
         ? pricingOptions.carat_weights
-            .map((w: any) => Number(w))
-            .filter((w: number) => Number.isFinite(w) && w > 0)
+            .map((w: any) => {
+              if (typeof w === 'number') return { value: w, is_default: false };
+              if (w && typeof w.value === 'number') {
+                return { value: Number(w.value) || 0, is_default: !!w.is_default };
+              }
+              return null;
+            })
+            .filter((w: any) => w && Number.isFinite(w.value) && w.value > 0)
         : [];
+      const certificates = Array.isArray(pricingOptions.certificates)
+        ? pricingOptions.certificates
+            .filter((c: any) => c && typeof c.label === 'string')
+            .map((c: any) => ({
+              label: c.label,
+              price: Number(c.price) || 0,
+              is_default: !!c.is_default,
+            }))
+        : [];
+      const autoFillFromDiamond = typeof pricingOptions.auto_fill_stones === 'boolean'
+        ? pricingOptions.auto_fill_stones
+        : true;
       setFormData({
         name: data.name,
         slug: data.slug,
@@ -305,6 +373,8 @@ export default function AdminProductForm() {
         pricing_metals: resolvedPricingMetals,
         diamond_qualities: diamondQualities,
         carat_weights: caratWeights,
+        certificates,
+        auto_fill_stones_from_diamond: autoFillFromDiamond,
         images: data.images || [],
         sku: data.sku || '',
         stock_quantity: data.stock_quantity || 1,
@@ -384,10 +454,19 @@ export default function AdminProductForm() {
             metals: formData.pricing_metals,
             diamond_qualities: formData.diamond_qualities
               .filter(q => q.label.trim() !== '' && Number.isFinite(q.rate_per_carat))
-              .map(q => ({ label: q.label.trim(), rate_per_carat: q.rate_per_carat })),
+              .map(q => ({
+                label: q.label.trim(),
+                subtitle: q.subtitle?.trim() || '',
+                rate_per_carat: q.rate_per_carat,
+                is_default: q.is_default,
+              })),
             carat_weights: formData.carat_weights
-              .map(w => Number(w))
-              .filter(w => Number.isFinite(w) && w > 0),
+              .map(w => ({ value: Number(w.value), is_default: w.is_default }))
+              .filter(w => Number.isFinite(w.value) && w.value > 0),
+            certificates: formData.certificates
+              .filter(c => c.label.trim() !== '' && Number.isFinite(c.price))
+              .map(c => ({ label: c.label.trim(), price: c.price, is_default: c.is_default })),
+            auto_fill_stones: formData.auto_fill_stones_from_diamond,
           },
         } as unknown as Json,
       };
@@ -842,7 +921,7 @@ export default function AdminProductForm() {
                       onClick={() =>
                         setFormData((prev) => ({
                           ...prev,
-                          diamond_qualities: [...prev.diamond_qualities, { label: '', rate_per_carat: 0 }],
+                          diamond_qualities: [...prev.diamond_qualities, { label: '', subtitle: '', rate_per_carat: 0, is_default: false }],
                         }))
                       }
                     >
@@ -854,7 +933,7 @@ export default function AdminProductForm() {
                   ) : (
                     <div className="space-y-2">
                       {formData.diamond_qualities.map((quality, idx) => (
-                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-2 items-center">
+                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_auto_auto] gap-2 items-center">
                           <Input
                             value={quality.label}
                             onChange={(e) => {
@@ -863,6 +942,15 @@ export default function AdminProductForm() {
                               setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
                             }}
                             placeholder="e.g. VVS1 EF"
+                          />
+                          <Input
+                            value={quality.subtitle}
+                            onChange={(e) => {
+                              const updated = [...formData.diamond_qualities];
+                              updated[idx] = { ...updated[idx], subtitle: e.target.value };
+                              setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
+                            }}
+                            placeholder="e.g. Best Quality"
                           />
                           <Input
                             type="number"
@@ -874,6 +962,19 @@ export default function AdminProductForm() {
                             }}
                             placeholder="₹/ct"
                           />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={quality.is_default}
+                              onCheckedChange={(checked) => {
+                                const updated = formData.diamond_qualities.map((q, qIdx) => ({
+                                  ...q,
+                                  is_default: qIdx === idx ? checked : false,
+                                }));
+                                setFormData((prev) => ({ ...prev, diamond_qualities: updated }));
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">Default</span>
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
@@ -902,7 +1003,10 @@ export default function AdminProductForm() {
                       onClick={() =>
                         setFormData((prev) => ({
                           ...prev,
-                          carat_weights: [...prev.carat_weights, 0],
+                          carat_weights: [
+                            ...prev.carat_weights,
+                            { value: 0, is_default: prev.carat_weights.length === 0 },
+                          ],
                         }))
                       }
                     >
@@ -911,7 +1015,7 @@ export default function AdminProductForm() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {[0.25, 0.5, 0.75, 1, 1.5, 2].map((preset) => {
-                      const selected = formData.carat_weights.includes(preset);
+                      const selected = formData.carat_weights.some((w) => w.value === preset);
                       return (
                         <Button
                           key={preset}
@@ -922,8 +1026,8 @@ export default function AdminProductForm() {
                             setFormData((prev) => ({
                               ...prev,
                               carat_weights: selected
-                                ? prev.carat_weights.filter((w) => w !== preset)
-                                : [...prev.carat_weights, preset],
+                                ? prev.carat_weights.filter((w) => w.value !== preset)
+                                : [...prev.carat_weights, { value: preset, is_default: prev.carat_weights.length === 0 }],
                             }))
                           }
                           className={selected ? 'btn-premium' : ''}
@@ -938,18 +1042,31 @@ export default function AdminProductForm() {
                   ) : (
                     <div className="space-y-2">
                       {formData.carat_weights.map((carat, idx) => (
-                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-center">
+                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2 items-center">
                           <Input
                             type="number"
                             step="0.01"
-                            value={carat || ''}
+                            value={carat.value || ''}
                             onChange={(e) => {
                               const updated = [...formData.carat_weights];
-                              updated[idx] = parseFloat(e.target.value) || 0;
+                              updated[idx] = { ...updated[idx], value: parseFloat(e.target.value) || 0 };
                               setFormData((prev) => ({ ...prev, carat_weights: updated }));
                             }}
                             placeholder="e.g. 0.50"
                           />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={carat.is_default}
+                              onCheckedChange={(checked) => {
+                                const updated = formData.carat_weights.map((w, wIdx) => ({
+                                  ...w,
+                                  is_default: wIdx === idx ? checked : false,
+                                }));
+                                setFormData((prev) => ({ ...prev, carat_weights: updated }));
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">Default</span>
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
@@ -958,6 +1075,79 @@ export default function AdminProductForm() {
                             onClick={() => {
                               const updated = formData.carat_weights.filter((_, i) => i !== idx);
                               setFormData((prev) => ({ ...prev, carat_weights: updated }));
+                            }}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Certificates / Add-ons</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          certificates: [...prev.certificates, { label: '', price: 0, is_default: false }],
+                        }))
+                      }
+                    >
+                      + Add Certificate
+                    </Button>
+                  </div>
+                  {formData.certificates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No certificates added yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {formData.certificates.map((cert, idx) => (
+                        <div key={idx} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto_auto] gap-2 items-center">
+                          <Input
+                            value={cert.label}
+                            onChange={(e) => {
+                              const updated = [...formData.certificates];
+                              updated[idx] = { ...updated[idx], label: e.target.value };
+                              setFormData((prev) => ({ ...prev, certificates: updated }));
+                            }}
+                            placeholder="e.g. IGI Certificate"
+                          />
+                          <Input
+                            type="number"
+                            value={cert.price || ''}
+                            onChange={(e) => {
+                              const updated = [...formData.certificates];
+                              updated[idx] = { ...updated[idx], price: parseFloat(e.target.value) || 0 };
+                              setFormData((prev) => ({ ...prev, certificates: updated }));
+                            }}
+                            placeholder="₹"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={cert.is_default}
+                              onCheckedChange={(checked) => {
+                                const updated = formData.certificates.map((c, cIdx) => ({
+                                  ...c,
+                                  is_default: cIdx === idx ? checked : false,
+                                }));
+                                setFormData((prev) => ({ ...prev, certificates: updated }));
+                              }}
+                            />
+                            <span className="text-xs text-muted-foreground">Default</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => {
+                              const updated = formData.certificates.filter((_, i) => i !== idx);
+                              setFormData((prev) => ({ ...prev, certificates: updated }));
                             }}
                           >
                             ✕
@@ -1025,6 +1215,18 @@ export default function AdminProductForm() {
                 </Button>
               </CardHeader>
               <CardContent>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <Label>Auto-fill diamonds from Quality + Carat</Label>
+                    <p className="text-xs text-muted-foreground">Generates stone rows from the diamond options above.</p>
+                  </div>
+                  <Switch
+                    checked={formData.auto_fill_stones_from_diamond}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, auto_fill_stones_from_diamond: checked }))
+                    }
+                  />
+                </div>
                 {formData.stones.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No stones added. Click "Add Stone" to add gemstone details.</p>
                 ) : (
