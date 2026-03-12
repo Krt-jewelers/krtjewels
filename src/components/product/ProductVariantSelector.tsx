@@ -24,12 +24,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { Json } from '@/integrations/supabase/types';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 
 interface ProductVariantSelectorProps {
   productId: string;
   category: ProductCategory;
   baseMetalType: MetalType;
   baseWeightGrams: number;
+  baseRatePerGram?: number;
   specifications: Record<string, any> | Json | null;
   onVariationChange?: (variation: { 
     metalType: string; 
@@ -64,10 +66,12 @@ export function ProductVariantSelector({
   category,
   baseMetalType,
   baseWeightGrams,
+  baseRatePerGram,
   specifications,
   onVariationChange,
 }: ProductVariantSelectorProps) {
   const { data: variations = [], isLoading } = useProductVariations(productId);
+  const { data: metalTypes = [] } = useMetalTypes();
 
   // (debug logs moved below after computed options)
   
@@ -327,6 +331,17 @@ export function ProductVariantSelector({
     const sizeComplete = sizeOptions.length === 0 || !!selectedSize;
     const isComplete = metalComplete && sizeComplete && gemstoneComplete && caratComplete;
 
+    const getRateBySlug = (slug?: string | null) =>
+      metalTypes.find(mt => mt.slug === slug)?.rate_per_gram ?? null;
+
+    const baseRate = typeof baseRatePerGram === 'number' && baseRatePerGram > 0
+      ? baseRatePerGram
+      : getRateBySlug(baseMetalType) || 0;
+    const selectedRate = getRateBySlug(selectedMetalOption?.metalType || baseMetalType) || baseRate;
+    const metalRateDelta = baseRate > 0 ? (selectedRate - baseRate) * baseWeightGrams : 0;
+    const explicitMetalAdjustment = selectedMetalOption?.priceAdjustment || 0;
+    const metalPriceAdjustment = explicitMetalAdjustment !== 0 ? explicitMetalAdjustment : metalRateDelta;
+
     const certificatePrice = selectedCertOptions.reduce((sum, cert) => sum + (cert.priceAdjustment || 0), 0);
     const customPrice = selectedCustomOptions.reduce((sum, opt) => sum + (opt.priceAdjustment || 0), 0);
     const gemstonePrice = selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0);
@@ -339,7 +354,7 @@ export function ProductVariantSelector({
       metalType: selectedMetalOption?.label || METAL_TYPE_NAMES[baseMetalType] || selectedMetal,
       size: selectedSize || null,
       priceAdjustment:
-        (selectedMetalOption?.priceAdjustment || 0) +
+        metalPriceAdjustment +
         (selectedSizeOption?.priceAdjustment || 0) +
         gemstonePrice +
         caratPrice +
@@ -375,6 +390,16 @@ export function ProductVariantSelector({
     selectedCustomAddons,
     engravingText,
     engravingFont,
+    availableMetals,
+    sizeOptions,
+    gemstoneOptions,
+    caratOptions,
+    certificateOptions,
+    customOptions,
+    baseRatePerGram,
+    baseMetalType,
+    baseWeightGrams,
+    metalTypes,
   ]);
 
   const selectedMetalOption = availableMetals.find(m => m.value === selectedMetal);
