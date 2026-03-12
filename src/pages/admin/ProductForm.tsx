@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
+import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
 import { listCloudinaryImages, type CloudinaryImage } from '@/lib/cloudinary';
 import {
   Select,
@@ -30,7 +31,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Loader2, Package, Settings, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
 
 interface MenuCategory {
   id: string;
@@ -75,7 +76,7 @@ interface CaratWeightItem {
   is_default: boolean;
 }
 
-interface CertificateOptionItem {
+interface AttributeOptionItem {
   label: string;
   price: number;
   is_default: boolean;
@@ -98,7 +99,7 @@ interface ProductFormData {
   pricing_metals: string[];
   diamond_qualities: DiamondQualityItem[];
   carat_weights: CaratWeightItem[];
-  certificates: CertificateOptionItem[];
+  attributes: AttributeOptionItem[];
   images: string[];
   sku: string;
   stock_quantity: number;
@@ -142,7 +143,7 @@ const defaultFormData: ProductFormData = {
   pricing_metals: ['gold_22k'],
   diamond_qualities: [],
   carat_weights: [],
-  certificates: [],
+  attributes: [],
   images: [],
   sku: '',
   stock_quantity: 1,
@@ -308,8 +309,8 @@ export default function AdminProductForm() {
             })
             .filter((w: any) => w && Number.isFinite(w.value) && w.value > 0)
         : [];
-      const certificates = Array.isArray(pricingOptions.certificates)
-        ? pricingOptions.certificates
+      const attributes = Array.isArray(pricingOptions.attributes)
+        ? pricingOptions.attributes
             .filter((c: any) => c && typeof c.label === 'string')
             .map((c: any) => ({
               label: c.label,
@@ -334,7 +335,7 @@ export default function AdminProductForm() {
         pricing_metals: resolvedPricingMetals,
         diamond_qualities: diamondQualities,
         carat_weights: caratWeights,
-        certificates,
+        attributes,
         images: data.images || [],
         sku: data.sku || '',
         stock_quantity: data.stock_quantity || 1,
@@ -423,7 +424,7 @@ export default function AdminProductForm() {
             carat_weights: formData.carat_weights
               .map(w => ({ value: Number(w.value), is_default: w.is_default }))
               .filter(w => Number.isFinite(w.value) && w.value > 0),
-            certificates: formData.certificates
+            attributes: formData.attributes
               .filter(c => c.label.trim() !== '' && Number.isFinite(c.price))
               .map(c => ({ label: c.label.trim(), price: c.price, is_default: c.is_default })),
           },
@@ -525,7 +526,7 @@ export default function AdminProductForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <Tabs defaultValue="details" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
             <TabsTrigger value="details" className="gap-2">
               <Package className="w-4 h-4" />
               <span className="hidden sm:inline">Details</span>
@@ -537,6 +538,10 @@ export default function AdminProductForm() {
             <TabsTrigger value="images" className="gap-2">
               <ImageIcon className="w-4 h-4" />
               <span className="hidden sm:inline">Images</span>
+            </TabsTrigger>
+            <TabsTrigger value="variations" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Variations</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1046,7 +1051,7 @@ export default function AdminProductForm() {
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label>Certificates / Add-ons</Label>
+                    <Label>Attributes</Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -1054,47 +1059,47 @@ export default function AdminProductForm() {
                       onClick={() =>
                         setFormData((prev) => ({
                           ...prev,
-                          certificates: [...prev.certificates, { label: '', price: 0, is_default: false }],
+                          attributes: [...prev.attributes, { label: '', price: 0, is_default: false }],
                         }))
                       }
                     >
-                      + Add Certificate
+                      + Add Attribute
                     </Button>
                   </div>
-                  {formData.certificates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No certificates added yet.</p>
+                  {formData.attributes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No attributes added yet.</p>
                   ) : (
                     <div className="space-y-2">
-                      {formData.certificates.map((cert, idx) => (
+                      {formData.attributes.map((attr, idx) => (
                         <div key={idx} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto_auto] gap-2 items-center">
                           <Input
-                            value={cert.label}
+                            value={attr.label}
                             onChange={(e) => {
-                              const updated = [...formData.certificates];
+                              const updated = [...formData.attributes];
                               updated[idx] = { ...updated[idx], label: e.target.value };
-                              setFormData((prev) => ({ ...prev, certificates: updated }));
+                              setFormData((prev) => ({ ...prev, attributes: updated }));
                             }}
                             placeholder="e.g. IGI Certificate"
                           />
                           <Input
                             type="number"
-                            value={cert.price || ''}
+                            value={attr.price || ''}
                             onChange={(e) => {
-                              const updated = [...formData.certificates];
+                              const updated = [...formData.attributes];
                               updated[idx] = { ...updated[idx], price: parseFloat(e.target.value) || 0 };
-                              setFormData((prev) => ({ ...prev, certificates: updated }));
+                              setFormData((prev) => ({ ...prev, attributes: updated }));
                             }}
                             placeholder="₹"
                           />
                           <div className="flex items-center gap-2">
                             <Switch
-                              checked={cert.is_default}
+                              checked={attr.is_default}
                               onCheckedChange={(checked) => {
-                                const updated = formData.certificates.map((c, cIdx) => ({
-                                  ...c,
-                                  is_default: cIdx === idx ? checked : false,
+                                const updated = formData.attributes.map((a, aIdx) => ({
+                                  ...a,
+                                  is_default: aIdx === idx ? checked : false,
                                 }));
-                                setFormData((prev) => ({ ...prev, certificates: updated }));
+                                setFormData((prev) => ({ ...prev, attributes: updated }));
                               }}
                             />
                             <span className="text-xs text-muted-foreground">Default</span>
@@ -1105,8 +1110,8 @@ export default function AdminProductForm() {
                             size="icon"
                             className="text-destructive"
                             onClick={() => {
-                              const updated = formData.certificates.filter((_, i) => i !== idx);
-                              setFormData((prev) => ({ ...prev, certificates: updated }));
+                              const updated = formData.attributes.filter((_, i) => i !== idx);
+                              setFormData((prev) => ({ ...prev, attributes: updated }));
                             }}
                           >
                             ✕
@@ -1381,6 +1386,47 @@ export default function AdminProductForm() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          {/* Variations Tab */}
+          <TabsContent value="variations" className="space-y-6">
+            {isEditing && id ? (
+              <div className="space-y-6">
+                {(() => {
+                  const selectedCategory = productCategories.find(c => c.id === formData.category_id)?.slug as any;
+                  if (!selectedCategory) {
+                    return (
+                      <Card>
+                        <CardContent className="py-12 text-center">
+                          <Sparkles className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                          <p className="text-muted-foreground font-medium">Select a category first</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Variations depend on the product category.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  }
+                  return (
+                    <ProductVariationsForm
+                      productId={id}
+                      category={selectedCategory}
+                      productImages={formData.images}
+                    />
+                  );
+                })()}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Sparkles className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" />
+                  <p className="text-muted-foreground font-medium">Save the product first</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You can add variations after creating the product.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
         </Tabs>
