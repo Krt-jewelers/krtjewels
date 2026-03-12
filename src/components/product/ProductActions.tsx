@@ -7,29 +7,39 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import type { ProductWithPrice } from '@/lib/types';
+import type { ProductWithPrice, CalculatedPrice } from '@/lib/types';
 
 interface ProductActionsProps {
   product: ProductWithPrice;
+  calculatedPrice?: CalculatedPrice;
   variationState?: {
     metalType: string;
+    metalTypeSlug: string;
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
     imageUrl: string | null;
     isComplete?: boolean;
+    pricing?: {
+      metalRatePerGram: number;
+      metalWeightGrams: number;
+      diamondRatePerCarat: number;
+      diamondCaratWeight: number;
+      diamondCost: number;
+    };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
       certificates?: string[];
       addOns?: string[];
       metalType: string;
+      metalTypeSlug?: string;
       size?: string | null;
     };
   } | null;
 }
 
-export function ProductActions({ product, variationState }: ProductActionsProps) {
+export function ProductActions({ product, variationState, calculatedPrice }: ProductActionsProps) {
   const { isAuthenticated } = useAuth();
   const { addToCart, isAdding } = useCart();
   const { isInWishlist, toggleWishlist, isToggling } = useWishlist();
@@ -78,7 +88,8 @@ export function ProductActions({ product, variationState }: ProductActionsProps)
   };
 
   const handleWhatsAppEnquiry = () => {
-    const message = `Hi KRT Jewels! I'm interested in the ${product.name} (${formatPrice(product.calculated_price.total)}). Can you please provide more details?`;
+    const effectivePrice = calculatedPrice?.total ?? product.calculated_price.total;
+    const message = `Hi KRT Jewels! I'm interested in the ${product.name} (${formatPrice(effectivePrice)}). Can you please provide more details?`;
     window.open(`https://wa.me/919843010986?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -118,11 +129,11 @@ export function ProductActions({ product, variationState }: ProductActionsProps)
           {/* Price display */}
           <div className="flex-1 bg-secondary/50 rounded-lg px-3 py-2 text-center">
             <span className="text-lg font-semibold tracking-tight text-foreground">
-              {formatPrice((product.calculated_price.total + (variationState?.priceAdjustment || 0)) * quantity)}
+              {formatPrice((calculatedPrice?.total ?? product.calculated_price.total) * quantity)}
             </span>
             {quantity > 1 && (
               <span className="text-xs text-muted-foreground ml-1">
-                ({formatPrice(product.calculated_price.total + (variationState?.priceAdjustment || 0))} × {quantity})
+                ({formatPrice(calculatedPrice?.total ?? product.calculated_price.total)} × {quantity})
               </span>
             )}
           </div>
@@ -168,7 +179,7 @@ export function ProductActions({ product, variationState }: ProductActionsProps)
 
             <div className="flex-1 rounded-lg px-3 py-2 text-center">
               <span className="text-base font-semibold tracking-tight text-background">
-                {formatPrice((product.calculated_price.total + (variationState?.priceAdjustment || 0)) * quantity)}
+                {formatPrice((calculatedPrice?.total ?? product.calculated_price.total) * quantity)}
               </span>
             </div>
 
