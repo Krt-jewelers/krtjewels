@@ -26,11 +26,12 @@ interface ProductActionsProps {
       diamondRatePerCarat: number;
       diamondCaratWeight: number;
       diamondCost: number;
+      extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
     };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
-      certificates?: string[];
+      attributes?: string[];
       addOns?: string[];
       metalType: string;
       metalTypeSlug?: string;
