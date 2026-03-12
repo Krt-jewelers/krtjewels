@@ -12,6 +12,33 @@ export function ProductTabs({ product }: ProductTabsProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['product-details']));
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
+  const excludedSpecKeys = new Set(['certificate_items', 'manufacturer_info']);
+
+  const formatSpecValue = (value: unknown) => {
+    if (Array.isArray(value)) {
+      const parts = value
+        .map((item) => {
+          if (item == null) return '';
+          if (typeof item === 'string' || typeof item === 'number') return String(item);
+          if (typeof item === 'object') {
+            const obj = item as Record<string, unknown>;
+            const preferred = obj.label ?? obj.title ?? obj.name ?? obj.value;
+            return preferred ? String(preferred) : '';
+          }
+          return '';
+        })
+        .filter(Boolean);
+      return parts.length > 0 ? parts.join(', ') : '—';
+    }
+
+    if (value && typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      const preferred = obj.label ?? obj.title ?? obj.name ?? obj.value;
+      return preferred ? String(preferred) : '—';
+    }
+
+    return String(value);
+  };
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => {
@@ -37,12 +64,14 @@ export function ProductTabs({ product }: ProductTabsProps) {
           )}
           {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div className="grid grid-cols-2 gap-3">
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <div key={key} className="flex justify-between text-sm py-1.5 border-b border-border/50">
-                  <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                  <span className="font-medium">{String(value)}</span>
-                </div>
-              ))}
+              {Object.entries(product.specifications)
+                .filter(([key]) => !excludedSpecKeys.has(key))
+                .map(([key, value]) => (
+                  <div key={key} className="flex justify-between text-sm py-1.5 border-b border-border/50">
+                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                    <span className="font-medium">{formatSpecValue(value)}</span>
+                  </div>
+                ))}
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
