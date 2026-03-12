@@ -47,6 +47,8 @@ interface ProductVariantSelectorProps {
       diamondRatePerCarat: number;
       diamondCaratWeight: number;
       diamondCost: number;
+      extras?: { label: string; amount: number; type: 'certificate' | 'addon' | 'size' | 'metal' }[];
+      extraTotal?: number;
     };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
@@ -88,17 +90,31 @@ export function ProductVariantSelector({
   const specMetals: string[] = Array.isArray(pricingOptions.metals)
     ? pricingOptions.metals.filter((m: any) => typeof m === 'string')
     : [];
-  const specDiamondQualities: { label: string; rate_per_carat: number }[] = Array.isArray(pricingOptions.diamond_qualities)
+  const specDiamondQualities: { label: string; subtitle: string; rate_per_carat: number; is_default: boolean }[] = Array.isArray(pricingOptions.diamond_qualities)
     ? pricingOptions.diamond_qualities
         .filter((q: any) => q && typeof q.label === 'string')
-        .map((q: any) => ({ label: q.label, rate_per_carat: Number(q.rate_per_carat) || 0 }))
+        .map((q: any) => ({
+          label: q.label,
+          subtitle: typeof q.subtitle === 'string' ? q.subtitle : '',
+          rate_per_carat: Number(q.rate_per_carat) || 0,
+          is_default: !!q.is_default,
+        }))
     : [];
-  const specCaratWeights: number[] = Array.isArray(pricingOptions.carat_weights)
+  const specCaratWeights: { value: number; is_default: boolean }[] = Array.isArray(pricingOptions.carat_weights)
     ? pricingOptions.carat_weights
-        .map((w: any) => Number(w))
-        .filter((w: number) => Number.isFinite(w) && w > 0)
+        .map((w: any) => {
+          if (typeof w === 'number') return { value: w, is_default: false };
+          if (w && typeof w.value === 'number') return { value: Number(w.value) || 0, is_default: !!w.is_default };
+          return null;
+        })
+        .filter((w: any) => w && Number.isFinite(w.value) && w.value > 0)
     : [];
-  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0;
+  const specCertificates: { label: string; price: number; is_default: boolean }[] = Array.isArray(pricingOptions.certificates)
+    ? pricingOptions.certificates
+        .filter((c: any) => c && typeof c.label === 'string')
+        .map((c: any) => ({ label: c.label, price: Number(c.price) || 0, is_default: !!c.is_default }))
+    : [];
+  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0 || specCertificates.length > 0;
   
   const [selectedMetal, setSelectedMetal] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -218,9 +234,10 @@ export function ProductVariantSelector({
     ? specDiamondQualities.map((q) => ({
         value: q.label,
         label: q.label,
+        subtitle: q.subtitle,
         priceAdjustment: q.rate_per_carat,
         weightAdjustment: 0,
-        isDefault: false,
+        isDefault: q.is_default,
         imageUrl: null,
         selectionMode: 'single',
         groupLabel: 'Diamond Quality',
@@ -240,11 +257,11 @@ export function ProductVariantSelector({
 
   const caratOptions = useSpecOptions && specCaratWeights.length > 0
     ? specCaratWeights.map((w) => ({
-        value: String(w),
-        label: `${w} ct`,
+        value: String(w.value),
+        label: `${w.value} ct`,
         priceAdjustment: 0,
         weightAdjustment: 0,
-        isDefault: false,
+        isDefault: w.is_default,
         imageUrl: null,
         selectionMode: 'single',
         groupLabel: 'Total Carat Weight',
@@ -262,7 +279,17 @@ export function ProductVariantSelector({
       }))
     : [];
 
-  const certificateOptions = hasCertificateVariations
+  const certificateOptions = useSpecOptions && specCertificates.length > 0
+    ? specCertificates.map((c) => ({
+        value: c.label,
+        label: c.label,
+        priceAdjustment: c.price,
+        imageUrl: null,
+        isDefault: c.is_default,
+        selectionMode: 'single',
+        groupLabel: 'Add Certificate',
+      }))
+    : hasCertificateVariations
     ? certificateVariations.filter(v => v.is_available).map(v => ({
         value: v.id,
         label: normalizeLabel(v.size_label || v.size_value || '', v.id),
@@ -460,6 +487,18 @@ export function ProductVariantSelector({
       (selectedMetalOption?.weightAdjustment || 0) +
       (selectedSizeOption?.weightAdjustment || 0);
 
+    const extras = [
+      ...(selectedCertOptions.map(c => ({ label: c.label, amount: c.priceAdjustment || 0, type: 'certificate' as const }))),
+      ...(selectedCustomOptions.map(o => ({ label: o.label, amount: o.priceAdjustment || 0, type: 'addon' as const }))),
+      ...(selectedSizeOption?.priceAdjustment
+        ? [{ label: `${sizeLabel} Adjustment`, amount: selectedSizeOption.priceAdjustment, type: 'size' as const }]
+        : []),
+      ...(explicitMetalAdjustment !== 0
+        ? [{ label: `${metalTypeLabel} Adjustment`, amount: explicitMetalAdjustment, type: 'metal' as const }]
+        : []),
+    ];
+    const extrasTotal = extras.reduce((sum, e) => sum + (e.amount || 0), 0);
+
     onVariationChange?.({
       metalType: metalTypeLabel,
       metalTypeSlug,
@@ -481,6 +520,8 @@ export function ProductVariantSelector({
         diamondRatePerCarat: perCaratRate,
         diamondCaratWeight: totalCaratWeight,
         diamondCost,
+        extras,
+        extraTotal: extrasTotal,
       },
       selectedOptions: {
         gemstoneQuality: gemstoneIsMulti
@@ -590,13 +631,9 @@ export function ProductVariantSelector({
                 <span className="text-xs font-medium text-foreground">
                   {option.label || option.value || 'Option'}
                 </span>
-                {option.priceAdjustment > 0 ? (
-                  <span className="text-[10px] text-muted-foreground">
-                    ₹{option.priceAdjustment.toLocaleString('en-IN')}/ct
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground"> </span>
-                )}
+                <span className="text-[10px] text-muted-foreground">
+                  {(option as any).subtitle || ' '}
+                </span>
               </button>
             ))}
           </div>
