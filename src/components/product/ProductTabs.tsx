@@ -17,7 +17,7 @@ interface ProductTabsProps {
     diamondCaratWeight?: number;
     diamondCost?: number;
     diamondQualityLabel?: string;
-    extras?: { label: string; amount: number; type: 'certificate' | 'addon' | 'size' | 'metal' }[];
+    extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
   };
 }
 
