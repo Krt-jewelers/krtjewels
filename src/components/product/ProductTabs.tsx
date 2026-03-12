@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ProductWithPrice } from '@/lib/types';
+import type { ProductWithPrice, MetalType } from '@/lib/types';
+import { METAL_TYPE_NAMES } from '@/lib/types';
 import { useGstSettings } from '@/hooks/useSiteSettings';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 
 interface ProductTabsProps {
   product: ProductWithPrice;
@@ -12,7 +14,12 @@ export function ProductTabs({ product }: ProductTabsProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['product-details']));
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
+  const { data: metalTypes = [] } = useMetalTypes();
   const excludedSpecKeys = new Set(['certificate_items', 'manufacturer_info']);
+  const metalDisplayName =
+    (product.metal_type_id && metalTypes.find(mt => mt.id === product.metal_type_id)?.name) ||
+    METAL_TYPE_NAMES[product.metal_type as MetalType] ||
+    product.metal_type;
 
   const formatSpecValue = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -81,7 +88,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
             </div>
             <div className="flex justify-between text-sm py-1.5 border-b border-border/50">
               <span className="text-muted-foreground">Purity</span>
-              <span className="font-medium">{product.metal_type.replace('_', ' ').toUpperCase()}</span>
+              <span className="font-medium">{metalDisplayName}</span>
             </div>
             <div className="flex justify-between text-sm py-1.5 border-b border-border/50">
               <span className="text-muted-foreground">SKU</span>
@@ -119,7 +126,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                   <td colSpan={4} className="p-3 text-primary font-semibold text-xs uppercase">Metals</td>
                 </tr>
                 <tr className="border-t border-border/50">
-                  <td className="p-3">{product.metal_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</td>
+                  <td className="p-3">{metalDisplayName}</td>
                   <td className="p-3">₹{product.calculated_price.gold_rate_applied.toLocaleString('en-IN')}</td>
                   <td className="p-3">{product.weight_grams} g</td>
                   <td className="p-3 text-right">₹{product.calculated_price.gold_value.toLocaleString('en-IN')}</td>
