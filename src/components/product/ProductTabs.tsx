@@ -1,25 +1,37 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, FileText, Award, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ProductWithPrice, MetalType } from '@/lib/types';
+import type { ProductWithPrice, MetalType, CalculatedPrice } from '@/lib/types';
 import { METAL_TYPE_NAMES } from '@/lib/types';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { useMetalTypes } from '@/hooks/useMetalTypes';
 
 interface ProductTabsProps {
   product: ProductWithPrice;
+  calculatedPrice?: CalculatedPrice;
+  pricingMeta?: {
+    metalLabel?: string;
+    metalRatePerGram?: number;
+    metalWeightGrams?: number;
+    diamondRatePerCarat?: number;
+    diamondCaratWeight?: number;
+    diamondCost?: number;
+    diamondQualityLabel?: string;
+  };
 }
 
-export function ProductTabs({ product }: ProductTabsProps) {
+export function ProductTabs({ product, calculatedPrice, pricingMeta }: ProductTabsProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['product-details']));
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const { data: metalTypes = [] } = useMetalTypes();
-  const excludedSpecKeys = new Set(['certificate_items', 'manufacturer_info']);
+  const excludedSpecKeys = new Set(['certificate_items', 'manufacturer_info', 'pricing_options']);
   const metalDisplayName =
+    pricingMeta?.metalLabel ||
     (product.metal_type_id && metalTypes.find(mt => mt.id === product.metal_type_id)?.name) ||
     METAL_TYPE_NAMES[product.metal_type as MetalType] ||
     product.metal_type;
+  const effectivePrice = calculatedPrice || product.calculated_price;
 
   const formatSpecValue = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -109,6 +121,13 @@ export function ProductTabs({ product }: ProductTabsProps) {
       content: (() => {
         const stones = Array.isArray((product as any).stones) ? (product as any).stones : [];
         const hasStones = stones.length > 0;
+        const diamondCostFromSelection = pricingMeta?.diamondCost ?? 0;
+        const diamondRate = pricingMeta?.diamondRatePerCarat ?? 0;
+        const diamondCarat = pricingMeta?.diamondCaratWeight ?? 0;
+        const diamondQuality = pricingMeta?.diamondQualityLabel || 'Diamond';
+        const showSelectedDiamond = diamondCostFromSelection > 0 && diamondCarat > 0;
+        const metalRate = pricingMeta?.metalRatePerGram ?? effectivePrice.gold_rate_applied;
+        const metalWeight = pricingMeta?.metalWeightGrams ?? product.weight_grams;
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
@@ -127,17 +146,25 @@ export function ProductTabs({ product }: ProductTabsProps) {
                 </tr>
                 <tr className="border-t border-border/50">
                   <td className="p-3">{metalDisplayName}</td>
-                  <td className="p-3">₹{product.calculated_price.gold_rate_applied.toLocaleString('en-IN')}</td>
-                  <td className="p-3">{product.weight_grams} g</td>
-                  <td className="p-3 text-right">₹{product.calculated_price.gold_value.toLocaleString('en-IN')}</td>
+                  <td className="p-3">₹{metalRate.toLocaleString('en-IN')}</td>
+                  <td className="p-3">{metalWeight} g</td>
+                  <td className="p-3 text-right">₹{effectivePrice.gold_value.toLocaleString('en-IN')}</td>
                 </tr>
 
                 {/* Stones */}
-                {(hasStones || product.stone_cost > 0 || product.diamond_cost > 0) && (
+                {(hasStones || product.stone_cost > 0 || product.diamond_cost > 0 || showSelectedDiamond) && (
                   <>
                     <tr className="border-t border-border">
                       <td colSpan={4} className="p-3 text-primary font-semibold text-xs uppercase">Stones</td>
                     </tr>
+                    {showSelectedDiamond && (
+                      <tr className="border-t border-border/50">
+                        <td className="p-3">{diamondQuality}</td>
+                        <td className="p-3">₹{diamondRate.toLocaleString('en-IN')}/ct</td>
+                        <td className="p-3">{diamondCarat} ct</td>
+                        <td className="p-3 text-right">₹{Math.round(diamondCostFromSelection).toLocaleString('en-IN')}</td>
+                      </tr>
+                    )}
                     {hasStones ? stones.map((stone: any, idx: number) => (
                       <tr key={idx} className="border-t border-border/50">
                         <td className="p-3">{stone.name}{stone.quantity > 1 ? ` x ${stone.quantity}` : ''}{stone.shape ? ` (${stone.shape})` : ''}</td>
@@ -147,7 +174,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                       </tr>
                     )) : (
                       <>
-                        {product.diamond_cost > 0 && (
+                        {product.diamond_cost > 0 && !showSelectedDiamond && (
                           <tr className="border-t border-border/50">
                             <td className="p-3">Diamond</td>
                             <td className="p-3">–</td>
@@ -173,7 +200,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                   <td className="p-3 text-primary font-semibold text-xs uppercase">Making Charges</td>
                   <td className="p-3">–</td>
                   <td className="p-3">–</td>
-                  <td className="p-3 text-right">₹{product.calculated_price.making_charges.toLocaleString('en-IN')}</td>
+                  <td className="p-3 text-right">₹{effectivePrice.making_charges.toLocaleString('en-IN')}</td>
                 </tr>
 
                 {/* Subtotal */}
@@ -181,7 +208,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                   <td className="p-3 text-primary font-semibold text-xs uppercase">Subtotal</td>
                   <td className="p-3">–</td>
                   <td className="p-3">–</td>
-                  <td className="p-3 text-right font-medium">₹{product.calculated_price.subtotal.toLocaleString('en-IN')}</td>
+                  <td className="p-3 text-right font-medium">₹{effectivePrice.subtotal.toLocaleString('en-IN')}</td>
                 </tr>
 
                 {/* GST */}
@@ -189,7 +216,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                   <td className="p-3 text-primary font-semibold text-xs uppercase">GST ({gstRate}%)</td>
                   <td className="p-3">–</td>
                   <td className="p-3">–</td>
-                  <td className="p-3 text-right">₹{product.calculated_price.gst.toLocaleString('en-IN')}</td>
+                  <td className="p-3 text-right">₹{effectivePrice.gst.toLocaleString('en-IN')}</td>
                 </tr>
 
                 {/* Total */}
@@ -197,7 +224,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
                   <td className="p-3 font-bold uppercase text-xs">Total</td>
                   <td className="p-3">–</td>
                   <td className="p-3">–</td>
-                  <td className="p-3 text-right text-lg font-serif font-bold text-primary">₹{product.calculated_price.total.toLocaleString('en-IN')}</td>
+                  <td className="p-3 text-right text-lg font-serif font-bold text-primary">₹{effectivePrice.total.toLocaleString('en-IN')}</td>
                 </tr>
               </tbody>
             </table>
