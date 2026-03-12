@@ -808,88 +808,189 @@ export default function AdminProductForm() {
 
           {/* Pricing Tab */}
           <TabsContent value="pricing" className="space-y-6">
+            {/* Metal Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Pricing & Stock</CardTitle>
+                <CardTitle className="text-primary text-sm uppercase tracking-wide">Metal</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="weight_grams">Weight (grams) *</Label>
-                    <Input
-                      id="weight_grams"
-                      type="number"
-                      step="0.01"
-                      value={formData.weight_grams || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, weight_grams: parseFloat(e.target.value) || 0 }))
-                      }
-                      placeholder="0.00"
-                      required
+                    <Label>Metal Type *</Label>
+                    <MetalTypeSelector
+                      value={formData.metal_type}
+                      onChange={(value) => setFormData((prev) => ({ ...prev, metal_type: value as MetalType }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="making_charge_percent">Making Charge %</Label>
+                    <Label>Metal Weight (g) *</Label>
                     <Input
-                      id="making_charge_percent"
-                      type="number"
-                      step="0.1"
+                      type="number" step="0.01"
+                      value={formData.weight_grams || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, weight_grams: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00" required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Making Charge / Wastage %</Label>
+                    <Input
+                      type="number" step="0.1"
                       value={formData.making_charge_percent ?? ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          making_charge_percent: e.target.value ? parseFloat(e.target.value) : null,
-                        }))
-                      }
+                      onChange={(e) => setFormData((prev) => ({ ...prev, making_charge_percent: e.target.value ? parseFloat(e.target.value) : null }))}
                       placeholder="Category default"
                     />
-                    <p className="text-xs text-muted-foreground">Leave blank to use category default</p>
+                    <p className="text-xs text-muted-foreground">Leave blank for category default</p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="stock_quantity">Stock</Label>
+                    <Label>Diamond Cost (₹)</Label>
                     <Input
-                      id="stock_quantity"
                       type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, stock_quantity: parseInt(e.target.value) || 0 }))
-                      }
+                      value={formData.diamond_cost || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0"
                     />
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Stones Section */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-primary text-sm uppercase tracking-wide">Stones</CardTitle>
+                <Button
+                  type="button" variant="outline" size="sm"
+                  onClick={() => setFormData((prev) => ({
+                    ...prev,
+                    stones: [...prev.stones, { name: '', shape: '', carat_weight: 0, per_carat_price: 0, quantity: 1 }],
+                  }))}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Stone
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {formData.stones.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No stones added. Click "Add Stone" to add gemstone details.</p>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 text-xs font-medium text-muted-foreground uppercase">
+                      <span>Stone Name</span>
+                      <span>Shape</span>
+                      <span>Carat Wt</span>
+                      <span>₹/Carat</span>
+                      <span>Qty</span>
+                      <span></span>
+                    </div>
+                    {formData.stones.map((stone, idx) => (
+                      <div key={idx} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 items-center">
+                        <Input
+                          value={stone.name}
+                          onChange={(e) => {
+                            const updated = [...formData.stones];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                          placeholder="e.g. Heart Pink Sapphire"
+                          className="h-9"
+                        />
+                        <Input
+                          value={stone.shape}
+                          onChange={(e) => {
+                            const updated = [...formData.stones];
+                            updated[idx] = { ...updated[idx], shape: e.target.value };
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                          placeholder="Round"
+                          className="h-9"
+                        />
+                        <Input
+                          type="number" step="0.01"
+                          value={stone.carat_weight || ''}
+                          onChange={(e) => {
+                            const updated = [...formData.stones];
+                            updated[idx] = { ...updated[idx], carat_weight: parseFloat(e.target.value) || 0 };
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                          placeholder="0.80"
+                          className="h-9"
+                        />
+                        <Input
+                          type="number" step="1"
+                          value={stone.per_carat_price || ''}
+                          onChange={(e) => {
+                            const updated = [...formData.stones];
+                            updated[idx] = { ...updated[idx], per_carat_price: parseFloat(e.target.value) || 0 };
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                          placeholder="₹/ct"
+                          className="h-9"
+                        />
+                        <Input
+                          type="number" step="1" min="1"
+                          value={stone.quantity || ''}
+                          onChange={(e) => {
+                            const updated = [...formData.stones];
+                            updated[idx] = { ...updated[idx], quantity: parseInt(e.target.value) || 1 };
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                          placeholder="1"
+                          className="h-9"
+                        />
+                        <Button
+                          type="button" variant="ghost" size="icon" className="text-destructive h-9 w-9"
+                          onClick={() => {
+                            const updated = formData.stones.filter((_, i) => i !== idx);
+                            setFormData((prev) => ({ ...prev, stones: updated }));
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                    {formData.stones.length > 0 && (
+                      <div className="flex justify-end pt-2 border-t">
+                        <p className="text-sm font-medium">
+                          Stones Total: <span className="text-primary">₹{Math.round(formData.stones.reduce((sum, s) => sum + (s.carat_weight * s.per_carat_price * s.quantity), 0)).toLocaleString('en-IN')}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Stock & SKU */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm uppercase tracking-wide">Stock & Identification</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="diamond_cost">Diamond Cost (₹)</Label>
+                    <Label>Stock Quantity</Label>
                     <Input
-                      id="diamond_cost"
                       type="number"
-                      value={formData.diamond_cost || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, diamond_cost: parseFloat(e.target.value) || 0 }))
-                      }
-                      placeholder="0"
+                      value={formData.stock_quantity}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, stock_quantity: parseInt(e.target.value) || 0 }))}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="stone_cost">Stone Cost (₹)</Label>
+                    <Label>SKU</Label>
                     <Input
-                      id="stone_cost"
-                      type="number"
-                      value={formData.stone_cost || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, stone_cost: parseFloat(e.target.value) || 0 }))
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input
-                      id="sku"
                       value={formData.sku}
                       onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
                       placeholder="KRT-001"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Legacy Stone Cost (₹)</Label>
+                    <Input
+                      type="number"
+                      value={formData.stone_cost || ''}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, stone_cost: parseFloat(e.target.value) || 0 }))}
+                      placeholder="Auto-calculated from stones"
+                    />
+                    <p className="text-xs text-muted-foreground">Override if not using stone entries above</p>
                   </div>
                 </div>
               </CardContent>
