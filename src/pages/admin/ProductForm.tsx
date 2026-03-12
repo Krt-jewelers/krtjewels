@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus } from 'lucide-react';
 
 function MetalTypeSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { data: metalTypes = [] } = useMetalTypes();
