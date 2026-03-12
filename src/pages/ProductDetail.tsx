@@ -51,11 +51,13 @@ export default function ProductDetail() {
       diamondRatePerCarat: number;
       diamondCaratWeight: number;
       diamondCost: number;
+      extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
+      extraTotal?: number;
     };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
-      certificates?: string[];
+      attributes?: string[];
       addOns?: string[];
       metalType: string;
       metalTypeSlug?: string;
@@ -129,10 +131,21 @@ export default function ProductDetail() {
     metalTypes || []
   );
 
+  const extraTotal = variationState?.pricing?.extraTotal || 0;
+  const adjustedSubtotal = effectiveCalculatedPrice.subtotal + extraTotal;
+  const adjustedGst = Math.round(adjustedSubtotal * (gstRate / 100));
+  const adjustedTotal = Math.round(adjustedSubtotal + adjustedGst);
+  const adjustedCalculatedPrice = {
+    ...effectiveCalculatedPrice,
+    subtotal: Math.round(adjustedSubtotal),
+    gst: adjustedGst,
+    total: adjustedTotal,
+  };
+
   const variationStateForCart = variationState
     ? {
         ...variationState,
-        priceAdjustment: effectiveCalculatedPrice.subtotal - product.calculated_price.subtotal,
+        priceAdjustment: adjustedCalculatedPrice.subtotal - product.calculated_price.subtotal,
       }
     : null;
 
@@ -189,7 +202,7 @@ export default function ProductDetail() {
 
             {/* Price */}
             <ProductPricing
-              calculatedPrice={effectiveCalculatedPrice}
+              calculatedPrice={adjustedCalculatedPrice}
               quantity={1}
             />
 
@@ -208,7 +221,7 @@ export default function ProductDetail() {
             <ProductActions
               product={product}
               variationState={variationStateForCart}
-              calculatedPrice={effectiveCalculatedPrice}
+              calculatedPrice={adjustedCalculatedPrice}
             />
 
             <PincodeChecker />
@@ -237,7 +250,7 @@ export default function ProductDetail() {
             {/* Accordion Tabs */}
             <ProductTabs
               product={product}
-              calculatedPrice={effectiveCalculatedPrice}
+              calculatedPrice={adjustedCalculatedPrice}
               pricingMeta={{
                 metalLabel: variationState?.metalType || '',
                 metalRatePerGram: variationState?.pricing?.metalRatePerGram ?? product.calculated_price.gold_rate_applied,
@@ -250,6 +263,7 @@ export default function ProductDetail() {
                   : Array.isArray(variationState?.selectedOptions?.gemstoneQuality)
                   ? variationState?.selectedOptions?.gemstoneQuality?.join(', ')
                   : '',
+                extras: variationState?.pricing?.extras || [],
               }}
             />
           </div>
