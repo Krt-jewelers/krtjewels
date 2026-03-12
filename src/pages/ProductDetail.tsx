@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { useProduct, useBestsellerProducts } from '@/hooks/useProducts';
+import { useProduct, useBestsellerProducts, calculateProductPrice } from '@/hooks/useProducts';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { CATEGORY_NAMES } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,12 +19,19 @@ import { StockBadge } from '@/components/product/StockBadge';
 import { ProductReviews } from '@/components/products/ProductReviews';
 import { ChevronRight, Shield, RefreshCw, Truck, Award, Star } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { MetalType } from '@/lib/types';
+import type { MetalType, Product } from '@/lib/types';
+import { useGoldRate } from '@/hooks/useGoldRate';
+import { useGstSettings } from '@/hooks/useSiteSettings';
+import { useMetalTypes } from '@/hooks/useMetalTypes';
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProduct(slug || '');
   const { data: relatedProducts } = useBestsellerProducts();
+  const { data: goldRate } = useGoldRate();
+  const { data: gstSettings } = useGstSettings();
+  const { data: metalTypes = [] } = useMetalTypes();
+  const gstRate = gstSettings?.rate ?? 3;
   const { addToRecentlyViewed, getRecentlyViewed } = useRecentlyViewed();
   const [recentlyViewedItems, setRecentlyViewedItems] = useState<any[]>([]);
 
@@ -32,17 +39,26 @@ export default function ProductDetail() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [variationState, setVariationState] = useState<{
     metalType: string;
+    metalTypeSlug: string;
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
     imageUrl: string | null;
     isComplete?: boolean;
+    pricing?: {
+      metalRatePerGram: number;
+      metalWeightGrams: number;
+      diamondRatePerCarat: number;
+      diamondCaratWeight: number;
+      diamondCost: number;
+    };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
       certificates?: string[];
       addOns?: string[];
       metalType: string;
+      metalTypeSlug?: string;
       size?: string | null;
     };
   } | null>(null);
@@ -93,6 +109,32 @@ export default function ProductDetail() {
       </Layout>
     );
   }
+
+  const selectedMetalSlug = variationState?.metalTypeSlug || product.metal_type;
+  const selectedWeightGrams = product.weight_grams + (variationState?.weightAdjustment || 0);
+  const selectedDiamondCost = typeof variationState?.pricing?.diamondCost === 'number'
+    ? variationState?.pricing?.diamondCost || 0
+    : product.diamond_cost || 0;
+
+  const effectiveCalculatedPrice = calculateProductPrice(
+    {
+      ...(product as Product),
+      metal_type: selectedMetalSlug as MetalType,
+      weight_grams: selectedWeightGrams,
+      diamond_cost: selectedDiamondCost,
+    },
+    goldRate || null,
+    undefined,
+    gstRate,
+    metalTypes || []
+  );
+
+  const variationStateForCart = variationState
+    ? {
+        ...variationState,
+        priceAdjustment: effectiveCalculatedPrice.subtotal - product.calculated_price.subtotal,
+      }
+    : null;
 
   return (
     <Layout>
@@ -147,10 +189,7 @@ export default function ProductDetail() {
 
             {/* Price */}
             <ProductPricing
-              calculatedPrice={{
-                ...product.calculated_price,
-                total: product.calculated_price.total + (variationState?.priceAdjustment || 0),
-              }}
+              calculatedPrice={effectiveCalculatedPrice}
               quantity={1}
             />
 
@@ -168,7 +207,8 @@ export default function ProductDetail() {
             {/* Actions (Wishlist + Price + Add to Bag) */}
             <ProductActions
               product={product}
-              variationState={variationState}
+              variationState={variationStateForCart}
+              calculatedPrice={effectiveCalculatedPrice}
             />
 
             <PincodeChecker />
@@ -195,7 +235,23 @@ export default function ProductDetail() {
             </div>
 
             {/* Accordion Tabs */}
-            <ProductTabs product={product} />
+            <ProductTabs
+              product={product}
+              calculatedPrice={effectiveCalculatedPrice}
+              pricingMeta={{
+                metalLabel: variationState?.metalType || '',
+                metalRatePerGram: variationState?.pricing?.metalRatePerGram ?? product.calculated_price.gold_rate_applied,
+                metalWeightGrams: selectedWeightGrams,
+                diamondRatePerCarat: variationState?.pricing?.diamondRatePerCarat ?? 0,
+                diamondCaratWeight: variationState?.pricing?.diamondCaratWeight ?? 0,
+                diamondCost: selectedDiamondCost,
+                diamondQualityLabel: typeof variationState?.selectedOptions?.gemstoneQuality === 'string'
+                  ? variationState?.selectedOptions?.gemstoneQuality
+                  : Array.isArray(variationState?.selectedOptions?.gemstoneQuality)
+                  ? variationState?.selectedOptions?.gemstoneQuality?.join(', ')
+                  : '',
+              }}
+            />
           </div>
         </div>
       </div>
