@@ -324,10 +324,17 @@ export function ProductImageGallery({
 
       {/* Desktop: grid or single image */}
       {mediaItems.length === 1 && mediaItems[0]?.type === 'image' ? (
-        <button
-          type="button"
-          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+        <div
+          role="button"
+          tabIndex={0}
+          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-zoom-in"
           onClick={() => onOpenLightbox(mediaItems[0]?.index ?? 0)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onOpenLightbox(mediaItems[0]?.index ?? 0);
+            }
+          }}
         >
           <LensImage
             src={mediaItems[0]?.url || '/placeholder.svg'}
@@ -350,7 +357,7 @@ export function ProductImageGallery({
               </Badge>
             )}
           </div>
-        </button>
+        </div>
       ) : (
         <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-3">
           {mediaItems.map((item, idx) => {
@@ -377,13 +384,21 @@ export function ProductImageGallery({
 
             const imageIndex = item.index ?? 0;
             return (
-              <button
+              <div
                 key={`image-${imageIndex}`}
-                type="button"
-                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+                role="button"
+                tabIndex={0}
+                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-zoom-in"
                 onClick={() => {
                   setSelectedImage(imageIndex);
                   onOpenLightbox(imageIndex);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedImage(imageIndex);
+                    onOpenLightbox(imageIndex);
+                  }
                 }}
               >
                 <LensImage
@@ -409,7 +424,7 @@ export function ProductImageGallery({
                     )}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
