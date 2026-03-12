@@ -277,6 +277,8 @@ export default function AdminProductForm() {
     setIsLoading(true);
 
     try {
+      // Auto-calculate stone_cost from stones array
+      const calculatedStoneCost = formData.stones.reduce((sum, s) => sum + (s.carat_weight * s.per_carat_price * s.quantity), 0);
       const productData = {
         name: formData.name,
         slug: formData.slug,
@@ -288,7 +290,8 @@ export default function AdminProductForm() {
         weight_grams: formData.weight_grams,
         making_charge_percent: formData.making_charge_percent,
         diamond_cost: formData.diamond_cost,
-        stone_cost: formData.stone_cost,
+        stone_cost: calculatedStoneCost || formData.stone_cost,
+        stones: formData.stones as unknown as Json,
         images: formData.images,
         sku: formData.sku || null,
         stock_quantity: formData.stock_quantity,
