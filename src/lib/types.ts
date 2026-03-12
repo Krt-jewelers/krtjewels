@@ -63,6 +63,7 @@ export interface Product {
   short_description: string | null;
   category: ProductCategory;
   metal_type: MetalType;
+  metal_type_id?: string | null;
   weight_grams: number;
   making_charge_percent: number | null;
   diamond_cost: number;
