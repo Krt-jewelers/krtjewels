@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Collapsible,
@@ -29,17 +29,25 @@ import { useMetalTypes } from '@/hooks/useMetalTypes';
 interface ProductVariantSelectorProps {
   productId: string;
   category: ProductCategory;
-  baseMetalType: MetalType;
+  baseMetalType: string;
   baseWeightGrams: number;
   baseRatePerGram?: number;
   specifications: Record<string, any> | Json | null;
   onVariationChange?: (variation: { 
     metalType: string; 
+    metalTypeSlug: string;
     size: string | null;
     priceAdjustment: number;
     weightAdjustment: number;
     imageUrl: string | null;
     isComplete?: boolean;
+    pricing?: {
+      metalRatePerGram: number;
+      metalWeightGrams: number;
+      diamondRatePerCarat: number;
+      diamondCaratWeight: number;
+      diamondCost: number;
+    };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
@@ -47,18 +55,19 @@ interface ProductVariantSelectorProps {
       addOns?: string[];
       engraving?: { text: string; font: 'script' | 'block' };
       metalType: string;
+      metalTypeSlug?: string;
       size?: string | null;
     };
   }) => void;
 }
 
-// Metal type options with colors
-const METAL_OPTIONS: { type: MetalType; label: string; color: string }[] = [
-  { type: 'gold_24k', label: '24K Yellow Gold', color: 'bg-amber-400' },
-  { type: 'gold_22k', label: '22K Yellow Gold', color: 'bg-amber-500' },
-  { type: 'gold_18k', label: '18K White Gold', color: 'bg-gray-200' },
-  { type: 'silver', label: 'Sterling Silver', color: 'bg-slate-200' },
-  { type: 'platinum', label: 'Platinum', color: 'bg-slate-300' },
+// Metal type options (text only)
+const METAL_OPTIONS: { type: MetalType; label: string }[] = [
+  { type: 'gold_24k', label: '24K Gold' },
+  { type: 'gold_22k', label: '22K Gold' },
+  { type: 'gold_18k', label: '18K Gold' },
+  { type: 'silver', label: 'Silver' },
+  { type: 'platinum', label: 'Platinum' },
 ];
 
 export function ProductVariantSelector({
@@ -74,6 +83,22 @@ export function ProductVariantSelector({
   const { data: metalTypes = [] } = useMetalTypes();
 
   // (debug logs moved below after computed options)
+
+  const pricingOptions = (specifications as any)?.pricing_options || {};
+  const specMetals: string[] = Array.isArray(pricingOptions.metals)
+    ? pricingOptions.metals.filter((m: any) => typeof m === 'string')
+    : [];
+  const specDiamondQualities: { label: string; rate_per_carat: number }[] = Array.isArray(pricingOptions.diamond_qualities)
+    ? pricingOptions.diamond_qualities
+        .filter((q: any) => q && typeof q.label === 'string')
+        .map((q: any) => ({ label: q.label, rate_per_carat: Number(q.rate_per_carat) || 0 }))
+    : [];
+  const specCaratWeights: number[] = Array.isArray(pricingOptions.carat_weights)
+    ? pricingOptions.carat_weights
+        .map((w: any) => Number(w))
+        .filter((w: number) => Number.isFinite(w) && w > 0)
+    : [];
+  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0;
   
   const [selectedMetal, setSelectedMetal] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -124,15 +149,23 @@ export function ProductVariantSelector({
         imageUrl: null,
       })) || [];
 
-  const metalColorMap: Partial<Record<MetalType, string>> = {
-    gold_24k: 'bg-amber-400',
-    gold_22k: 'bg-amber-500',
-    gold_18k: 'bg-gray-200',
-    silver: 'bg-slate-200',
-    platinum: 'bg-slate-300',
-  };
+  const specMetalOptions = specMetals.map((slug) => {
+    const mt = metalTypes.find(m => m.slug === slug);
+    const label = mt?.name || METAL_TYPE_NAMES[slug as MetalType] || slug;
+    return {
+      value: slug,
+      label,
+      metalType: slug,
+      priceAdjustment: 0,
+      weightAdjustment: 0,
+      isDefault: slug === baseMetalType,
+      imageUrl: null,
+    };
+  });
 
-  const availableMetals = hasMetalVariations
+  const availableMetals = useSpecOptions && specMetals.length > 0
+    ? specMetalOptions
+    : hasMetalVariations
     ? metalVariations
         .filter(v => v.is_available)
         .map(v => ({
@@ -148,13 +181,11 @@ export function ProductVariantSelector({
           weightAdjustment: v.weight_adjustment || 0,
           isDefault: v.is_default || false,
           imageUrl: v.image_url || null,
-          color: v.metal_type ? metalColorMap[v.metal_type as MetalType] || 'bg-secondary' : 'bg-secondary',
         }))
     : METAL_OPTIONS.map(m => ({
         value: m.type,
         label: m.label,
         metalType: m.type,
-        color: m.color,
         priceAdjustment: 0,
         weightAdjustment: 0,
         isDefault: m.type === baseMetalType,
@@ -183,7 +214,18 @@ export function ProductVariantSelector({
     return null;
   };
 
-  const gemstoneOptions = hasGemstoneVariations
+  const gemstoneOptions = useSpecOptions && specDiamondQualities.length > 0
+    ? specDiamondQualities.map((q) => ({
+        value: q.label,
+        label: q.label,
+        priceAdjustment: q.rate_per_carat,
+        weightAdjustment: 0,
+        isDefault: false,
+        imageUrl: null,
+        selectionMode: 'single',
+        groupLabel: 'Diamond Quality',
+      }))
+    : hasGemstoneVariations
     ? gemstoneVariations.filter(v => v.is_available).map(v => ({
         value: v.size_value || v.size_label || v.id,
         label: normalizeLabel(v.size_label || v.size_value || v.metal_label || '', v.size_value || v.size_label || v.id),
@@ -196,7 +238,18 @@ export function ProductVariantSelector({
       }))
     : [];
 
-  const caratOptions = hasCaratVariations
+  const caratOptions = useSpecOptions && specCaratWeights.length > 0
+    ? specCaratWeights.map((w) => ({
+        value: String(w),
+        label: `${w} ct`,
+        priceAdjustment: 0,
+        weightAdjustment: 0,
+        isDefault: false,
+        imageUrl: null,
+        selectionMode: 'single',
+        groupLabel: 'Total Carat Weight',
+      }))
+    : hasCaratVariations
     ? caratVariations.filter(v => v.is_available).map(v => ({
         value: v.size_value || v.size_label || v.id,
         label: normalizeLabel(v.size_label || v.size_value || '', v.size_value || v.size_label || v.id),
@@ -233,6 +286,14 @@ export function ProductVariantSelector({
       }))
     : [];
 
+  const parseCaratWeight = (value?: string | null, label?: string | null) => {
+    const candidate = `${value || ''} ${label || ''}`.trim();
+    const match = candidate.match(/([0-9]*\.?[0-9]+)/);
+    if (!match) return 0;
+    const parsed = parseFloat(match[1]);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
   // Debug: log variations and computed options to help diagnose issues
   if (process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console
@@ -243,6 +304,13 @@ export function ProductVariantSelector({
   useEffect(() => {
     if (availableMetals.length === 1 && !selectedMetal) {
       setSelectedMetal(availableMetals[0].value);
+    }
+  }, [availableMetals, selectedMetal]);
+
+  useEffect(() => {
+    if (availableMetals.length > 1 && !selectedMetal) {
+      const defaultMetal = availableMetals.find(m => m.isDefault) || availableMetals[0];
+      if (defaultMetal) setSelectedMetal(defaultMetal.value);
     }
   }, [availableMetals, selectedMetal]);
 
@@ -271,6 +339,32 @@ export function ProductVariantSelector({
       }
     }
   }, [caratOptions, selectedCarat]);
+
+  useEffect(() => {
+    if (gemstoneOptions.length > 1 && !selectedGemstone && selectedGemstones.length === 0) {
+      const defaults = gemstoneOptions.filter(g => g.isDefault).map(g => g.value);
+      if (defaults.length > 0) {
+        if (gemstoneOptions[0]?.selectionMode === 'multi') {
+          setSelectedGemstones(defaults);
+        } else {
+          setSelectedGemstone(defaults[0]);
+        }
+      }
+    }
+  }, [gemstoneOptions, selectedGemstone, selectedGemstones.length]);
+
+  useEffect(() => {
+    if (caratOptions.length > 1 && !selectedCarat && selectedCarats.length === 0) {
+      const defaults = caratOptions.filter(c => c.isDefault).map(c => c.value);
+      if (defaults.length > 0) {
+        if (caratOptions[0]?.selectionMode === 'multi') {
+          setSelectedCarats(defaults);
+        } else {
+          setSelectedCarat(defaults[0]);
+        }
+      }
+    }
+  }, [caratOptions, selectedCarat, selectedCarats.length]);
 
   useEffect(() => {
     if (certificateOptions.length > 0 && selectedCertificates.length === 0) {
@@ -344,25 +438,50 @@ export function ProductVariantSelector({
 
     const certificatePrice = selectedCertOptions.reduce((sum, cert) => sum + (cert.priceAdjustment || 0), 0);
     const customPrice = selectedCustomOptions.reduce((sum, opt) => sum + (opt.priceAdjustment || 0), 0);
-    const gemstonePrice = selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0);
-    const caratPrice = selectedCaratOptions.reduce((sum, c) => sum + (c.priceAdjustment || 0), 0);
+    const totalCaratWeight = selectedCaratOptions.reduce(
+      (sum, c) => sum + parseCaratWeight(c.value, c.label),
+      0
+    );
+    const perCaratRate = selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0);
+    const diamondCost = perCaratRate > 0 && totalCaratWeight > 0
+      ? perCaratRate * totalCaratWeight
+      : 0;
+    const gemstoneFallbackPrice = totalCaratWeight <= 0
+      ? selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0)
+      : 0;
+    const caratExtraPrice = selectedCaratOptions.reduce((sum, c) => sum + (c.priceAdjustment || 0), 0);
 
     const gemstoneSelectionLabels = selectedGemOptions.map(g => g.label);
     const caratSelectionLabels = selectedCaratOptions.map(c => c.label);
 
+    const metalTypeSlug = selectedMetalOption?.metalType || baseMetalType;
+    const metalTypeLabel = selectedMetalOption?.label || METAL_TYPE_NAMES[baseMetalType as MetalType] || selectedMetal;
+    const metalWeightGrams = baseWeightGrams +
+      (selectedMetalOption?.weightAdjustment || 0) +
+      (selectedSizeOption?.weightAdjustment || 0);
+
     onVariationChange?.({
-      metalType: selectedMetalOption?.label || METAL_TYPE_NAMES[baseMetalType] || selectedMetal,
+      metalType: metalTypeLabel,
+      metalTypeSlug,
       size: selectedSize || null,
       priceAdjustment:
         metalPriceAdjustment +
         (selectedSizeOption?.priceAdjustment || 0) +
-        gemstonePrice +
-        caratPrice +
+        diamondCost +
+        gemstoneFallbackPrice +
+        caratExtraPrice +
         certificatePrice +
         customPrice,
       weightAdjustment: (selectedMetalOption?.weightAdjustment || 0) + (selectedSizeOption?.weightAdjustment || 0),
       imageUrl,
       isComplete,
+      pricing: {
+        metalRatePerGram: selectedRate,
+        metalWeightGrams,
+        diamondRatePerCarat: perCaratRate,
+        diamondCaratWeight: totalCaratWeight,
+        diamondCost,
+      },
       selectedOptions: {
         gemstoneQuality: gemstoneIsMulti
           ? gemstoneSelectionLabels
@@ -375,7 +494,8 @@ export function ProductVariantSelector({
         engraving: engravingSelected && engravingText.trim()
           ? { text: engravingText.trim(), font: engravingFont }
           : undefined,
-        metalType: selectedMetalOption?.label || METAL_TYPE_NAMES[baseMetalType] || selectedMetal,
+        metalType: metalTypeLabel,
+        metalTypeSlug,
         size: selectedSize || null,
       },
     });
@@ -459,7 +579,7 @@ export function ProductVariantSelector({
                   }
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-1 rounded-md border-2 px-2 py-1.5 transition-all',
+                  'flex flex-col items-start gap-0.5 rounded-md border-2 px-3 py-2 transition-all text-left',
                   (option.selectionMode === 'multi'
                     ? selectedGemstones.includes(option.value)
                     : selectedGemstone === option.value)
@@ -467,18 +587,15 @@ export function ProductVariantSelector({
                     : 'border-border hover:border-primary/50'
                 )}
               >
-                <div className="w-10 h-10 rounded overflow-hidden bg-secondary/40 flex items-center justify-center">
-                  {option.imageUrl ? (
-                    <img src={option.imageUrl} alt={option.label} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">
-                      {(option.label || option.value || '•').toString().slice(0, 1)}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[9px] text-muted-foreground">{option.label || option.value || 'Option'}</span>
-                {option.isDefault && (
-                  <span className="text-[9px] text-primary font-medium">Most Loved</span>
+                <span className="text-xs font-medium text-foreground">
+                  {option.label || option.value || 'Option'}
+                </span>
+                {option.priceAdjustment > 0 ? (
+                  <span className="text-[10px] text-muted-foreground">
+                    ₹{option.priceAdjustment.toLocaleString('en-IN')}/ct
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground"> </span>
                 )}
               </button>
             ))}
@@ -524,7 +641,7 @@ export function ProductVariantSelector({
                   }
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-1 rounded-md border-2 px-2 py-1.5 transition-all',
+                  'flex flex-col items-center justify-center rounded-md border-2 px-3 py-2 transition-all min-w-[70px]',
                   (option.selectionMode === 'multi'
                     ? selectedCarats.includes(option.value)
                     : selectedCarat === option.value)
@@ -532,24 +649,14 @@ export function ProductVariantSelector({
                     : 'border-border hover:border-primary/50'
                 )}
               >
-                <div className="w-10 h-10 rounded overflow-hidden bg-secondary/40 flex items-center justify-center">
-                  {option.imageUrl ? (
-                    <img src={option.imageUrl} alt={option.label} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">{option.label}</span>
-                  )}
-                </div>
-                <span className="text-[9px] text-muted-foreground">{option.label}</span>
-                {option.isDefault && (
-                  <span className="text-[9px] text-primary font-medium">Most Loved</span>
-                )}
+                <span className="text-xs font-medium text-foreground">{option.label}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Metal Type Selector — Angara style with image swatches */}
+      {/* Metal Type Selector — text only */}
       {availableMetals.length > 0 && (
         <div className="border border-border rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
@@ -560,14 +667,14 @@ export function ProductVariantSelector({
               </span>
             </label>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 pr-1 -mr-1 flex-nowrap">
+          <div className="flex flex-wrap gap-2">
             {availableMetals.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setSelectedMetal(option.value)}
                 className={cn(
-                  'relative flex flex-col items-center gap-1 rounded-lg border-2 transition-all duration-200 p-1 shrink-0 w-[70px]',
+                  'relative rounded-md border-2 transition-all duration-200 px-3 py-2 text-xs font-medium',
                   selectedMetal === option.value
                     ? 'border-primary shadow-md'
                     : 'border-border hover:border-primary/50'
@@ -577,30 +684,7 @@ export function ProductVariantSelector({
                 data-metal-type={option.metalType}
                 style={{ zIndex: 1 }}
               >
-                {/* Show image if available, otherwise show color swatch */}
-                {option.imageUrl ? (
-                  <div className="w-10 h-10 rounded overflow-hidden">
-                    <img 
-                      src={option.imageUrl} 
-                      alt={option.label} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className={cn('w-10 h-10 rounded flex items-center justify-center', option.color)}>
-                    {selectedMetal === option.value && (
-                      <Check className="w-4 h-4 text-foreground/80" />
-                    )}
-                  </div>
-                )}
-                <span className="text-[9px] text-muted-foreground leading-tight text-center max-w-[64px]">
-                  {option.label}
-                </span>
-                {option.priceAdjustment !== 0 && (
-                  <span className="text-[8px] text-muted-foreground">
-                    {option.priceAdjustment > 0 ? '+' : ''}₹{option.priceAdjustment.toLocaleString('en-IN')}
-                  </span>
-                )}
+                <span>{option.label}</span>
               </button>
             ))}
           </div>
