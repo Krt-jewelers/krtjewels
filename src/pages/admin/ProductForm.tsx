@@ -228,6 +228,7 @@ export default function AdminProductForm() {
         making_charge_percent: data.making_charge_percent,
         diamond_cost: data.diamond_cost || 0,
         stone_cost: data.stone_cost || 0,
+        stones: Array.isArray((data as any).stones) ? (data as any).stones : [],
         images: data.images || [],
         sku: data.sku || '',
         stock_quantity: data.stock_quantity || 1,
