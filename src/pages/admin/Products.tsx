@@ -68,6 +68,7 @@ function useAdminProducts() {
 
 export default function AdminProducts() {
   const { data: products, isLoading, isFetching, isError, error } = useAdminProducts();
+  const { data: metalTypes = [] } = useMetalTypes();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -386,7 +387,10 @@ export default function AdminProducts() {
                           <div>
                             <p className="font-medium line-clamp-1">{product.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {product.sku || 'No SKU'} • {METAL_TYPE_NAMES[product.metal_type as MetalType]}
+                              {product.sku || 'No SKU'} • {
+                                (product.metal_type_id && metalTypes.find(mt => mt.id === product.metal_type_id)?.name) ||
+                                METAL_TYPE_NAMES[product.metal_type as MetalType]
+                              }
                             </p>
                           </div>
                         </TableCell>
