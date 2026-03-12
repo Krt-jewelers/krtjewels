@@ -41,7 +41,9 @@ export function calculateProductPrice(
 
   // Try to get rate from metal_types first (dynamic), fall back to gold_rates
   let goldRatePerGram: number = 0;
-  const metalTypeRecord = metalTypes?.find(mt => mt.slug === product.metal_type);
+  const metalTypeRecord =
+    (product.metal_type_id && metalTypes?.find(mt => mt.id === product.metal_type_id)) ||
+    metalTypes?.find(mt => mt.slug === product.metal_type);
   if (metalTypeRecord && metalTypeRecord.rate_per_gram > 0) {
     goldRatePerGram = metalTypeRecord.rate_per_gram;
   } else if (goldRate) {
