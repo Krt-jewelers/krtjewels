@@ -127,6 +127,7 @@ const defaultFormData: ProductFormData = {
   making_charge_percent: null,
   diamond_cost: 0,
   stone_cost: 0,
+  stones: [],
   images: [],
   sku: '',
   stock_quantity: 1,
