@@ -17,6 +17,7 @@ interface ProductTabsProps {
     diamondCaratWeight?: number;
     diamondCost?: number;
     diamondQualityLabel?: string;
+    extras?: { label: string; amount: number; type: 'certificate' | 'addon' | 'size' | 'metal' }[];
   };
 }
 
@@ -126,6 +127,7 @@ export function ProductTabs({ product, calculatedPrice, pricingMeta }: ProductTa
         const diamondCarat = pricingMeta?.diamondCaratWeight ?? 0;
         const diamondQuality = pricingMeta?.diamondQualityLabel || 'Diamond';
         const showSelectedDiamond = diamondCostFromSelection > 0 && diamondCarat > 0;
+        const extras = (pricingMeta?.extras || []).filter(e => e.amount !== 0);
         const metalRate = pricingMeta?.metalRatePerGram ?? effectivePrice.gold_rate_applied;
         const metalWeight = pricingMeta?.metalWeightGrams ?? product.weight_grams;
         return (
@@ -192,6 +194,22 @@ export function ProductTabs({ product, calculatedPrice, pricingMeta }: ProductTa
                         )}
                       </>
                     )}
+                  </>
+                )}
+
+                {extras.length > 0 && (
+                  <>
+                    <tr className="border-t border-border">
+                      <td colSpan={4} className="p-3 text-primary font-semibold text-xs uppercase">Add-ons</td>
+                    </tr>
+                    {extras.map((extra, idx) => (
+                      <tr key={`${extra.label}-${idx}`} className="border-t border-border/50">
+                        <td className="p-3">{extra.label}</td>
+                        <td className="p-3">–</td>
+                        <td className="p-3">–</td>
+                        <td className="p-3 text-right">₹{extra.amount.toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
                   </>
                 )}
 
