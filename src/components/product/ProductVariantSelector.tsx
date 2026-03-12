@@ -47,13 +47,13 @@ interface ProductVariantSelectorProps {
       diamondRatePerCarat: number;
       diamondCaratWeight: number;
       diamondCost: number;
-      extras?: { label: string; amount: number; type: 'certificate' | 'addon' | 'size' | 'metal' }[];
+      extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
       extraTotal?: number;
     };
     selectedOptions?: {
       gemstoneQuality?: string | string[] | null;
       caratWeight?: string | string[] | null;
-      certificates?: string[];
+      attributes?: string[];
       addOns?: string[];
       engraving?: { text: string; font: 'script' | 'block' };
       metalType: string;
@@ -109,12 +109,12 @@ export function ProductVariantSelector({
         })
         .filter((w: any) => w && Number.isFinite(w.value) && w.value > 0)
     : [];
-  const specCertificates: { label: string; price: number; is_default: boolean }[] = Array.isArray(pricingOptions.certificates)
-    ? pricingOptions.certificates
+  const specAttributes: { label: string; price: number; is_default: boolean }[] = Array.isArray(pricingOptions.attributes)
+    ? pricingOptions.attributes
         .filter((c: any) => c && typeof c.label === 'string')
         .map((c: any) => ({ label: c.label, price: Number(c.price) || 0, is_default: !!c.is_default }))
     : [];
-  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0 || specCertificates.length > 0;
+  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0 || specAttributes.length > 0;
   
   const [selectedMetal, setSelectedMetal] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -122,7 +122,7 @@ export function ProductVariantSelector({
   const [selectedCarat, setSelectedCarat] = useState<string>('');
   const [selectedGemstones, setSelectedGemstones] = useState<string[]>([]);
   const [selectedCarats, setSelectedCarats] = useState<string[]>([]);
-  const [selectedCertificates, setSelectedCertificates] = useState<string[]>([]);
+  const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [selectedCustomAddons, setSelectedCustomAddons] = useState<string[]>([]);
   const [isEngravingOpen, setIsEngravingOpen] = useState(false);
@@ -279,15 +279,15 @@ export function ProductVariantSelector({
       }))
     : [];
 
-  const certificateOptions = useSpecOptions && specCertificates.length > 0
-    ? specCertificates.map((c) => ({
+  const attributeOptions = useSpecOptions && specAttributes.length > 0
+    ? specAttributes.map((c) => ({
         value: c.label,
         label: c.label,
         priceAdjustment: c.price,
         imageUrl: null,
         isDefault: c.is_default,
         selectionMode: 'single',
-        groupLabel: 'Add Certificate',
+        groupLabel: 'Add Attribute',
       }))
     : hasCertificateVariations
     ? certificateVariations.filter(v => v.is_available).map(v => ({
@@ -297,7 +297,7 @@ export function ProductVariantSelector({
         imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
         isDefault: v.is_default,
         selectionMode: v.selection_mode || 'single',
-        groupLabel: v.variation_group || 'Add Certificate',
+        groupLabel: v.variation_group || 'Add Attribute',
       }))
     : [];
 
@@ -394,13 +394,13 @@ export function ProductVariantSelector({
   }, [caratOptions, selectedCarat, selectedCarats.length]);
 
   useEffect(() => {
-    if (certificateOptions.length > 0 && selectedCertificates.length === 0) {
-      const defaults = certificateOptions.filter(c => c.isDefault).map(c => c.value);
+    if (attributeOptions.length > 0 && selectedAttributes.length === 0) {
+      const defaults = attributeOptions.filter(c => c.isDefault).map(c => c.value);
       if (defaults.length > 0) {
-        setSelectedCertificates(defaults);
+        setSelectedAttributes(defaults);
       }
     }
-  }, [certificateOptions]);
+  }, [attributeOptions, selectedAttributes.length]);
 
   useEffect(() => {
     if (customOptions.length > 0 && selectedCustomAddons.length === 0) {
@@ -428,7 +428,7 @@ export function ProductVariantSelector({
       : selectedCaratOption
       ? [selectedCaratOption]
       : [];
-    const selectedCertOptions = certificateOptions.filter(c => selectedCertificates.includes(c.value));
+    const selectedCertOptions = attributeOptions.filter(c => selectedAttributes.includes(c.value));
     const selectedCustomOptions = customOptions.filter(c => selectedCustomAddons.includes(c.value));
     const engravingOption = customOptions.find(c =>
       c.label.toLowerCase().includes('engraving') || c.value.toLowerCase().includes('engraving')
@@ -488,7 +488,7 @@ export function ProductVariantSelector({
       (selectedSizeOption?.weightAdjustment || 0);
 
     const extras = [
-      ...(selectedCertOptions.map(c => ({ label: c.label, amount: c.priceAdjustment || 0, type: 'certificate' as const }))),
+      ...(selectedCertOptions.map(c => ({ label: c.label, amount: c.priceAdjustment || 0, type: 'attribute' as const }))),
       ...(selectedCustomOptions.map(o => ({ label: o.label, amount: o.priceAdjustment || 0, type: 'addon' as const }))),
       ...(selectedSizeOption?.priceAdjustment
         ? [{ label: `${sizeLabel} Adjustment`, amount: selectedSizeOption.priceAdjustment, type: 'size' as const }]
@@ -530,7 +530,7 @@ export function ProductVariantSelector({
         caratWeight: caratIsMulti
           ? caratSelectionLabels
           : selectedCaratOption?.label || selectedCaratOption?.value || null,
-        certificates: selectedCertOptions.map((cert) => cert.label),
+        attributes: selectedCertOptions.map((cert) => cert.label),
         addOns: selectedCustomOptions.map((opt) => opt.label),
         engraving: engravingSelected && engravingText.trim()
           ? { text: engravingText.trim(), font: engravingFont }
@@ -545,7 +545,7 @@ export function ProductVariantSelector({
     selectedSize,
     selectedGemstone,
     selectedCarat,
-    selectedCertificates,
+    selectedAttributes,
     selectedGemstones,
     selectedCarats,
     selectedCustomAddons,
@@ -555,7 +555,7 @@ export function ProductVariantSelector({
     sizeOptions,
     gemstoneOptions,
     caratOptions,
-    certificateOptions,
+    attributeOptions,
     customOptions,
     baseRatePerGram,
     baseMetalType,
@@ -827,23 +827,23 @@ export function ProductVariantSelector({
       )}
 
       {/* Add Certificate */}
-      {certificateOptions.length > 0 && (
+      {attributeOptions.length > 0 && (
         <div className="border border-border rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-medium text-foreground">
-              {certificateOptions[0]?.groupLabel || 'Add Certificate'}
+              {attributeOptions[0]?.groupLabel || 'Add Attribute'}
             </label>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            {certificateOptions.map((cert) => {
+            {attributeOptions.map((cert) => {
               const isMulti = cert.selectionMode === 'multi';
-              const selected = selectedCertificates.includes(cert.value);
+              const selected = selectedAttributes.includes(cert.value);
               return (
                 <button
                   key={cert.value}
                   type="button"
                   onClick={() => {
-                    setSelectedCertificates((prev) => {
+                    setSelectedAttributes((prev) => {
                       if (isMulti) {
                         return prev.includes(cert.value)
                           ? prev.filter((id) => id !== cert.value)
