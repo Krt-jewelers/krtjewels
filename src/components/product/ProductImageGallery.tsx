@@ -164,16 +164,17 @@ export function ProductImageGallery({
         />
         {lens.visible && (
           <div
-            className="absolute rounded-full border border-white/80 shadow-xl bg-white pointer-events-none"
+            className="absolute rounded-full border-2 border-white/90 shadow-2xl pointer-events-none"
             style={{
               width: `${lensSize}px`,
               height: `${lensSize}px`,
               left: `calc(${lens.x}% - ${lensSize / 2}px)`,
               top: `calc(${lens.y}% - ${lensSize / 2}px)`,
-              backgroundImage: `url(${src})`,
+              backgroundImage: `url("${src}")`,
               backgroundRepeat: 'no-repeat',
               backgroundPosition: `${lens.x}% ${lens.y}%`,
               backgroundSize: `${zoom * 100}%`,
+              zIndex: 50,
             }}
           />
         )}

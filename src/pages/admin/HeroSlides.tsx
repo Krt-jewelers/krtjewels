@@ -277,17 +277,26 @@ export default function AdminHeroSlides() {
                     placeholder="Paste image URL or upload"
                     className="flex-1"
                   />
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'desktop')}
-                    />
-                    <Button variant="outline" size="icon" asChild disabled={uploadingDesktop}>
-                      <span>{uploadingDesktop ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}</span>
-                    </Button>
-                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploadingDesktop}
+                    onClick={() => document.getElementById('desktop-upload')?.click()}
+                  >
+                    {uploadingDesktop ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                  </Button>
+                  <input
+                    id="desktop-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUpload(file, 'desktop');
+                      e.target.value = '';
+                    }}
+                  />
                 </div>
                 {form.desktop_image_url && (
                   <img src={form.desktop_image_url} alt="Desktop preview" className="w-full h-32 object-cover rounded-lg border mt-2" />
@@ -304,17 +313,26 @@ export default function AdminHeroSlides() {
                     placeholder="Paste image URL or upload"
                     className="flex-1"
                   />
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => e.target.files?.[0] && handleUpload(e.target.files[0], 'mobile')}
-                    />
-                    <Button variant="outline" size="icon" asChild disabled={uploadingMobile}>
-                      <span>{uploadingMobile ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}</span>
-                    </Button>
-                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={uploadingMobile}
+                    onClick={() => document.getElementById('mobile-upload')?.click()}
+                  >
+                    {uploadingMobile ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                  </Button>
+                  <input
+                    id="mobile-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUpload(file, 'mobile');
+                      e.target.value = '';
+                    }}
+                  />
                 </div>
                 {form.mobile_image_url && (
                   <img src={form.mobile_image_url} alt="Mobile preview" className="w-full h-48 object-cover rounded-lg border mt-2" />
