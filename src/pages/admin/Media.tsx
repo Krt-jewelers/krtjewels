@@ -86,6 +86,8 @@ export default function AdminMedia() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [isDirectUploading, setIsDirectUploading] = useState(false);
+  const directUploadRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
