@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -49,6 +50,8 @@ export function CategoryCarousel() {
   });
 
   const displayCategories = categories || [];
+  const visibleCategories = displayCategories.filter((category) => !category.is_view_all);
+  const shouldStretchDesktop = !showArrows && visibleCategories.length > 0 && visibleCategories.length <= 7;
 
   // Check if scrolling is needed
   useEffect(() => {
@@ -110,43 +113,45 @@ export function CategoryCarousel() {
     }, 5000);
   };
 
-
   return (
     <section className="py-4 md:py-6 bg-background border-b">
       <div className="w-full px-4 md:px-8">
         <div className="relative">
-          {/* Scroll Buttons - Only show if content overflows */}
-          {/* Categories Container - Spread evenly on large screens */}
           <div
             ref={scrollRef}
             onMouseEnter={handleInteractionStart}
             onMouseLeave={handleInteractionEnd}
             onTouchStart={handleInteractionStart}
             onTouchEnd={handleInteractionEnd}
-            className="flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory lg:flex-nowrap lg:justify-evenly lg:gap-0 lg:overflow-x-auto touch-pan-y"
+            className={cn(
+              'flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory touch-pan-y',
+              showArrows
+                ? 'lg:flex-nowrap lg:justify-evenly lg:gap-0 lg:overflow-x-auto'
+                : 'lg:flex-nowrap lg:justify-between lg:gap-3 lg:overflow-visible lg:px-1'
+            )}
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
           >
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="flex-shrink-0 lg:flex-shrink snap-start">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 rounded-2xl bg-muted animate-pulse" />
+                    <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-2xl bg-muted animate-pulse" />
                     <div className="w-12 h-3 bg-muted animate-pulse rounded" />
                   </div>
                 </div>
               ))
-            ) : displayCategories.filter((category) => !category.is_view_all).map((category) => (
+            ) : visibleCategories.map((category) => (
               <Link
                 key={category.slug}
                 to={`/collections/${category.slug}`}
-                className="flex-shrink-0 lg:flex-shrink group snap-start"
-                onClick={(event) => {
-                  handleInteractionStart();
-                }}
+                className={cn(
+                  'flex-shrink-0 lg:flex-shrink group snap-start',
+                  shouldStretchDesktop && 'lg:flex-1 lg:max-w-[170px]'
+                )}
+                onClick={handleInteractionStart}
               >
                 <div className="flex flex-col items-center gap-2">
-                  {/* Circular Image Container */}
-                  <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32 rounded-2xl border-2 border-transparent group-hover:border-primary overflow-hidden transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
+                  <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-2xl border-2 border-transparent group-hover:border-primary overflow-hidden transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
                     <img 
                       src={category.image_url || '/placeholder.svg'} 
                       alt={category.name}
@@ -154,8 +159,7 @@ export function CategoryCarousel() {
                       loading="eager"
                     />
                   </div>
-                  {/* Category Name */}
-                  <span className="text-xs sm:text-xs md:text-sm font-medium text-center whitespace-nowrap group-hover:text-primary transition-colors select-none">
+                  <span className="text-xs md:text-sm font-medium text-center whitespace-nowrap group-hover:text-primary transition-colors select-none">
                     {category.name}
                   </span>
                 </div>
@@ -173,3 +177,4 @@ export function CategoryCarousel() {
     </section>
   );
 }
+
