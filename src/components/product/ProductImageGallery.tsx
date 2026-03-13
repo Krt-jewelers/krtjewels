@@ -16,16 +16,6 @@ interface ProductImageGalleryProps {
   onOpenLightbox: (index: number) => void;
 }
 
-// Helper to detect if a URL is a video
-const isVideoUrl = (url: string): boolean => {
-  if (!url) return false;
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
-  const lowercaseUrl = url.toLowerCase();
-  return videoExtensions.some(ext => lowercaseUrl.includes(ext)) || 
-         lowercaseUrl.includes('youtube') || 
-         lowercaseUrl.includes('vimeo');
-};
-
 export function ProductImageGallery({
   images,
   productName,
@@ -42,9 +32,8 @@ export function ProductImageGallery({
   const panStartRef = useRef<{ x: number; y: number; startX: number; startY: number } | null>(null);
   const isGestureRef = useRef(false);
 
-  // When a variation image is provided, show it first in the grid
   const displayImages = variationImageUrl
-    ? [variationImageUrl, ...images.filter(img => img !== variationImageUrl)]
+    ? [variationImageUrl, ...images.filter((img) => img !== variationImageUrl)]
     : images;
 
   useEffect(() => {
@@ -63,13 +52,7 @@ export function ProductImageGallery({
     ...displayImages.map((url, index) => ({ type: 'image' as const, url, index })),
   ];
 
-  const LensImage = ({
-    src,
-    alt,
-  }: {
-    src: string;
-    alt: string;
-  }) => {
+  const LensImage = ({ src, alt }: { src: string; alt: string }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
     const [isDragging, setIsDragging] = useState(false);
@@ -143,7 +126,6 @@ export function ProductImageGallery({
 
   return (
     <div className="space-y-4">
-      {/* Mobile: single image with dots */}
       <div className="block md:hidden">
         <div
           className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
@@ -211,13 +193,9 @@ export function ProductImageGallery({
             const threshold = 40;
             if (Math.abs(delta) > threshold) {
               if (delta > 0) {
-                setSelectedImage((prev) =>
-                  prev === displayImages.length - 1 ? 0 : prev + 1
-                );
+                setSelectedImage((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
               } else {
-                setSelectedImage((prev) =>
-                  prev === 0 ? displayImages.length - 1 : prev - 1
-                );
+                setSelectedImage((prev) => (prev === 0 ? displayImages.length - 1 : prev - 1));
               }
             } else {
               onOpenLightbox(selectedImage);
@@ -282,7 +260,6 @@ export function ProductImageGallery({
         )}
       </div>
 
-      {/* Desktop: grid or single image */}
       {mediaItems.length === 1 && mediaItems[0]?.type === 'image' ? (
         <div
           role="button"
@@ -296,7 +273,56 @@ export function ProductImageGallery({
             }
           }}
         >
-...
+          <LensImage
+            src={mediaItems[0]?.url || '/placeholder.svg'}
+            alt={`${productName} - Image 1`}
+          />
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            {badges?.isNewArrival && (
+              <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
+                <Sparkles className="w-4 h-4" />
+              </Badge>
+            )}
+            {badges?.isBestseller && (
+              <Badge className="bg-accent text-accent-foreground w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bestseller">
+                <Star className="w-4 h-4" />
+              </Badge>
+            )}
+            {badges?.isBridal && (
+              <Badge className="bg-maroon text-ivory w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bridal">
+                <Gem className="w-4 h-4" />
+              </Badge>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {mediaItems.map((item, idx) => {
+            if (item.type === 'video') {
+              return (
+                <div
+                  key={`video-${idx}`}
+                  className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10 pointer-events-none">
+                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                      <Play className="w-5 h-5 text-foreground" />
+                    </div>
+                  </div>
+                  <video
+                    src={item.url}
+                    className="w-full h-full object-contain"
+                    controls
+                    playsInline
+                  />
+                </div>
+              );
+            }
+
+            const imageIndex = item.index ?? 0;
+            return (
+              <div
+                key={`image-${imageIndex}`}
                 role="button"
                 tabIndex={0}
                 className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-crosshair"
