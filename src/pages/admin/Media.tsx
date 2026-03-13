@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { FoundifMediaUsage } from '@/components/admin/FoundifMediaUsage';
-import { listCloudinaryImages, migrateToCloudinary, deleteCloudinaryImages, CloudinaryImage } from '@/lib/cloudinary';
+import { listCloudinaryImages, migrateToCloudinary, deleteCloudinaryImages, uploadToCloudinary, CloudinaryImage } from '@/lib/cloudinary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -86,6 +86,8 @@ export default function AdminMedia() {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [isDirectUploading, setIsDirectUploading] = useState(false);
+  const directUploadRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -272,6 +274,27 @@ export default function AdminMedia() {
 
   const deleteCount = singleDeleteTarget ? 1 : selectedIds.size;
 
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setIsDirectUploading(true);
+    try {
+      const folder = selectedFolder === 'all' ? 'products' : selectedFolder;
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        await uploadToCloudinary(file, folder);
+      }
+      toast({ title: 'Upload complete', description: `${files.length} image(s) uploaded` });
+      queryClient.invalidateQueries({ queryKey: ['cloudinary-images'] });
+      queryClient.invalidateQueries({ queryKey: ['foundif-media-usage'] });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsDirectUploading(false);
+      if (directUploadRef.current) directUploadRef.current.value = '';
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -282,6 +305,23 @@ export default function AdminMedia() {
             <p className="text-muted-foreground">Manage all your uploaded images</p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => directUploadRef.current?.click()}
+              disabled={isDirectUploading}
+            >
+              {isDirectUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              Upload
+            </Button>
+            <input
+              ref={directUploadRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleDirectUpload}
+            />
             <Button
               variant="outline"
               size="sm"

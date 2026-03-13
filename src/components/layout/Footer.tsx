@@ -38,8 +38,8 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
-              <h2 className="font-serif text-2xl font-medium">
-                <span className="text-primary">KRT</span> JEWELLERS
+              <h2 className="font-serif text-2xl font-medium text-primary">
+                KRT JEWELLERS
               </h2>
               <p className="text-xs text-ivory/50 tracking-widest uppercase mt-1">Trusted Since 30+ Years</p>
             </Link>
