@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { Heart, Sparkles, Star, Gem } from 'lucide-react';
+import { Heart, Sparkles, Star, Gem, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPrice } from '@/lib/types';
 import { ProductCardSlider } from './ProductCardSlider';
 import { AuthPromptModal } from '@/components/product/AuthPromptModal';
+import { ProductQuickViewDialog } from './ProductQuickViewDialog';
 import type { ProductWithPrice } from '@/lib/types';
 
 interface ProductCardProps {
@@ -17,6 +18,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const inWishlist = isInWishlist(product.id);
   const isOutOfStock = (product.stock_quantity ?? 1) <= 0;
 
@@ -30,7 +32,14 @@ export function ProductCard({ product }: ProductCardProps) {
     toggleWishlist(product.id);
   };
 
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsQuickViewOpen(true);
+  };
+
   const images = product.images.length > 0 ? product.images : ['/placeholder.svg'];
+
   return (
     <>
       <Link to={`/product/${product.slug}`} className="group block select-none h-full">
@@ -38,6 +47,16 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Image Container with Slider */}
           <div className="relative aspect-[4/5] overflow-hidden bg-white">
             <ProductCardSlider images={images} productName={product.name} />
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleQuickView}
+              className="absolute bottom-2 left-1/2 z-20 h-8 -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 text-xs font-medium text-foreground shadow-sm transition md:opacity-0 md:group-hover:opacity-100"
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
+              Quick View
+            </Button>
             
             {/* Out of Stock Overlay */}
             {isOutOfStock && (
@@ -108,6 +127,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
 
+      <ProductQuickViewDialog
+        open={isQuickViewOpen}
+        onOpenChange={setIsQuickViewOpen}
+        product={product}
+      />
+
       {/* Auth Prompt Modal */}
       <AuthPromptModal
         isOpen={showAuthModal}
@@ -117,3 +142,4 @@ export function ProductCard({ product }: ProductCardProps) {
     </>
   );
 }
+

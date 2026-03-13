@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Sparkles, Star, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -71,110 +71,69 @@ export function ProductImageGallery({
     alt: string;
   }) => {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const [lens, setLens] = useState({ x: 0, y: 0, visible: false });
-    const [zoom, setZoom] = useState(3.2);
-    const [lensSize, setLensSize] = useState(160);
-    const pinchDistanceRef = useRef<number | null>(null);
+    const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
     const [isDragging, setIsDragging] = useState(false);
+    const lensSize = 150;
 
-    const updateLensFromPoint = (clientX: number, clientY: number) => {
+    const updateLensFromPoint = useCallback((clientX: number, clientY: number) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
+
       const x = Math.min(Math.max(clientX - rect.left, 0), rect.width);
       const y = Math.min(Math.max(clientY - rect.top, 0), rect.height);
-      const xPercent = (x / rect.width) * 100;
-      const yPercent = (y / rect.height) * 100;
-      setLens({ x: xPercent, y: yPercent, visible: true });
-    };
 
-    const handleMove = (event: React.MouseEvent<HTMLDivElement>) => {
-      updateLensFromPoint(event.clientX, event.clientY);
-    };
+      setLens({
+        x: (x / rect.width) * 100,
+        y: (y / rect.height) * 100,
+        visible: true,
+      });
+    }, []);
 
-    const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const touch = event.touches[0];
-      if (!touch) return;
-      event.preventDefault();
-      updateLensFromPoint(touch.clientX, touch.clientY);
-
-      if (event.touches.length >= 2) {
-        const t1 = event.touches[0];
-        const t2 = event.touches[1];
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        const distance = Math.hypot(dx, dy);
-        if (pinchDistanceRef.current) {
-          const delta = distance - pinchDistanceRef.current;
-          const nextZoom = Math.min(Math.max(2.6, zoom + delta * 0.005), 5.5);
-          setZoom(nextZoom);
-        }
-        pinchDistanceRef.current = distance;
-      }
-    };
-
-    const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-      const touch = event.touches[0];
-      if (touch) {
-        updateLensFromPoint(touch.clientX, touch.clientY);
-      }
-      if (event.touches.length >= 2) {
-        const t1 = event.touches[0];
-        const t2 = event.touches[1];
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        pinchDistanceRef.current = Math.hypot(dx, dy);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      pinchDistanceRef.current = null;
+    const hideLens = useCallback(() => {
+      setIsDragging(false);
       setLens((prev) => ({ ...prev, visible: false }));
-    };
+    }, []);
 
     return (
       <div
         ref={containerRef}
         className={cn(
-          "relative w-full h-full select-none",
-          isDragging ? "cursor-grabbing" : "cursor-crosshair"
+          'relative w-full h-full overflow-hidden select-none',
+          isDragging ? 'cursor-grabbing' : 'cursor-crosshair'
         )}
-        style={{ touchAction: 'none' }}
-        onMouseEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
-        onMouseMove={handleMove}
-        onMouseDown={(e) => {
+        onPointerEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
+        onPointerMove={(e) => updateLensFromPoint(e.clientX, e.clientY)}
+        onPointerDown={(e) => {
           e.preventDefault();
           setIsDragging(true);
           updateLensFromPoint(e.clientX, e.clientY);
         }}
-        onMouseUp={() => setIsDragging(false)}
-        onMouseLeave={() => {
-          setIsDragging(false);
-          setLens((prev) => ({ ...prev, visible: false }));
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onPointerUp={() => setIsDragging(false)}
+        onPointerCancel={hideLens}
+        onPointerLeave={hideLens}
       >
         <img
           src={src}
           alt={alt}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className={cn(
+            'w-full h-full object-cover will-change-transform',
+            lens.visible ? 'scale-[1.85]' : 'scale-100'
+          )}
+          style={{
+            transformOrigin: `${lens.x}% ${lens.y}%`,
+            transition: lens.visible ? 'transform 80ms linear' : 'transform 300ms ease',
+          }}
+          draggable={false}
         />
+
         {lens.visible && (
           <div
-            className="absolute rounded-full border-2 border-white/90 shadow-2xl pointer-events-none"
+            className="pointer-events-none absolute rounded-full border-2 border-primary/80 bg-background/10 shadow-xl ring-1 ring-background/70"
             style={{
               width: `${lensSize}px`,
               height: `${lensSize}px`,
               left: `calc(${lens.x}% - ${lensSize / 2}px)`,
               top: `calc(${lens.y}% - ${lensSize / 2}px)`,
-              backgroundImage: `url("${src}")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: `${lens.x}% ${lens.y}%`,
-              backgroundSize: `${zoom * 100}%`,
-              zIndex: 50,
             }}
           />
         )}
