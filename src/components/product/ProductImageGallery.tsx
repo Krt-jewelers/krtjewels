@@ -287,7 +287,7 @@ export function ProductImageGallery({
         <div
           role="button"
           tabIndex={0}
-          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-zoom-in"
+          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-crosshair"
           onClick={() => onOpenLightbox(mediaItems[0]?.index ?? 0)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -296,59 +296,10 @@ export function ProductImageGallery({
             }
           }}
         >
-          <LensImage
-            src={mediaItems[0]?.url || '/placeholder.svg'}
-            alt={`${productName} - Image 1`}
-          />
-          <div className="absolute top-3 left-3 flex items-center gap-2">
-            {badges?.isNewArrival && (
-              <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
-                <Sparkles className="w-4 h-4" />
-              </Badge>
-            )}
-            {badges?.isBestseller && (
-              <Badge className="bg-accent text-accent-foreground w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bestseller">
-                <Star className="w-4 h-4" />
-              </Badge>
-            )}
-            {badges?.isBridal && (
-              <Badge className="bg-maroon text-ivory w-8 h-8 p-0 rounded-full flex items-center justify-center" title="Bridal">
-                <Gem className="w-4 h-4" />
-              </Badge>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {mediaItems.map((item, idx) => {
-            if (item.type === 'video') {
-              return (
-                <div
-                  key={`video-${idx}`}
-                  className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20"
-                >
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10 pointer-events-none">
-                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
-                      <Play className="w-5 h-5 text-foreground" />
-                    </div>
-                  </div>
-                  <video
-                    src={item.url}
-                    className="w-full h-full object-contain"
-                    controls
-                    playsInline
-                  />
-                </div>
-              );
-            }
-
-            const imageIndex = item.index ?? 0;
-            return (
-              <div
-                key={`image-${imageIndex}`}
+...
                 role="button"
                 tabIndex={0}
-                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-zoom-in"
+                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-crosshair"
                 onClick={() => {
                   setSelectedImage(imageIndex);
                   onOpenLightbox(imageIndex);
