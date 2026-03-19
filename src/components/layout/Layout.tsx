@@ -6,6 +6,7 @@ import { Footer } from './Footer';
 import { FloatingContactMenu } from '@/components/ui/FloatingContactMenu';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageViewTracker } from '@/hooks/useAnalyticsTracker';
 
 interface LayoutProps {
   children: ReactNode;
