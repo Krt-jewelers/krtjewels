@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPrice, CATEGORY_NAMES, ProductCategory } from '@/lib/types';
+import { logSearch } from '@/hooks/useAnalyticsTracker';
 
 interface SearchOverlayProps {
   isOpen: boolean;
