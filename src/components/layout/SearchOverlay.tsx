@@ -38,6 +38,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   const handleSearch = (searchTerm: string) => {
     if (searchTerm.trim()) {
+      logSearch(searchTerm, products?.length || 0);
       navigate(`/collections/necklaces?search=${encodeURIComponent(searchTerm)}`);
       onClose();
     }

@@ -18,6 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
+  usePageViewTracker();
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
