@@ -6,6 +6,7 @@ import { Footer } from './Footer';
 import { FloatingContactMenu } from '@/components/ui/FloatingContactMenu';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageViewTracker } from '@/hooks/useAnalyticsTracker';
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,6 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const location = useLocation();
+  usePageViewTracker();
 
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {

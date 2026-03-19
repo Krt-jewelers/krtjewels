@@ -8,22 +8,23 @@ export async function compressImage(file: File): Promise<File> {
     maxSizeMB: 2,
     maxWidthOrHeight: 2048,
     useWebWorker: true,
-    preserveExif: true,
-    fileType: file.type as string,
-    initialQuality: 0.92,
+    preserveExif: false,
+    fileType: 'image/webp' as string,
+    initialQuality: 0.88,
   };
 
   const originalSizeMB = file.size / (1024 * 1024);
 
-  if (originalSizeMB <= 1) {
-    return file;
-  }
-
   const compressed = await imageCompression(file, options);
+  
+  // Rename to .webp extension
+  const webpName = file.name.replace(/\.[^.]+$/, '.webp');
+  const webpFile = new File([compressed], webpName, { type: 'image/webp' });
+  
   console.log(
-    `Compressed ${file.name}: ${originalSizeMB.toFixed(2)}MB → ${(compressed.size / (1024 * 1024)).toFixed(2)}MB`
+    `Optimized ${file.name} → WebP: ${originalSizeMB.toFixed(2)}MB → ${(webpFile.size / (1024 * 1024)).toFixed(2)}MB`
   );
-  return compressed;
+  return webpFile;
 }
 
 export async function uploadToCloudinary(file: File, folder = 'products'): Promise<string> {

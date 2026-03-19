@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPrice, CATEGORY_NAMES, ProductCategory } from '@/lib/types';
+import { logSearch } from '@/hooks/useAnalyticsTracker';
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   const handleSearch = (searchTerm: string) => {
     if (searchTerm.trim()) {
+      logSearch(searchTerm, products?.length || 0);
       navigate(`/collections/necklaces?search=${encodeURIComponent(searchTerm)}`);
       onClose();
     }
