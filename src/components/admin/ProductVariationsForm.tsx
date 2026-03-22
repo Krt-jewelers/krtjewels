@@ -62,6 +62,7 @@ interface ProductVariationsFormProps {
   productId: string;
   category: ProductCategory;
   productImages?: string[];
+  baseWeightGrams?: number;
 }
 
 interface VariationFormData {
@@ -98,7 +99,7 @@ const defaultFormData: VariationFormData = {
   image_url: null,
 };
 
-export function ProductVariationsForm({ productId, category, productImages = [] }: ProductVariationsFormProps) {
+export function ProductVariationsForm({ productId, category, productImages = [], baseWeightGrams = 0 }: ProductVariationsFormProps) {
   const { toast } = useToast();
   const { data: variations = [], isLoading } = useProductVariations(productId);
   const createVariation = useCreateVariation();
@@ -529,19 +530,29 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Weight Adjustment (g)</Label>
+                      <Label>{formData.variation_type === 'metal_type' ? 'Gross Weight (g)' : 'Weight Adjustment (g)'}</Label>
                       <Input
                         type="number"
                         step="0.01"
-                        value={formData.weight_adjustment}
-                        onChange={(e) =>
+                        value={formData.variation_type === 'metal_type'
+                          ? (baseWeightGrams + formData.weight_adjustment) || ''
+                          : formData.weight_adjustment}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
                           setFormData(prev => ({
                             ...prev,
-                            weight_adjustment: parseFloat(e.target.value) || 0,
-                          }))
-                        }
-                        placeholder="0"
+                            weight_adjustment: formData.variation_type === 'metal_type'
+                              ? parseFloat((val - baseWeightGrams).toFixed(4))
+                              : val,
+                          }));
+                        }}
+                        placeholder={formData.variation_type === 'metal_type' ? String(baseWeightGrams) : '0'}
                       />
+                      {formData.variation_type === 'metal_type' && (
+                        <p className="text-xs text-muted-foreground">
+                          Enter the actual gross weight for this metal purity (base: {baseWeightGrams}g)
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -665,7 +676,7 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                 <TableHead>Type</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Price Adj.</TableHead>
-                <TableHead>Weight Adj.</TableHead>
+                <TableHead>Gross Wt.</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -700,8 +711,9 @@ export function ProductVariationsForm({ productId, category, productImages = [] 
                     ₹{variation.price_adjustment.toLocaleString('en-IN')}
                   </TableCell>
                   <TableCell>
-                    {variation.weight_adjustment > 0 && '+'}
-                    {variation.weight_adjustment}g
+                    {variation.variation_type === 'metal_type'
+                      ? `${(baseWeightGrams + variation.weight_adjustment).toFixed(2)}g`
+                      : `${variation.weight_adjustment > 0 ? '+' : ''}${variation.weight_adjustment}g`}
                   </TableCell>
                   <TableCell>{variation.stock_quantity}</TableCell>
                   <TableCell>
