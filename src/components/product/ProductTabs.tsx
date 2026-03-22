@@ -96,8 +96,8 @@ export function ProductTabs({ product, calculatedPrice, pricingMeta }: ProductTa
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex justify-between text-sm py-1.5 border-b border-border/50">
-              <span className="text-muted-foreground">Weight</span>
-              <span className="font-medium">{product.weight_grams}g</span>
+              <span className="text-muted-foreground">Gross Weight</span>
+              <span className="font-medium">{(pricingMeta?.metalWeightGrams ?? product.weight_grams).toFixed(2)} grams</span>
             </div>
             <div className="flex justify-between text-sm py-1.5 border-b border-border/50">
               <span className="text-muted-foreground">Purity</span>
