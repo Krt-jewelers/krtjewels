@@ -1412,6 +1412,7 @@ export default function AdminProductForm() {
                       productId={id}
                       category={selectedCategory}
                       productImages={formData.images}
+                      baseWeightGrams={formData.weight_grams}
                     />
                   );
                 })()}

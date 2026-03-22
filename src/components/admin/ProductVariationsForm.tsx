@@ -62,6 +62,7 @@ interface ProductVariationsFormProps {
   productId: string;
   category: ProductCategory;
   productImages?: string[];
+  baseWeightGrams?: number;
 }
 
 interface VariationFormData {
