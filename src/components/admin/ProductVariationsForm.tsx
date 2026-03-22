@@ -711,8 +711,9 @@ export function ProductVariationsForm({ productId, category, productImages = [],
                     ₹{variation.price_adjustment.toLocaleString('en-IN')}
                   </TableCell>
                   <TableCell>
-                    {variation.weight_adjustment > 0 && '+'}
-                    {variation.weight_adjustment}g
+                    {variation.variation_type === 'metal_type'
+                      ? `${(baseWeightGrams + variation.weight_adjustment).toFixed(2)}g`
+                      : `${variation.weight_adjustment > 0 ? '+' : ''}${variation.weight_adjustment}g`}
                   </TableCell>
                   <TableCell>{variation.stock_quantity}</TableCell>
                   <TableCell>
