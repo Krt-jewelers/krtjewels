@@ -676,7 +676,7 @@ export function ProductVariationsForm({ productId, category, productImages = [],
                 <TableHead>Type</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Price Adj.</TableHead>
-                <TableHead>Weight Adj.</TableHead>
+                <TableHead>Gross Wt.</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
