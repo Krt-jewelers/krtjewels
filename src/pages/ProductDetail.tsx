@@ -135,6 +135,7 @@ export default function ProductDetail() {
             metalSlug: selectedMetalSlug,
             diamondCost: selectedDiamondCost,
             attributeExtra: 0,
+            metalWeightGrams: selectedWeightGrams,
           },
           usePricingOptionsDefaults: false,
         }
