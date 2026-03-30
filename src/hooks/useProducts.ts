@@ -98,18 +98,34 @@ export function calculateProductPrice(
 
   // Resolve metal-specific weight (pricing_options.metals can store per-metal weights)
   let metalWeightGrams = product.weight_grams;
+  let defaultMetalWeight = product.weight_grams;
+  if (Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0) {
+    const first = pricingOptions.metals[0];
+    if (first && typeof first === 'object') {
+      const firstWeight = Number((first as any).weight_grams);
+      if (Number.isFinite(firstWeight) && firstWeight > 0) {
+        defaultMetalWeight = firstWeight;
+      }
+    }
+  }
+
   if (typeof options?.selection?.metalWeightGrams === 'number' && Number.isFinite(options.selection.metalWeightGrams)) {
     metalWeightGrams = options.selection.metalWeightGrams;
   } else if (Array.isArray(pricingOptions.metals)) {
+    let foundWeight = false;
     for (const m of pricingOptions.metals) {
       if (m && typeof m === 'object') {
         const slug = (m as any).slug || (m as any).metal_type;
         const weight = Number((m as any).weight_grams);
         if (slug === selectedMetalSlug && Number.isFinite(weight) && weight > 0) {
           metalWeightGrams = weight;
+          foundWeight = true;
           break;
         }
       }
+    }
+    if (!foundWeight) {
+      metalWeightGrams = defaultMetalWeight;
     }
   }
 
