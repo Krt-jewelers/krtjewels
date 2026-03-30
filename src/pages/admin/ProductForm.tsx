@@ -1236,7 +1236,7 @@ export default function AdminProductForm() {
                           return { ...prev, weight_grams: nextWeight, pricing_metal_weights: nextWeights };
                         });
                       }}
-                      placeholder="0.00" required
+                      placeholder="0.00"
                     />
                   </div>
                   <div className="space-y-2">
