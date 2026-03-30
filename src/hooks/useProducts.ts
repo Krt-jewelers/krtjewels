@@ -32,6 +32,7 @@ export function calculateProductPrice(
       metalSlug?: string;
       diamondCost?: number;
       attributeExtra?: number;
+      metalWeightGrams?: number;
     };
     usePricingOptionsDefaults?: boolean;
   }
@@ -51,7 +52,9 @@ export function calculateProductPrice(
   const pricingOptions = (product.specifications as Record<string, any> | null)?.pricing_options || {};
   const defaultMetalSlug =
     useDefaults && Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
-      ? pricingOptions.metals[0]
+      ? (typeof pricingOptions.metals[0] === 'string'
+          ? pricingOptions.metals[0]
+          : pricingOptions.metals[0]?.slug || pricingOptions.metals[0]?.metal_type)
       : null;
   const selectedMetalSlug = options?.selection?.metalSlug || defaultMetalSlug || product.metal_type;
 
@@ -93,8 +96,25 @@ export function calculateProductPrice(
     }
   }
 
+  // Resolve metal-specific weight (pricing_options.metals can store per-metal weights)
+  let metalWeightGrams = product.weight_grams;
+  if (typeof options?.selection?.metalWeightGrams === 'number' && Number.isFinite(options.selection.metalWeightGrams)) {
+    metalWeightGrams = options.selection.metalWeightGrams;
+  } else if (Array.isArray(pricingOptions.metals)) {
+    for (const m of pricingOptions.metals) {
+      if (m && typeof m === 'object') {
+        const slug = (m as any).slug || (m as any).metal_type;
+        const weight = Number((m as any).weight_grams);
+        if (slug === selectedMetalSlug && Number.isFinite(weight) && weight > 0) {
+          metalWeightGrams = weight;
+          break;
+        }
+      }
+    }
+  }
+
   // Calculate gold value
-  const goldValue = product.weight_grams * goldRatePerGram;
+  const goldValue = metalWeightGrams * goldRatePerGram;
 
   // Calculate making charges (use product-specific or category default)
   const makingChargePercent = product.making_charge_percent || categoryMakingCharge || 12;
