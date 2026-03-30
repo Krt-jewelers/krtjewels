@@ -87,8 +87,21 @@ export function ProductVariantSelector({
   // (debug logs moved below after computed options)
 
   const pricingOptions = (specifications as any)?.pricing_options || {};
-  const specMetals: string[] = Array.isArray(pricingOptions.metals)
-    ? pricingOptions.metals.filter((m: any) => typeof m === 'string')
+  const specMetals: { slug: string; weightGrams?: number }[] = Array.isArray(pricingOptions.metals)
+    ? pricingOptions.metals
+        .map((m: any) => {
+          if (typeof m === 'string') {
+            return { slug: m };
+          }
+          if (m && typeof m.slug === 'string') {
+            return { slug: m.slug, weightGrams: Number(m.weight_grams) };
+          }
+          if (m && typeof m.metal_type === 'string') {
+            return { slug: m.metal_type, weightGrams: Number(m.weight_grams) };
+          }
+          return null;
+        })
+        .filter((m: any) => m && typeof m.slug === 'string')
     : [];
   const specDiamondQualities: { label: string; subtitle: string; rate_per_carat: number; is_default: boolean }[] = Array.isArray(pricingOptions.diamond_qualities)
     ? pricingOptions.diamond_qualities
@@ -165,16 +178,19 @@ export function ProductVariantSelector({
         imageUrl: null,
       })) || [];
 
-  const specMetalOptions = specMetals.map((slug) => {
-    const mt = metalTypes.find(m => m.slug === slug);
-    const label = mt?.name || METAL_TYPE_NAMES[slug as MetalType] || slug;
+  const specMetalOptions = specMetals.map((metal) => {
+    const mt = metalTypes.find(m => m.slug === metal.slug);
+    const label = mt?.name || METAL_TYPE_NAMES[metal.slug as MetalType] || metal.slug;
+    const resolvedWeight = Number.isFinite(metal.weightGrams) && (metal.weightGrams as number) > 0
+      ? (metal.weightGrams as number)
+      : baseWeightGrams;
     return {
-      value: slug,
+      value: metal.slug,
       label,
-      metalType: slug,
+      metalType: metal.slug,
       priceAdjustment: 0,
-      weightAdjustment: 0,
-      isDefault: slug === baseMetalType,
+      weightAdjustment: resolvedWeight - baseWeightGrams,
+      isDefault: metal.slug === baseMetalType,
       imageUrl: null,
     };
   });
