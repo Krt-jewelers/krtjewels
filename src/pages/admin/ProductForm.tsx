@@ -981,7 +981,7 @@ export default function AdminProductForm() {
                           ? formData.pricing_metal_weights[defaultMetalSlug]
                           : formData.weight_grams;
                         return (
-                          <div key={slug} className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-2 items-center">
+                          <div key={slug} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-2 items-center">
                             <span className="text-sm text-muted-foreground">{metalLabel}</span>
                             <Input
                               type="number"
@@ -1001,6 +1001,15 @@ export default function AdminProductForm() {
                               }}
                               placeholder={String(defaultMetalWeight || 0)}
                             />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => togglePricingMetal(slug)}
+                            >
+                              ✕
+                            </Button>
                           </div>
                         );
                       })}
