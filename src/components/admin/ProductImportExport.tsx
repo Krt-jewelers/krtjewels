@@ -17,6 +17,7 @@ const EXPORT_COLUMNS = [
   'diamond_cost', 'stone_cost', 'stock_quantity',
   'is_featured', 'is_bestseller', 'is_new_arrival', 'is_bridal', 'is_active',
   'images', 'tags', 'category_name', 'subcategory_name',
+  'pricing_metals', 'pricing_metal_weights',
 ];
 
 export function ProductImportExport({ onImportComplete }: ProductImportExportProps) {
@@ -48,32 +49,56 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
         .in('product_id', productIds.length > 0 ? productIds : ['none']);
 
       // Build export rows
-      const rows = (products || []).map((p: any) => ({
-        name: p.name,
-        slug: p.slug,
-        description: p.description || '',
-        short_description: p.short_description || '',
-        sku: p.sku || '',
-        metal_type: p.metal_type,
-        weight_grams: p.weight_grams,
-        making_charge_percent: p.making_charge_percent || '',
-        diamond_cost: p.diamond_cost || 0,
-        stone_cost: p.stone_cost || 0,
-        stock_quantity: p.stock_quantity || 0,
-        is_featured: p.is_featured ? 'yes' : 'no',
-        is_bestseller: p.is_bestseller ? 'yes' : 'no',
-        is_new_arrival: p.is_new_arrival ? 'yes' : 'no',
-        is_bridal: p.is_bridal ? 'yes' : 'no',
-        is_active: p.is_active ? 'yes' : 'no',
-        images: (p.images || []).join(' | '),
-        tags: (p.tags || []).join(', '),
-        category_name: p.product_categories?.name || '',
-        subcategory_name: p.product_subcategories?.name || '',
-        variations: (variations || [])
-          .filter(v => v.product_id === p.id)
-          .map(v => `${v.variation_type}:${v.size_value || v.metal_label || v.size_label || ''}:${v.price_adjustment}:${v.weight_adjustment}`)
-          .join(' | '),
-      }));
+      const rows = (products || []).map((p: any) => {
+        const pricingOptions = (p.specifications || {})?.pricing_options || {};
+        const pricingMetalsRaw = Array.isArray(pricingOptions.metals) ? pricingOptions.metals : [];
+        const pricingMetals = pricingMetalsRaw
+          .map((m: any) => {
+            if (typeof m === 'string') return m;
+            if (m && typeof m.slug === 'string') return m.slug;
+            if (m && typeof m.metal_type === 'string') return m.metal_type;
+            return null;
+          })
+          .filter(Boolean) as string[];
+        const pricingMetalWeights = pricingMetalsRaw
+          .map((m: any) => {
+            if (!m || typeof m !== 'object') return null;
+            const slug = m.slug || m.metal_type;
+            const weight = Number(m.weight_grams);
+            if (!slug || !Number.isFinite(weight) || weight <= 0) return null;
+            return `${slug}:${weight}`;
+          })
+          .filter(Boolean) as string[];
+
+        return {
+          name: p.name,
+          slug: p.slug,
+          description: p.description || '',
+          short_description: p.short_description || '',
+          sku: p.sku || '',
+          metal_type: p.metal_type,
+          weight_grams: p.weight_grams,
+          making_charge_percent: p.making_charge_percent || '',
+          diamond_cost: p.diamond_cost || 0,
+          stone_cost: p.stone_cost || 0,
+          stock_quantity: p.stock_quantity || 0,
+          is_featured: p.is_featured ? 'yes' : 'no',
+          is_bestseller: p.is_bestseller ? 'yes' : 'no',
+          is_new_arrival: p.is_new_arrival ? 'yes' : 'no',
+          is_bridal: p.is_bridal ? 'yes' : 'no',
+          is_active: p.is_active ? 'yes' : 'no',
+          images: (p.images || []).join(' | '),
+          tags: (p.tags || []).join(', '),
+          category_name: p.product_categories?.name || '',
+          subcategory_name: p.product_subcategories?.name || '',
+          pricing_metals: pricingMetals.join(' | '),
+          pricing_metal_weights: pricingMetalWeights.join(' | '),
+          variations: (variations || [])
+            .filter(v => v.product_id === p.id)
+            .map(v => `${v.variation_type}:${v.size_value || v.metal_label || v.size_label || ''}:${v.price_adjustment}:${v.weight_adjustment}`)
+            .join(' | '),
+        };
+      });
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
@@ -101,6 +126,8 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
         tags: 'temple, traditional',
         category_name: 'Necklaces',
         subcategory_name: '',
+        pricing_metals: 'gold_22k | gold_18k',
+        pricing_metal_weights: 'gold_22k:10.5 | gold_18k:9.8',
         variations: 'size:16":0:0 | size:18":500:1.5 | metal_type:24K Gold:0:0',
       }];
       const templateWs = XLSX.utils.json_to_sheet(templateRow);
@@ -183,6 +210,33 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
             return !!v;
           };
 
+          const parseList = (value: any, separator = '|') =>
+            value
+              ? String(value).split(separator).map((s: string) => s.trim()).filter(Boolean)
+              : [];
+
+          const parseMetalWeights = (value: any) => {
+            const entries = parseList(value, '|');
+            const map: Record<string, number> = {};
+            entries.forEach((entry: string) => {
+              const normalized = entry.replace('=', ':');
+              const [slug, weightRaw] = normalized.split(':').map((s) => s.trim());
+              if (!slug) return;
+              const weight = parseFloat(weightRaw);
+              if (Number.isFinite(weight) && weight > 0) {
+                map[slug] = weight;
+              }
+            });
+            return map;
+          };
+
+          const pricingMetals = parseList(row.pricing_metals, '|');
+          const pricingMetalWeights = parseMetalWeights(row.pricing_metal_weights);
+          const metalsFromWeights = Object.keys(pricingMetalWeights);
+          const resolvedPricingMetals = pricingMetals.length > 0
+            ? pricingMetals
+            : metalsFromWeights;
+
           const productData: any = {
             name: row.name,
             slug: row.slug || generateSlug(row.name),
@@ -200,8 +254,8 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
             is_new_arrival: boolVal(row.is_new_arrival),
             is_bridal: boolVal(row.is_bridal),
             is_active: row.is_active !== undefined ? boolVal(row.is_active) : true,
-            images: row.images ? String(row.images).split('|').map((s: string) => s.trim()).filter(Boolean) : [],
-            tags: row.tags ? String(row.tags).split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+            images: parseList(row.images, '|'),
+            tags: parseList(row.tags, ','),
           };
 
           // Map category
@@ -225,9 +279,25 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
           // Check if product with same slug exists (upsert)
           const { data: existing } = await supabase
             .from('products')
-            .select('id')
+            .select('id, specifications')
             .eq('slug', productData.slug)
             .maybeSingle();
+
+          if (resolvedPricingMetals.length > 0) {
+            const baseSpecs = (existing?.specifications as any) || {};
+            const basePricingOptions = baseSpecs.pricing_options || {};
+            const metalsPayload = resolvedPricingMetals.map((slug) => ({
+              slug,
+              weight_grams: Number.isFinite(pricingMetalWeights[slug]) ? pricingMetalWeights[slug] : null,
+            }));
+            productData.specifications = {
+              ...baseSpecs,
+              pricing_options: {
+                ...basePricingOptions,
+                metals: metalsPayload,
+              },
+            };
+          }
 
           let productId: string;
           if (existing) {
@@ -327,6 +397,8 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
       tags: 'temple, traditional, gold',
       category_name: 'Necklaces',
       subcategory_name: '',
+      pricing_metals: 'gold_22k | gold_18k',
+      pricing_metal_weights: 'gold_22k:10.5 | gold_18k:9.8',
       variations: 'size:18":0:0 | size:20":500:1.5',
     }];
 
