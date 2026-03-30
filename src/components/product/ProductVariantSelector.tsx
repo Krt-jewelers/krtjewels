@@ -178,12 +178,28 @@ export function ProductVariantSelector({
         imageUrl: null,
       })) || [];
 
+  const defaultSpecMetalSlug = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
+    ? (typeof pricingOptions.metals[0] === 'string'
+        ? pricingOptions.metals[0]
+        : pricingOptions.metals[0]?.slug || pricingOptions.metals[0]?.metal_type)
+    : null;
+  const defaultSpecMetalWeight = (() => {
+    if (defaultSpecMetalSlug) {
+      const match = specMetals.find(m => m.slug === defaultSpecMetalSlug);
+      if (match && Number.isFinite(match.weightGrams) && (match.weightGrams as number) > 0) {
+        return match.weightGrams as number;
+      }
+    }
+    const anyWeight = specMetals.find(m => Number.isFinite(m.weightGrams) && (m.weightGrams as number) > 0);
+    return anyWeight?.weightGrams ?? baseWeightGrams;
+  })();
+
   const specMetalOptions = specMetals.map((metal) => {
     const mt = metalTypes.find(m => m.slug === metal.slug);
     const label = mt?.name || METAL_TYPE_NAMES[metal.slug as MetalType] || metal.slug;
     const resolvedWeight = Number.isFinite(metal.weightGrams) && (metal.weightGrams as number) > 0
       ? (metal.weightGrams as number)
-      : baseWeightGrams;
+      : defaultSpecMetalWeight;
     return {
       value: metal.slug,
       label,
