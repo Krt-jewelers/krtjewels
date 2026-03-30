@@ -166,7 +166,6 @@ export function ProductImportExport({ onImportComplete }: ProductImportExportPro
       const errors: string[] = [];
       rows.forEach((row, idx) => {
         if (!row.name) errors.push(`Row ${idx + 2}: Missing product name`);
-        if (!row.weight_grams && row.weight_grams !== 0) errors.push(`Row ${idx + 2}: Missing weight`);
       });
 
       setImportPreview(rows);
