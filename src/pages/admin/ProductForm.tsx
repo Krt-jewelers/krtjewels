@@ -188,7 +188,7 @@ export default function AdminProductForm() {
       const exists = prev.pricing_metals.includes(slug);
       const nextMetals = exists
         ? prev.pricing_metals.filter((m) => m !== slug)
-        : [...prev.pricing_metals, slug];
+        : Array.from(new Set([...prev.pricing_metals, slug]));
       const nextWeights = { ...prev.pricing_metal_weights };
       if (exists) {
         delete nextWeights[slug];
@@ -324,6 +324,7 @@ export default function AdminProductForm() {
       const normalizedPricingMetals = resolvedPricingMetals.length > 0
         ? resolvedPricingMetals
         : fallbackMetals;
+      const uniquePricingMetals = Array.from(new Set(normalizedPricingMetals));
       const diamondQualities = Array.isArray(pricingOptions.diamond_qualities)
         ? pricingOptions.diamond_qualities
             .filter((q: any) => q && typeof q.label === 'string')
@@ -368,7 +369,7 @@ export default function AdminProductForm() {
         diamond_cost: data.diamond_cost || 0,
         stone_cost: data.stone_cost || 0,
         stones: Array.isArray((data as any).stones) ? (data as any).stones : [],
-        pricing_metals: normalizedPricingMetals,
+        pricing_metals: uniquePricingMetals,
         pricing_metal_weights: resolvedMetalWeights,
         diamond_qualities: diamondQualities,
         carat_weights: caratWeights,
