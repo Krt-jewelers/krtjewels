@@ -112,8 +112,17 @@ export default function ProductDetail() {
     );
   }
 
+  const pricingOptions = (product.specifications as Record<string, any> | null)?.pricing_options || {};
+  const firstPricingMetal = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
+    ? pricingOptions.metals[0]
+    : null;
+  const defaultMetalWeight = firstPricingMetal && typeof firstPricingMetal === 'object'
+    ? Number((firstPricingMetal as any).weight_grams) || 0
+    : 0;
+  const baseWeightGrams = defaultMetalWeight > 0 ? defaultMetalWeight : product.weight_grams;
+
   const selectedMetalSlug = variationState?.metalTypeSlug || product.metal_type;
-  const selectedWeightGrams = product.weight_grams + (variationState?.weightAdjustment || 0);
+  const selectedWeightGrams = baseWeightGrams + (variationState?.weightAdjustment || 0);
   const selectedDiamondCost = typeof variationState?.pricing?.diamondCost === 'number'
     ? variationState?.pricing?.diamondCost || 0
     : product.diamond_cost || 0;
@@ -222,7 +231,7 @@ export default function ProductDetail() {
               productId={product.id}
               category={product.category}
               baseMetalType={product.metal_type}
-              baseWeightGrams={product.weight_grams}
+              baseWeightGrams={baseWeightGrams}
               baseRatePerGram={product.calculated_price.gold_rate_applied}
               specifications={product.specifications}
               onVariationChange={setVariationState}
