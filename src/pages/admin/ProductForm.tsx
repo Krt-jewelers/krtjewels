@@ -183,17 +183,51 @@ export default function AdminProductForm() {
     ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
     : Object.entries(METAL_TYPE_NAMES).map(([slug, name]) => ({ id: slug, slug, name }));
 
+  const normalizeMetalToken = (value: string) =>
+    value.toLowerCase().replace(/\s+/g, '').replace(/gold/g, '');
+
+  const resolveMetalSlug = (value?: string | null) => {
+    if (!value) return null;
+    const direct = metalOptions.find(m => m.slug.toLowerCase() === value.toLowerCase());
+    if (direct) return direct.slug;
+    const normalizedValue = normalizeMetalToken(value);
+    const byName = metalOptions.find(m => normalizeMetalToken(m.name) === normalizedValue);
+    if (byName) return byName.slug;
+    return value;
+  };
+
+  const normalizePricingMetals = (metals: string[], weights: Record<string, number>) => {
+    const resolvedWeights: Record<string, number> = {};
+    metals.forEach((slug) => {
+      const resolvedSlug = resolveMetalSlug(slug);
+      if (!resolvedSlug) return;
+      if (Number.isFinite(weights[slug])) {
+        resolvedWeights[resolvedSlug] = weights[slug];
+      }
+      if (Number.isFinite(weights[resolvedSlug])) {
+        resolvedWeights[resolvedSlug] = weights[resolvedSlug];
+      }
+    });
+
+    const normalizedMetals = metals
+      .map((slug) => resolveMetalSlug(slug))
+      .filter(Boolean) as string[];
+    const uniqueMetals = Array.from(new Set(normalizedMetals));
+    return { metals: uniqueMetals, weights: resolvedWeights };
+  };
+
   const togglePricingMetal = (slug: string) => {
     setFormData((prev) => {
-      const exists = prev.pricing_metals.includes(slug);
+      const resolvedSlug = resolveMetalSlug(slug) || slug;
+      const exists = prev.pricing_metals.includes(resolvedSlug);
       const nextMetals = exists
-        ? prev.pricing_metals.filter((m) => m !== slug)
-        : Array.from(new Set([...prev.pricing_metals, slug]));
+        ? prev.pricing_metals.filter((m) => m !== resolvedSlug)
+        : Array.from(new Set([...prev.pricing_metals, resolvedSlug]));
       const nextWeights = { ...prev.pricing_metal_weights };
       if (exists) {
-        delete nextWeights[slug];
-      } else if (slug !== prev.metal_type && !Number.isFinite(nextWeights[slug])) {
-        nextWeights[slug] = prev.weight_grams || 0;
+        delete nextWeights[resolvedSlug];
+      } else if (resolvedSlug !== prev.metal_type && !Number.isFinite(nextWeights[resolvedSlug])) {
+        nextWeights[resolvedSlug] = prev.weight_grams || 0;
       }
 
       let nextMetalTypeId = prev.metal_type_id;
@@ -263,6 +297,21 @@ export default function AdminProductForm() {
     }
   }, [metalTypes, formData.metal_type, formData.metal_type_id, formData.pricing_metals]);
 
+  useEffect(() => {
+    if (metalOptions.length === 0) return;
+    setFormData((prev) => {
+      const normalized = normalizePricingMetals(prev.pricing_metals, prev.pricing_metal_weights);
+      const sameMetals = normalized.metals.join('|') === prev.pricing_metals.join('|');
+      const sameWeights = JSON.stringify(normalized.weights) === JSON.stringify(prev.pricing_metal_weights);
+      if (sameMetals && sameWeights) return prev;
+      return {
+        ...prev,
+        pricing_metals: normalized.metals,
+        pricing_metal_weights: normalized.weights,
+      };
+    });
+  }, [metalOptions.length, metalOptions.map(m => m.slug).join('|')]);
+
   const fetchProductCategories = async () => {
     const { data: categories, error: catError } = await supabase
       .from('product_categories')
@@ -324,7 +373,7 @@ export default function AdminProductForm() {
       const normalizedPricingMetals = resolvedPricingMetals.length > 0
         ? resolvedPricingMetals
         : fallbackMetals;
-      const uniquePricingMetals = Array.from(new Set(normalizedPricingMetals));
+      const normalized = normalizePricingMetals(normalizedPricingMetals, resolvedMetalWeights);
       const diamondQualities = Array.isArray(pricingOptions.diamond_qualities)
         ? pricingOptions.diamond_qualities
             .filter((q: any) => q && typeof q.label === 'string')
@@ -369,8 +418,8 @@ export default function AdminProductForm() {
         diamond_cost: data.diamond_cost || 0,
         stone_cost: data.stone_cost || 0,
         stones: Array.isArray((data as any).stones) ? (data as any).stones : [],
-        pricing_metals: uniquePricingMetals,
-        pricing_metal_weights: resolvedMetalWeights,
+        pricing_metals: normalized.metals,
+        pricing_metal_weights: normalized.weights,
         diamond_qualities: diamondQualities,
         carat_weights: caratWeights,
         attributes,
@@ -926,6 +975,10 @@ export default function AdminProductForm() {
                         const metalLabel = metalOptions.find(m => m.slug === slug)?.name || slug;
                         const weightValue = Number.isFinite(formData.pricing_metal_weights[slug])
                           ? formData.pricing_metal_weights[slug]
+                          : '';
+                        const defaultMetalSlug = formData.pricing_metals[0] || formData.metal_type;
+                        const defaultMetalWeight = Number.isFinite(formData.pricing_metal_weights[defaultMetalSlug])
+                          ? formData.pricing_metal_weights[defaultMetalSlug]
                           : formData.weight_grams;
                         return (
                           <div key={slug} className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-2 items-center">
@@ -933,7 +986,7 @@ export default function AdminProductForm() {
                             <Input
                               type="number"
                               step="0.01"
-                              value={weightValue || ''}
+                              value={weightValue}
                               onChange={(e) => {
                                 const next = parseFloat(e.target.value);
                                 setFormData((prev) => {
@@ -946,14 +999,14 @@ export default function AdminProductForm() {
                                   return { ...prev, pricing_metal_weights: nextWeights };
                                 });
                               }}
-                              placeholder={String(formData.weight_grams || 0)}
+                              placeholder={String(defaultMetalWeight || 0)}
                             />
                           </div>
                         );
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Leave a weight blank to use the base metal weight.
+                      Leave a weight blank to use the default metal weight.
                     </p>
                   </div>
                 )}
@@ -1215,7 +1268,7 @@ export default function AdminProductForm() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Metal Weight (g) *</Label>
+                    <Label>Metal Weight (g)</Label>
                     <Input
                       type="number" step="0.01"
                       value={formData.weight_grams || ''}
