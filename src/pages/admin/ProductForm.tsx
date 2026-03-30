@@ -192,7 +192,7 @@ export default function AdminProductForm() {
       const nextWeights = { ...prev.pricing_metal_weights };
       if (exists) {
         delete nextWeights[slug];
-      } else if (!Number.isFinite(nextWeights[slug])) {
+      } else if (slug !== prev.metal_type && !Number.isFinite(nextWeights[slug])) {
         nextWeights[slug] = prev.weight_grams || 0;
       }
 
