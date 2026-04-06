@@ -703,6 +703,7 @@ export function ProductVariationsForm({ productId, category, productImages = [],
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Value</TableHead>
