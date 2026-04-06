@@ -178,6 +178,8 @@ export default function AdminProductForm() {
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [mediaSearch, setMediaSearch] = useState('');
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isAiScanning, setIsAiScanning] = useState(false);
+  const [metalDragIdx, setMetalDragIdx] = useState<number | null>(null);
 
   const metalOptions = metalTypes.length > 0
     ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
