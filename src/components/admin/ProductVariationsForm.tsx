@@ -110,6 +110,37 @@ export function ProductVariationsForm({ productId, category, productImages = [],
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<VariationFormData>(defaultFormData);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  // Local ordered list for drag reorder (order is visual only, persisted via display_order if needed)
+  const [orderedVariations, setOrderedVariations] = useState(variations);
+  useEffect(() => { setOrderedVariations(variations); }, [variations]);
+
+  const handleRowDragStart = useCallback((e: React.DragEvent, idx: number) => {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }, []);
+
+  const handleRowDragEnd = useCallback(() => {
+    setDragIdx(null);
+    setDragOverIdx(null);
+  }, []);
+
+  const handleRowDrop = useCallback((e: React.DragEvent, toIdx: number) => {
+    e.preventDefault();
+    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (isNaN(fromIdx) || fromIdx === toIdx) { setDragOverIdx(null); setDragIdx(null); return; }
+    setOrderedVariations(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+    setDragOverIdx(null);
+    setDragIdx(null);
+  }, []);
 
   const hasSizes = SIZE_OPTIONS[category] !== undefined;
   const sizeOptions = SIZE_OPTIONS[category] || [];
