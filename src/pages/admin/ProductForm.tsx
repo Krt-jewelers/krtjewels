@@ -1529,7 +1529,31 @@ export default function AdminProductForm() {
           <TabsContent value="images" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Product Images</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Product Images</span>
+                  {formData.images.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAiScan}
+                      disabled={isAiScanning}
+                      className="gap-2"
+                    >
+                      {isAiScanning ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-4 h-4" />
+                      )}
+                      {isAiScanning ? 'Scanning...' : 'AI Auto-Fill Details'}
+                    </Button>
+                  )}
+                </CardTitle>
+                {formData.images.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Upload images then click "AI Auto-Fill Details" to auto-generate product name, slug, and descriptions.
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
