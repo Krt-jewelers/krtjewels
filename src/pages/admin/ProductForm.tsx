@@ -595,7 +595,53 @@ export default function AdminProductForm() {
     setMediaDialogOpen(false);
   };
 
-  if (isFetching) {
+  const handleAiScan = async () => {
+    if (formData.images.length === 0) {
+      toast({ title: 'No images', description: 'Upload product images first, then use AI scan.', variant: 'destructive' });
+      return;
+    }
+    setIsAiScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-product-scan', {
+        body: { imageUrls: formData.images.slice(0, 5) },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        slug: data.slug || prev.slug,
+        short_description: data.short_description || prev.short_description,
+        description: data.description || prev.description,
+      }));
+      toast({ title: '✨ AI Generated!', description: 'Product name, slug, and descriptions filled. Review and adjust as needed.' });
+    } catch (err: any) {
+      toast({ title: 'AI Scan Failed', description: err.message || 'Could not analyze images', variant: 'destructive' });
+    } finally {
+      setIsAiScanning(false);
+    }
+  };
+
+  const handleMetalWeightDragStart = (e: React.DragEvent, idx: number) => {
+    setMetalDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleMetalWeightDrop = (e: React.DragEvent, toIdx: number) => {
+    e.preventDefault();
+    const fromIdx = metalDragIdx ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (fromIdx === toIdx || isNaN(fromIdx)) return;
+    setFormData((prev) => {
+      const next = [...prev.pricing_metals];
+      const [removed] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, removed);
+      return { ...prev, pricing_metals: next };
+    });
+    setMetalDragIdx(null);
+  };
+
+
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-20">
