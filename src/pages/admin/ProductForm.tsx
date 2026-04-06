@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus, Search, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Package, Settings, Sparkles, Image as ImageIcon, Plus, Search, CheckCircle, GripVertical, Wand2 } from 'lucide-react';
 
 interface MenuCategory {
   id: string;
@@ -178,6 +178,8 @@ export default function AdminProductForm() {
   const [mediaDialogOpen, setMediaDialogOpen] = useState(false);
   const [mediaSearch, setMediaSearch] = useState('');
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isAiScanning, setIsAiScanning] = useState(false);
+  const [metalDragIdx, setMetalDragIdx] = useState<number | null>(null);
 
   const metalOptions = metalTypes.length > 0
     ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
@@ -593,6 +595,52 @@ export default function AdminProductForm() {
     setMediaDialogOpen(false);
   };
 
+  const handleAiScan = async () => {
+    if (formData.images.length === 0) {
+      toast({ title: 'No images', description: 'Upload product images first, then use AI scan.', variant: 'destructive' });
+      return;
+    }
+    setIsAiScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-product-scan', {
+        body: { imageUrls: formData.images.slice(0, 5) },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setFormData((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        slug: data.slug || prev.slug,
+        short_description: data.short_description || prev.short_description,
+        description: data.description || prev.description,
+      }));
+      toast({ title: '✨ AI Generated!', description: 'Product name, slug, and descriptions filled. Review and adjust as needed.' });
+    } catch (err: any) {
+      toast({ title: 'AI Scan Failed', description: err.message || 'Could not analyze images', variant: 'destructive' });
+    } finally {
+      setIsAiScanning(false);
+    }
+  };
+
+  const handleMetalWeightDragStart = (e: React.DragEvent, idx: number) => {
+    setMetalDragIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  };
+
+  const handleMetalWeightDrop = (e: React.DragEvent, toIdx: number) => {
+    e.preventDefault();
+    const fromIdx = metalDragIdx ?? parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (fromIdx === toIdx || isNaN(fromIdx)) return;
+    setFormData((prev) => {
+      const next = [...prev.pricing_metals];
+      const [removed] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, removed);
+      return { ...prev, pricing_metals: next };
+    });
+    setMetalDragIdx(null);
+  };
+
   if (isFetching) {
     return (
       <AdminLayout>
@@ -969,9 +1017,9 @@ export default function AdminProductForm() {
 
                 {formData.pricing_metals.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Metal Weights (g)</Label>
-                    <div className="space-y-2">
-                      {formData.pricing_metals.map((slug) => {
+                    <Label>Metal Weights (g) <span className="text-xs text-muted-foreground font-normal ml-1">— drag to reorder</span></Label>
+                    <div className="space-y-1">
+                      {formData.pricing_metals.map((slug, idx) => {
                         const metalLabel = metalOptions.find(m => m.slug === slug)?.name || slug;
                         const weightValue = Number.isFinite(formData.pricing_metal_weights[slug])
                           ? formData.pricing_metal_weights[slug]
@@ -981,7 +1029,15 @@ export default function AdminProductForm() {
                           ? formData.pricing_metal_weights[defaultMetalSlug]
                           : formData.weight_grams;
                         return (
-                          <div key={slug} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-2 items-center">
+                          <div
+                            key={slug}
+                            draggable
+                            onDragStart={(e) => handleMetalWeightDragStart(e, idx)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => handleMetalWeightDrop(e, idx)}
+                            className={`grid grid-cols-1 md:grid-cols-[auto_2fr_1fr_auto] gap-2 items-center p-2 rounded-md border border-transparent transition-colors ${metalDragIdx === idx ? 'opacity-50 border-dashed border-primary' : 'hover:bg-muted/50'}`}
+                          >
+                            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab shrink-0" />
                             <span className="text-sm text-muted-foreground">{metalLabel}</span>
                             <Input
                               type="number"
@@ -1473,7 +1529,31 @@ export default function AdminProductForm() {
           <TabsContent value="images" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Product Images</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Product Images</span>
+                  {formData.images.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAiScan}
+                      disabled={isAiScanning}
+                      className="gap-2"
+                    >
+                      {isAiScanning ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-4 h-4" />
+                      )}
+                      {isAiScanning ? 'Scanning...' : 'AI Auto-Fill Details'}
+                    </Button>
+                  )}
+                </CardTitle>
+                {formData.images.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Upload images then click "AI Auto-Fill Details" to auto-generate product name, slug, and descriptions.
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2 mb-4">
