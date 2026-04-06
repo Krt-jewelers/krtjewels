@@ -715,8 +715,24 @@ export function ProductVariationsForm({ productId, category, productImages = [],
               </TableRow>
             </TableHeader>
             <TableBody>
-              {variations.map((variation) => (
-                <TableRow key={variation.id}>
+              {orderedVariations.map((variation, idx) => (
+                <TableRow
+                  key={variation.id}
+                  draggable
+                  onDragStart={(e) => handleRowDragStart(e, idx)}
+                  onDragEnd={handleRowDragEnd}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverIdx(idx); }}
+                  onDragLeave={() => setDragOverIdx(null)}
+                  onDrop={(e) => handleRowDrop(e, idx)}
+                  className={cn(
+                    'transition-all',
+                    dragOverIdx === idx && dragIdx !== idx && 'bg-primary/10 border-primary',
+                    dragIdx === idx && 'opacity-40'
+                  )}
+                >
+                  <TableCell className="cursor-grab active:cursor-grabbing px-2">
+                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  </TableCell>
                   <TableCell>
                     {variation.image_url ? (
                       <img src={variation.image_url} alt="" className="w-10 h-10 rounded object-cover border border-border" />
