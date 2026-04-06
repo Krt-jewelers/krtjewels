@@ -1,9 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Loader2, Plus, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
@@ -12,15 +11,13 @@ interface ImageUploadProps {
   maxImages?: number;
 }
 
-export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUploadProps) {
+export function ImageUpload({ images, onImagesChange, maxImages = 20 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  const uploadImage = async (file: File) => {
-    return await uploadToCloudinary(file, 'products');
-  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -41,61 +38,74 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
 
     try {
       const uploadedUrls: string[] = [];
-      
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Validate file type
         if (!file.type.startsWith('image/')) {
-          toast({
-            title: 'Invalid file type',
-            description: `${file.name} is not an image file`,
-            variant: 'destructive',
-          });
+          toast({ title: 'Invalid file type', description: `${file.name} is not an image`, variant: 'destructive' });
           continue;
         }
-
-
-        const url = await uploadImage(file);
+        const url = await uploadToCloudinary(file, 'products');
         uploadedUrls.push(url);
         setUploadProgress(((i + 1) / files.length) * 100);
       }
 
       if (uploadedUrls.length > 0) {
         onImagesChange([...images, ...uploadedUrls]);
-        toast({
-          title: 'Upload successful',
-          description: `${uploadedUrls.length} image(s) uploaded`,
-        });
+        toast({ title: 'Upload successful', description: `${uploadedUrls.length} image(s) uploaded` });
       }
     } catch (error: any) {
       console.error('Upload error:', error);
-      toast({
-        title: 'Upload failed',
-        description: error.message || 'Failed to upload images',
-        variant: 'destructive',
-      });
+      toast({ title: 'Upload failed', description: error.message || 'Failed to upload images', variant: 'destructive' });
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const removeImage = async (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    onImagesChange(newImages);
+  const removeImage = (index: number) => {
+    onImagesChange(images.filter((_, i) => i !== index));
   };
 
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= images.length) return;
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    setDraggingIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    // Make the drag image slightly transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    setDraggingIndex(null);
+    setDragOverIndex(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (isNaN(fromIndex) || fromIndex === toIndex) {
+      setDragOverIndex(null);
+      setDraggingIndex(null);
+      return;
+    }
     const newImages = [...images];
     const [removed] = newImages.splice(fromIndex, 1);
     newImages.splice(toIndex, 0, removed);
     onImagesChange(newImages);
-  };
+    setDragOverIndex(null);
+    setDraggingIndex(null);
+  }, [images, onImagesChange]);
 
   return (
     <div className="space-y-4">
@@ -115,16 +125,12 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
           onChange={handleFileSelect}
           className="hidden"
         />
-        
         {isUploading ? (
           <div className="space-y-3">
             <Loader2 className="w-10 h-10 mx-auto text-primary animate-spin" />
             <p className="text-sm text-muted-foreground">Uploading... {Math.round(uploadProgress)}%</p>
             <div className="w-full max-w-xs mx-auto bg-secondary rounded-full h-2">
-              <div
-                className="bg-primary h-2 rounded-full transition-all"
-                style={{ width: `${uploadProgress}%` }}
-              />
+              <div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
             </div>
           </div>
         ) : (
@@ -133,43 +139,34 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
               <Upload className="w-6 h-6 text-muted-foreground" />
             </div>
             <p className="text-sm font-medium">Click to upload images</p>
-            <p className="text-xs text-muted-foreground">
-              PNG, JPG, WEBP • Auto-compressed • Max {maxImages} images
-            </p>
+            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP • Auto-compressed • Max {maxImages} images</p>
           </div>
         )}
       </div>
 
-      {/* Image Grid */}
+      {/* Image Grid - Drag & Drop */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {images.map((url, index) => (
             <div
-              key={index}
+              key={`${url}-${index}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={() => setDragOverIndex(null)}
+              onDrop={(e) => handleDrop(e, index)}
               className={cn(
-                'relative group aspect-square rounded-lg overflow-hidden border-2',
-                index === 0 ? 'border-primary' : 'border-transparent'
+                'relative group aspect-square rounded-lg overflow-hidden border-2 cursor-grab active:cursor-grabbing transition-all duration-200',
+                index === 0 ? 'border-primary' : 'border-transparent',
+                dragOverIndex === index && draggingIndex !== index && 'border-primary ring-2 ring-primary/40 scale-[1.03]',
+                draggingIndex === index && 'opacity-50 scale-95'
               )}
             >
-              <img
-                src={url}
-                alt={`Product ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-rich-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                {index > 0 && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="secondary"
-                    className="w-8 h-8"
-                    onClick={(e) => { e.stopPropagation(); moveImage(index, index - 1); }}
-                  >
-                    ←
-                  </Button>
-                )}
+              <img src={url} alt={`Product ${index + 1}`} className="w-full h-full object-cover pointer-events-none" />
+
+              {/* Delete overlay */}
+              <div className="absolute inset-0 bg-rich-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Button
                   type="button"
                   size="icon"
@@ -179,17 +176,6 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
                 >
                   <X className="w-4 h-4" />
                 </Button>
-                {index < images.length - 1 && (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="secondary"
-                    className="w-8 h-8"
-                    onClick={(e) => { e.stopPropagation(); moveImage(index, index + 1); }}
-                  >
-                    →
-                  </Button>
-                )}
               </div>
 
               {/* Primary badge */}
@@ -198,9 +184,14 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
                   Primary
                 </span>
               )}
+
+              {/* Drag hint */}
+              <div className="absolute bottom-1 right-1 opacity-0 group-hover:opacity-70 transition-opacity">
+                <span className="text-[10px] bg-background/80 text-foreground px-1.5 py-0.5 rounded">drag</span>
+              </div>
             </div>
           ))}
-          
+
           {/* Add more button */}
           {images.length < maxImages && (
             <button
@@ -215,7 +206,7 @@ export function ImageUpload({ images, onImagesChange, maxImages = 10 }: ImageUpl
       )}
 
       <p className="text-xs text-muted-foreground">
-        First image will be used as the primary product image. Drag to reorder.
+        First image is primary. Drag images to reorder positions.
       </p>
     </div>
   );

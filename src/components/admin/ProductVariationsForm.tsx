@@ -29,7 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Plus, Trash2, Edit, Loader2, Sparkles, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Edit, Loader2, Sparkles, ImageIcon, GripVertical } from 'lucide-react';
 import { VariationImageUpload } from './VariationImageUpload';
 import {
   useProductVariations,
