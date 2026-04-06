@@ -1017,9 +1017,9 @@ export default function AdminProductForm() {
 
                 {formData.pricing_metals.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Metal Weights (g)</Label>
-                    <div className="space-y-2">
-                      {formData.pricing_metals.map((slug) => {
+                    <Label>Metal Weights (g) <span className="text-xs text-muted-foreground font-normal ml-1">— drag to reorder</span></Label>
+                    <div className="space-y-1">
+                      {formData.pricing_metals.map((slug, idx) => {
                         const metalLabel = metalOptions.find(m => m.slug === slug)?.name || slug;
                         const weightValue = Number.isFinite(formData.pricing_metal_weights[slug])
                           ? formData.pricing_metal_weights[slug]
@@ -1029,7 +1029,15 @@ export default function AdminProductForm() {
                           ? formData.pricing_metal_weights[defaultMetalSlug]
                           : formData.weight_grams;
                         return (
-                          <div key={slug} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_auto] gap-2 items-center">
+                          <div
+                            key={slug}
+                            draggable
+                            onDragStart={(e) => handleMetalWeightDragStart(e, idx)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => handleMetalWeightDrop(e, idx)}
+                            className={`grid grid-cols-1 md:grid-cols-[auto_2fr_1fr_auto] gap-2 items-center p-2 rounded-md border border-transparent transition-colors ${metalDragIdx === idx ? 'opacity-50 border-dashed border-primary' : 'hover:bg-muted/50'}`}
+                          >
+                            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab shrink-0" />
                             <span className="text-sm text-muted-foreground">{metalLabel}</span>
                             <Input
                               type="number"
