@@ -641,7 +641,7 @@ export default function AdminProductForm() {
     setMetalDragIdx(null);
   };
 
-
+  if (isFetching) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center py-20">
