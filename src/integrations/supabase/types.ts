@@ -1728,6 +1728,39 @@ export type Database = {
         }
         Relationships: []
       }
+      size_charts: {
+        Row: {
+          category: string
+          chart_data: Json
+          column_headers: Json
+          created_at: string
+          guide_image_url: string | null
+          id: string
+          instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          chart_data?: Json
+          column_headers?: Json
+          created_at?: string
+          guide_image_url?: string | null
+          id?: string
+          instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          chart_data?: Json
+          column_headers?: Json
+          created_at?: string
+          guide_image_url?: string | null
+          id?: string
+          instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           address: string

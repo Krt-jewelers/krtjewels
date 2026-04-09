@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { SizeGuideDialog } from '@/components/product/SizeGuideDialog';
 import { 
   METAL_TYPE_NAMES, 
   CATEGORY_SIZE_OPTIONS,
@@ -813,48 +814,14 @@ export function ProductVariantSelector({
             ))}
           </div>
           
-          {/* Size Guide Collapsible */}
-          <Collapsible open={isSizeGuideOpen} onOpenChange={setIsSizeGuideOpen}>
-            <CollapsibleContent className="mt-4">
-              <div className="bg-secondary/50 rounded-xl p-4 text-sm text-muted-foreground">
-                {category === 'rings' && (
-                  <div>
-                    <p className="font-medium text-foreground mb-2">Ring Size Guide</p>
-                    <p>Measure the inside diameter of a ring that fits you, then match it to our size chart.</p>
-                  </div>
-                )}
-                {category === 'bangles' && (
-                  <div>
-                    <p className="font-medium text-foreground mb-2">Bangle Size Guide</p>
-                    <p>Measure your hand at its widest point (knuckles) with your thumb tucked in.</p>
-                  </div>
-                )}
-                {(category === 'necklaces' || category === 'chains') && (
-                  <div>
-                    <p className="font-medium text-foreground mb-2">Chain Length Guide</p>
-                    <ul className="space-y-1">
-                      <li>16" - Choker length</li>
-                      <li>18" - Princess length, most popular</li>
-                      <li>20-22" - Matinee length</li>
-                      <li>24-30" - Opera length</li>
-                    </ul>
-                  </div>
-                )}
-                {category === 'bracelets' && (
-                  <div>
-                    <p className="font-medium text-foreground mb-2">Bracelet Size Guide</p>
-                    <p>Measure your wrist and add 0.5" to 1" for comfort.</p>
-                  </div>
-                )}
-                {!['rings', 'bangles', 'necklaces', 'chains', 'bracelets'].includes(category) && (
-                  <div>
-                    <p className="font-medium text-foreground mb-2">Size Information</p>
-                    <p>Contact us for detailed sizing information.</p>
-                  </div>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Size Guide Dialog */}
+          <SizeGuideDialog
+            open={isSizeGuideOpen}
+            onOpenChange={setIsSizeGuideOpen}
+            category={category}
+            selectedSize={selectedSize}
+            onSelectSize={(size) => setSelectedSize(size)}
+          />
         </div>
       )}
 
