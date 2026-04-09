@@ -245,18 +245,28 @@ export default function AdminSizeCharts() {
                       />
                     </div>
 
-                    {/* Guide Image URL */}
+                    {/* Guide File URL */}
                     <div>
-                      <Label className="text-sm font-medium">Size Guide Image URL (for PDF download)</Label>
+                      <Label className="text-sm font-medium">Size Guide PDF / Image URL</Label>
                       <Input
                         value={e.guide_image_url}
                         onChange={ev => updateEdit(cat, { guide_image_url: ev.target.value })}
-                        placeholder="https://... or /images/ring-size-guide.png"
+                        placeholder="/guides/ring-size-guide.pdf or https://..."
                         className="mt-1"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        This image will be shown when users click "View & Download Complete Guide"
+                        Upload a PDF to <code className="bg-muted px-1 rounded">public/guides/</code> folder and enter the path (e.g. <code className="bg-muted px-1 rounded">/guides/ring-size-guide.pdf</code>). This opens in a new tab when users click "View & Download Complete Guide".
                       </p>
+                      {e.guide_image_url && (
+                        <a
+                          href={e.guide_image_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline mt-2 inline-block"
+                        >
+                          Preview current guide →
+                        </a>
+                      )}
                     </div>
 
                     <Button onClick={() => handleSave(cat)} disabled={upsert.isPending}>
