@@ -53,6 +53,7 @@ const menuItems = [
   { name: 'Collection Banners', href: '/admin/collection-banners', icon: ImageIcon },
   { name: 'Megamenu', href: '/admin/megamenu', icon: Grid2X2 },
   { name: 'Attributes', href: '/admin/attributes', icon: Layers },
+  { name: 'Size Charts', href: '/admin/size-charts', icon: Layers },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
