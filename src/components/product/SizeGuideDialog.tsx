@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, ChevronLeft, ChevronRight, Ruler } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Ruler, ExternalLink } from 'lucide-react';
 import { useSizeChart } from '@/hooks/useSizeCharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -19,16 +19,12 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
   const [step, setStep] = useState(1);
   const totalSteps = 3;
 
-  const handleDownload = () => {
-    const imageUrl = chart?.guide_image_url || `/images/${category}-size-guide.png`;
-    // Open image in new tab for download
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `KRT-Jewellers-${category}-size-guide.png`;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const guideUrl = chart?.guide_image_url || `/guides/${category}-size-guide.pdf`;
+  const isPdf = guideUrl.toLowerCase().endsWith('.pdf');
+
+  const handleViewGuide = () => {
+    // Open in new tab so user can view/download
+    window.open(guideUrl, '_blank', 'noopener,noreferrer');
   };
 
   const getStepContent = () => {
@@ -114,13 +110,13 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
               </div>
             </div>
 
-            {/* Download Link */}
+            {/* View & Download Complete Guide */}
             <div className="text-center">
               <button
-                onClick={handleDownload}
+                onClick={handleViewGuide}
                 className="text-xs text-primary hover:underline inline-flex items-center gap-1"
               >
-                <Download className="w-3 h-3" />
+                {isPdf ? <ExternalLink className="w-3 h-3" /> : <Download className="w-3 h-3" />}
                 View & Download Complete Size Guide ›
               </button>
             </div>
