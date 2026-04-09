@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { SizeGuideDialog } from '@/components/product/SizeGuideDialog';
 import { 
   METAL_TYPE_NAMES, 
   CATEGORY_SIZE_OPTIONS,
