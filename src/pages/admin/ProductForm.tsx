@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
-import { listCloudinaryImages, type CloudinaryImage } from '@/lib/cloudinary';
+import { listCloudinaryImages, type CloudinaryImage, uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Select,
   SelectContent,
@@ -180,6 +180,9 @@ export default function AdminProductForm() {
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isAiScanning, setIsAiScanning] = useState(false);
   const [metalDragIdx, setMetalDragIdx] = useState<number | null>(null);
+  const [cadImage, setCadImage] = useState<string>('');
+  const [isCadUploading, setIsCadUploading] = useState(false);
+  const cadInputRef = useRef<HTMLInputElement>(null);
 
   const metalOptions = metalTypes.length > 0
     ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
@@ -595,26 +598,97 @@ export default function AdminProductForm() {
     setMediaDialogOpen(false);
   };
 
+  const handleCadUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    setIsCadUploading(true);
+    try {
+      const url = await uploadToCloudinary(file, 'cad-images');
+      setCadImage(url);
+      toast({ title: 'CAD image uploaded', description: 'Now click "AI Auto-Fill" to extract details.' });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsCadUploading(false);
+      if (cadInputRef.current) cadInputRef.current.value = '';
+    }
+  };
+
   const handleAiScan = async () => {
-    if (formData.images.length === 0) {
-      toast({ title: 'No images', description: 'Upload product images first, then use AI scan.', variant: 'destructive' });
+    if (formData.images.length === 0 && !cadImage) {
+      toast({ title: 'No images', description: 'Upload product images or a CAD image first.', variant: 'destructive' });
       return;
     }
     setIsAiScanning(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-product-scan', {
-        body: { imageUrls: formData.images.slice(0, 5) },
+        body: {
+          imageUrls: formData.images.slice(0, 5),
+          cadImageUrl: cadImage || null,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setFormData((prev) => ({
-        ...prev,
-        name: data.name || prev.name,
-        slug: data.slug || prev.slug,
-        short_description: data.short_description || prev.short_description,
-        description: data.description || prev.description,
-      }));
-      toast({ title: '✨ AI Generated!', description: 'Product name, slug, and descriptions filled. Review and adjust as needed.' });
+
+      setFormData((prev) => {
+        const updates: Partial<ProductFormData> = {};
+
+        // Text fields from product images
+        if (data.name) updates.name = data.name;
+        if (data.slug) updates.slug = data.slug;
+        if (data.short_description) updates.short_description = data.short_description;
+        if (data.description) updates.description = data.description;
+
+        // Metal weights from CAD image
+        if (Array.isArray(data.metal_weights) && data.metal_weights.length > 0) {
+          const newPricingMetals: string[] = [];
+          const newWeights: Record<string, number> = {};
+
+          data.metal_weights.forEach((mw: { metal_slug: string; weight_grams: number }) => {
+            const resolvedSlug = resolveMetalSlug(mw.metal_slug) || mw.metal_slug;
+            if (resolvedSlug && mw.weight_grams > 0) {
+              newPricingMetals.push(resolvedSlug);
+              newWeights[resolvedSlug] = mw.weight_grams;
+            }
+          });
+
+          if (newPricingMetals.length > 0) {
+            updates.pricing_metals = Array.from(new Set(newPricingMetals));
+            updates.pricing_metal_weights = newWeights;
+            // Set gross weight to first metal's weight
+            updates.weight_grams = newWeights[newPricingMetals[0]] || prev.weight_grams;
+
+            // Set primary metal type
+            const firstSlug = newPricingMetals[0];
+            const mt = metalTypes.find(m => m.slug === firstSlug);
+            if (mt) {
+              updates.metal_type_id = mt.id;
+            }
+            if (Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, firstSlug)) {
+              updates.metal_type = firstSlug as MetalType;
+            }
+          }
+        }
+
+        // Carat weight from CAD image
+        if (data.total_carat_weight && data.total_carat_weight > 0) {
+          const existingValues = prev.carat_weights.map(w => w.value);
+          if (!existingValues.includes(data.total_carat_weight)) {
+            updates.carat_weights = [
+              ...prev.carat_weights,
+              { value: data.total_carat_weight, is_default: prev.carat_weights.length === 0 },
+            ];
+          }
+        }
+
+        return { ...prev, ...updates };
+      });
+
+      const parts: string[] = [];
+      if (data.name) parts.push('name, slug, descriptions');
+      if (data.metal_weights?.length > 0) parts.push('metal weights');
+      if (data.total_carat_weight > 0) parts.push('carat weight');
+      toast({ title: '✨ AI Generated!', description: `Auto-filled: ${parts.join(', ')}. Review and adjust.` });
     } catch (err: any) {
       toast({ title: 'AI Scan Failed', description: err.message || 'Could not analyze images', variant: 'destructive' });
     } finally {
@@ -1525,20 +1599,24 @@ export default function AdminProductForm() {
             </Card>
           </TabsContent>
 
-          {/* Images Tab */}
           <TabsContent value="images" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Product Images</span>
-                  {formData.images.length > 0 && (
+            {/* AI Auto-Fill Button */}
+            {(formData.images.length > 0 || cadImage) && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">🤖 AI Auto-Fill</p>
+                      <p className="text-xs text-muted-foreground">
+                        Auto-generate product name, slug, descriptions from product images & extract metal weights, ct weight from CAD image.
+                      </p>
+                    </div>
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      variant="default"
                       onClick={handleAiScan}
                       disabled={isAiScanning}
-                      className="gap-2"
+                      className="gap-2 btn-premium"
                     >
                       {isAiScanning ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1547,28 +1625,103 @@ export default function AdminProductForm() {
                       )}
                       {isAiScanning ? 'Scanning...' : 'AI Auto-Fill Details'}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Product Images - 2/3 width */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Product Images</CardTitle>
+                  <CardDescription>Upload jewellery photos. First image is the primary display image.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(true)}>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Add From Media Library
+                    </Button>
+                  </div>
+                  <ImageUpload
+                    images={formData.images}
+                    onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
+                    maxImages={20}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* CAD Image - 1/3 width */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>CAD Image</CardTitle>
+                  <CardDescription>Upload the CAD specification image with metal weight details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <input
+                    ref={cadInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCadUpload}
+                    className="hidden"
+                  />
+
+                  {cadImage ? (
+                    <div className="space-y-3">
+                      <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/30">
+                        <img src={cadImage} alt="CAD specification" className="w-full h-full object-contain bg-background" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => cadInputRef.current?.click()}
+                          >
+                            Replace
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setCadImage('')}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        ✅ CAD image ready. Click "AI Auto-Fill" above to extract metal weights.
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                        isCadUploading ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-secondary/30'
+                      }`}
+                      onClick={() => !isCadUploading && cadInputRef.current?.click()}
+                    >
+                      {isCadUploading ? (
+                        <div className="space-y-2">
+                          <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
+                          <p className="text-sm text-muted-foreground">Uploading...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="w-12 h-12 rounded-full bg-secondary mx-auto flex items-center justify-center">
+                            <Wand2 className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm font-medium">Upload CAD Image</p>
+                          <p className="text-xs text-muted-foreground">
+                            Image with metal weight table (14K, 18K, 22K, etc.) and ct weight details
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </CardTitle>
-                {formData.images.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Upload images then click "AI Auto-Fill Details" to auto-generate product name, slug, and descriptions.
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(true)}>
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    Add From Media Library
-                  </Button>
-                </div>
-                <ImageUpload
-                  images={formData.images}
-                  onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
-                  maxImages={20}
-                />
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             <Dialog open={mediaDialogOpen} onOpenChange={(open) => {
               setMediaDialogOpen(open);
