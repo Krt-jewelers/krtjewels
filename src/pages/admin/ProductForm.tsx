@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUpload } from '@/components/admin/ImageUpload';
 import { ProductVariationsForm } from '@/components/admin/ProductVariationsForm';
-import { listCloudinaryImages, type CloudinaryImage } from '@/lib/cloudinary';
+import { listCloudinaryImages, type CloudinaryImage, uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Select,
   SelectContent,
