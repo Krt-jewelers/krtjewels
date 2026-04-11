@@ -598,26 +598,97 @@ export default function AdminProductForm() {
     setMediaDialogOpen(false);
   };
 
+  const handleCadUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    setIsCadUploading(true);
+    try {
+      const url = await uploadToCloudinary(file, 'cad-images');
+      setCadImage(url);
+      toast({ title: 'CAD image uploaded', description: 'Now click "AI Auto-Fill" to extract details.' });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsCadUploading(false);
+      if (cadInputRef.current) cadInputRef.current.value = '';
+    }
+  };
+
   const handleAiScan = async () => {
-    if (formData.images.length === 0) {
-      toast({ title: 'No images', description: 'Upload product images first, then use AI scan.', variant: 'destructive' });
+    if (formData.images.length === 0 && !cadImage) {
+      toast({ title: 'No images', description: 'Upload product images or a CAD image first.', variant: 'destructive' });
       return;
     }
     setIsAiScanning(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-product-scan', {
-        body: { imageUrls: formData.images.slice(0, 5) },
+        body: {
+          imageUrls: formData.images.slice(0, 5),
+          cadImageUrl: cadImage || null,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setFormData((prev) => ({
-        ...prev,
-        name: data.name || prev.name,
-        slug: data.slug || prev.slug,
-        short_description: data.short_description || prev.short_description,
-        description: data.description || prev.description,
-      }));
-      toast({ title: '✨ AI Generated!', description: 'Product name, slug, and descriptions filled. Review and adjust as needed.' });
+
+      setFormData((prev) => {
+        const updates: Partial<ProductFormData> = {};
+
+        // Text fields from product images
+        if (data.name) updates.name = data.name;
+        if (data.slug) updates.slug = data.slug;
+        if (data.short_description) updates.short_description = data.short_description;
+        if (data.description) updates.description = data.description;
+
+        // Metal weights from CAD image
+        if (Array.isArray(data.metal_weights) && data.metal_weights.length > 0) {
+          const newPricingMetals: string[] = [];
+          const newWeights: Record<string, number> = {};
+
+          data.metal_weights.forEach((mw: { metal_slug: string; weight_grams: number }) => {
+            const resolvedSlug = resolveMetalSlug(mw.metal_slug) || mw.metal_slug;
+            if (resolvedSlug && mw.weight_grams > 0) {
+              newPricingMetals.push(resolvedSlug);
+              newWeights[resolvedSlug] = mw.weight_grams;
+            }
+          });
+
+          if (newPricingMetals.length > 0) {
+            updates.pricing_metals = Array.from(new Set(newPricingMetals));
+            updates.pricing_metal_weights = newWeights;
+            // Set gross weight to first metal's weight
+            updates.weight_grams = newWeights[newPricingMetals[0]] || prev.weight_grams;
+
+            // Set primary metal type
+            const firstSlug = newPricingMetals[0];
+            const mt = metalTypes.find(m => m.slug === firstSlug);
+            if (mt) {
+              updates.metal_type_id = mt.id;
+            }
+            if (Object.prototype.hasOwnProperty.call(METAL_TYPE_NAMES, firstSlug)) {
+              updates.metal_type = firstSlug as MetalType;
+            }
+          }
+        }
+
+        // Carat weight from CAD image
+        if (data.total_carat_weight && data.total_carat_weight > 0) {
+          const existingValues = prev.carat_weights.map(w => w.value);
+          if (!existingValues.includes(data.total_carat_weight)) {
+            updates.carat_weights = [
+              ...prev.carat_weights,
+              { value: data.total_carat_weight, is_default: prev.carat_weights.length === 0 },
+            ];
+          }
+        }
+
+        return { ...prev, ...updates };
+      });
+
+      const parts: string[] = [];
+      if (data.name) parts.push('name, slug, descriptions');
+      if (data.metal_weights?.length > 0) parts.push('metal weights');
+      if (data.total_carat_weight > 0) parts.push('carat weight');
+      toast({ title: '✨ AI Generated!', description: `Auto-filled: ${parts.join(', ')}. Review and adjust.` });
     } catch (err: any) {
       toast({ title: 'AI Scan Failed', description: err.message || 'Could not analyze images', variant: 'destructive' });
     } finally {
