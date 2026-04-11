@@ -1599,20 +1599,24 @@ export default function AdminProductForm() {
             </Card>
           </TabsContent>
 
-          {/* Images Tab */}
           <TabsContent value="images" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Product Images</span>
-                  {formData.images.length > 0 && (
+            {/* AI Auto-Fill Button */}
+            {(formData.images.length > 0 || cadImage) && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">🤖 AI Auto-Fill</p>
+                      <p className="text-xs text-muted-foreground">
+                        Auto-generate product name, slug, descriptions from product images & extract metal weights, ct weight from CAD image.
+                      </p>
+                    </div>
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
+                      variant="default"
                       onClick={handleAiScan}
                       disabled={isAiScanning}
-                      className="gap-2"
+                      className="gap-2 btn-premium"
                     >
                       {isAiScanning ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1621,28 +1625,103 @@ export default function AdminProductForm() {
                       )}
                       {isAiScanning ? 'Scanning...' : 'AI Auto-Fill Details'}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Product Images - 2/3 width */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Product Images</CardTitle>
+                  <CardDescription>Upload jewellery photos. First image is the primary display image.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(true)}>
+                      <ImageIcon className="w-4 h-4 mr-2" />
+                      Add From Media Library
+                    </Button>
+                  </div>
+                  <ImageUpload
+                    images={formData.images}
+                    onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
+                    maxImages={20}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* CAD Image - 1/3 width */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>CAD Image</CardTitle>
+                  <CardDescription>Upload the CAD specification image with metal weight details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <input
+                    ref={cadInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCadUpload}
+                    className="hidden"
+                  />
+
+                  {cadImage ? (
+                    <div className="space-y-3">
+                      <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-primary/30">
+                        <img src={cadImage} alt="CAD specification" className="w-full h-full object-contain bg-background" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => cadInputRef.current?.click()}
+                          >
+                            Replace
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => setCadImage('')}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        ✅ CAD image ready. Click "AI Auto-Fill" above to extract metal weights.
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                        isCadUploading ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-secondary/30'
+                      }`}
+                      onClick={() => !isCadUploading && cadInputRef.current?.click()}
+                    >
+                      {isCadUploading ? (
+                        <div className="space-y-2">
+                          <Loader2 className="w-8 h-8 mx-auto text-primary animate-spin" />
+                          <p className="text-sm text-muted-foreground">Uploading...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="w-12 h-12 rounded-full bg-secondary mx-auto flex items-center justify-center">
+                            <Wand2 className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm font-medium">Upload CAD Image</p>
+                          <p className="text-xs text-muted-foreground">
+                            Image with metal weight table (14K, 18K, 22K, etc.) and ct weight details
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
-                </CardTitle>
-                {formData.images.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Upload images then click "AI Auto-Fill Details" to auto-generate product name, slug, and descriptions.
-                  </p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Button type="button" variant="outline" onClick={() => setMediaDialogOpen(true)}>
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    Add From Media Library
-                  </Button>
-                </div>
-                <ImageUpload
-                  images={formData.images}
-                  onImagesChange={(images) => setFormData((prev) => ({ ...prev, images }))}
-                  maxImages={20}
-                />
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             <Dialog open={mediaDialogOpen} onOpenChange={(open) => {
               setMediaDialogOpen(open);
