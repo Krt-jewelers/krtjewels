@@ -180,6 +180,9 @@ export default function AdminProductForm() {
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isAiScanning, setIsAiScanning] = useState(false);
   const [metalDragIdx, setMetalDragIdx] = useState<number | null>(null);
+  const [cadImage, setCadImage] = useState<string>('');
+  const [isCadUploading, setIsCadUploading] = useState(false);
+  const cadInputRef = useRef<HTMLInputElement>(null);
 
   const metalOptions = metalTypes.length > 0
     ? metalTypes.map(mt => ({ id: mt.id, slug: mt.slug, name: mt.name }))
