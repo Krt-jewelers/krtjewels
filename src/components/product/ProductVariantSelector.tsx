@@ -857,14 +857,10 @@ export function ProductVariantSelector({
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    {cert.imageUrl ? (
+                    {cert.imageUrl && (
                       <img src={cert.imageUrl} alt={cert.label} className="w-8 h-8 object-contain" />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-secondary/40 flex items-center justify-center text-[10px]">
-                        {cert.label.slice(0, 3).toUpperCase()}
-                      </div>
                     )}
-                    <span className="text-[10px] font-medium">{cert.label}</span>
+                    <span className="text-xs font-medium">{cert.label}</span>
                   </div>
                   {cert.priceAdjustment !== 0 && (
                     <span className="text-[10px] text-muted-foreground">
@@ -917,15 +913,11 @@ export function ProductVariantSelector({
                     selected ? 'border-primary shadow-md' : 'border-border hover:border-primary/50'
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    {opt.imageUrl ? (
+                <div className="flex items-center gap-2">
+                    {opt.imageUrl && (
                       <img src={opt.imageUrl} alt={opt.label} className="w-8 h-8 object-contain" />
-                    ) : (
-                      <div className="w-8 h-8 rounded bg-secondary/40 flex items-center justify-center text-[10px]">
-                        {opt.label.slice(0, 3).toUpperCase()}
-                      </div>
                     )}
-                    <span className="text-[10px] font-medium">{opt.label}</span>
+                    <span className="text-xs font-medium">{opt.label}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {opt.priceAdjustment === 0 && isEngraving && (

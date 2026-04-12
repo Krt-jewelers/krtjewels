@@ -87,7 +87,9 @@ export function CategoryCarousel() {
   }, []);
 
   useEffect(() => {
-    if (!isAutoPlaying || !showArrows) return;
+    // Disable auto-scrolling on mobile/touch devices to allow natural swipe
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isAutoPlaying || !showArrows || isTouchDevice) return;
 
     autoPlayRef.current = setInterval(() => {
       scroll('right');
