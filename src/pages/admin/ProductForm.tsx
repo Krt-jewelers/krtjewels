@@ -503,7 +503,7 @@ export default function AdminProductForm() {
         slug: formData.slug,
         description: formData.description || null,
         short_description: formData.short_description || null,
-        category: legacyCategory,
+        category: legacyCategory as any,
         product_category_id: formData.category_id || null,
         product_subcategory_id: formData.subcategory_id || null,
         metal_type: formData.metal_type,
