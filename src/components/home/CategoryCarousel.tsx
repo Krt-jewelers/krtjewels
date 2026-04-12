@@ -87,7 +87,9 @@ export function CategoryCarousel() {
   }, []);
 
   useEffect(() => {
-    if (!isAutoPlaying || !showArrows) return;
+    // Disable auto-scrolling on mobile/touch devices to allow natural swipe
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isAutoPlaying || !showArrows || isTouchDevice) return;
 
     autoPlayRef.current = setInterval(() => {
       scroll('right');
@@ -124,12 +126,18 @@ export function CategoryCarousel() {
             onTouchStart={handleInteractionStart}
             onTouchEnd={handleInteractionEnd}
             className={cn(
-              'flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory touch-pan-y',
+              'flex gap-4 sm:gap-3 overflow-x-auto scrollbar-hide px-4 md:px-6 snap-x snap-mandatory',
               showArrows
                 ? 'lg:flex-nowrap lg:justify-evenly lg:gap-0 lg:overflow-x-auto'
                 : 'lg:flex-nowrap lg:justify-between lg:gap-3 lg:overflow-visible lg:px-1'
             )}
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+            style={{ 
+              scrollbarWidth: 'none', 
+              msOverflowStyle: 'none', 
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehaviorX: 'contain',
+              touchAction: 'pan-x',
+            }}
           >
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
