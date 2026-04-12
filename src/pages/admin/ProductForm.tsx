@@ -478,11 +478,32 @@ export default function AdminProductForm() {
     try {
       // Auto-calculate stone_cost from stones array
       const calculatedStoneCost = formData.stones.reduce((sum, s) => sum + (s.carat_weight * s.per_carat_price * s.quantity), 0);
+
+      // Auto-resolve legacy category enum from product_category_id
+      const categorySlugMap: Record<string, string> = {};
+      productCategories.forEach(cat => { categorySlugMap[cat.id] = cat.slug; });
+      const resolvedCategorySlug = formData.category_id ? (categorySlugMap[formData.category_id] || null) : null;
+      // Map product_categories slug to legacy enum value
+      const slugToEnumMap: Record<string, string> = {
+        rings: 'rings',
+        earrings: 'earrings',
+        necklaces: 'necklaces',
+        bangles: 'bangles',
+        bracelets: 'bracelets',
+        chains: 'chains',
+        pendants: 'pendants',
+        engagement: 'wedding_sets',
+        collections: 'diamond_jewellery',
+        gifts: 'mens_jewellery',
+      };
+      const legacyCategory = resolvedCategorySlug ? (slugToEnumMap[resolvedCategorySlug] || null) : null;
+
       const productData = {
         name: formData.name,
         slug: formData.slug,
         description: formData.description || null,
         short_description: formData.short_description || null,
+        category: legacyCategory,
         product_category_id: formData.category_id || null,
         product_subcategory_id: formData.subcategory_id || null,
         metal_type: formData.metal_type,
