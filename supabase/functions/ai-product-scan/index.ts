@@ -46,22 +46,20 @@ From the PRODUCT IMAGES (the jewellery photos), generate:
 4. A detailed full description (2-3 paragraphs, highlighting craftsmanship, design, occasion, metal details)
 
 From the CAD IMAGE (the technical specification image with metal weights table), extract:
-5. Metal weights in grams for each purity listed (look for values like 14K, 18K, 22K, 9K, Sterling Silver 925, etc. and their corresponding weights in grams)
+5. Metal weights in grams ONLY for these 4 purities: 14K, 18K, 22K, and Sterling Silver 925. IGNORE all other metals (9K, 10K, 24K, Platinum, etc.)
 6. Total carat weight (ct weight) of diamonds/stones if shown
-7. Which metal purities are available (only include metals that have weight data in the CAD image)
 
-The CAD image typically shows a table with columns like "14K", "18K", "22K" etc. and rows with weight values in grams. Extract the NET WEIGHT or METAL WEIGHT row values for each purity.
+IMPORTANT: Do NOT include any metal type other than 14K, 18K, 22K, and Sterling Silver 925. Skip 9K, 10K, 24K, Platinum, and any other metals even if they appear in the CAD image.
 
 Focus on: jewellery type, design style, visible stones or patterns.`;
     } else if (hasCadImage) {
       userPrompt = `Analyze this CAD specification image for a jewellery product.
 
-From the CAD IMAGE (the technical specification image with metal weights table), extract:
-1. Metal weights in grams for each purity listed (look for values like 14K, 18K, 22K, 9K, Sterling Silver 925, etc.)
+From the CAD IMAGE, extract:
+1. Metal weights in grams ONLY for these 4 purities: 14K, 18K, 22K, and Sterling Silver 925. IGNORE all other metals (9K, 10K, 24K, Platinum, etc.)
 2. Total carat weight (ct weight) of diamonds/stones if shown
-3. Which metal purities are available
 
-The CAD image typically shows a table with columns like "14K", "18K", "22K" etc. and rows with weight values in grams. Extract the NET WEIGHT or METAL WEIGHT row values for each purity.`;
+IMPORTANT: Do NOT include any metal type other than 14K, 18K, 22K, and Sterling Silver 925. Skip 9K, 10K, 24K, Platinum, and any other metals even if they appear in the CAD image.`;
     } else {
       userPrompt = `Analyze these jewellery product images and generate:
 1. A compelling product name (e.g. "Radiant Temple Gold Necklace")
@@ -90,7 +88,8 @@ Focus on: jewellery type (ring, necklace, bangle, earring, etc.), design style (
           properties: {
             metal_slug: {
               type: "string",
-              description: "Metal purity slug. Use exactly these values: 'gold_9k', 'gold_14k', 'gold_18k', 'gold_22k', 'gold_24k', 'sterling_silver_925', 'platinum_950'. Map 9K/9kt to gold_9k, 14K/14kt to gold_14k, 18K/18kt to gold_18k, 22K/22kt to gold_22k, 24K/24kt to gold_24k, Sterling Silver/925 to sterling_silver_925, Platinum/950 to platinum_950."
+              enum: ["gold_14k", "gold_18k", "gold_22k", "sterling_silver_925"],
+              description: "Metal purity slug. ONLY these 4 values allowed: 'gold_14k', 'gold_18k', 'gold_22k', 'sterling_silver_925'. Do NOT return any other metal types."
             },
             weight_grams: {
               type: "number",
