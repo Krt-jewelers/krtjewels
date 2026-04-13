@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, Youtube, ExternalLink } from 'lucide-react';
+import { FoundifCredit } from './FoundifCredit';
 
 const collections = [
   { name: 'Necklaces', href: '/collections/necklaces' },
@@ -191,6 +192,7 @@ export function Footer() {
             <p className="text-ivory/40 text-sm">
               © {new Date().getFullYear()} KRT JEWELLERS. All rights reserved.
             </p>
+            <FoundifCredit />
             
             {/* Social Links */}
             <div className="flex items-center gap-4">
