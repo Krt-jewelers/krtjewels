@@ -189,16 +189,41 @@ export default function AdminProductForm() {
     : Object.entries(METAL_TYPE_NAMES).map(([slug, name]) => ({ id: slug, slug, name }));
 
   const normalizeMetalToken = (value: string) =>
-    value.toLowerCase().replace(/\s+/g, '').replace(/gold/g, '');
+    value.toLowerCase().replace(/[_\s-]+/g, '').replace(/gold/g, '');
 
-  const resolveMetalSlug = (value?: string | null) => {
+  // Map AI-returned slugs to human-readable search terms for matching against system metal names
+  const AI_SLUG_NAME_MAP: Record<string, string[]> = {
+    'gold_14k': ['14k', '14 karat'],
+    'gold_18k': ['18k', '18 karat'],
+    'gold_22k': ['22k', '22 karat'],
+    'sterling_silver_925': ['sterling silver', 'silver 925', 'sterling'],
+  };
+
+  const resolveMetalSlug = (value?: string | null): string | null => {
     if (!value) return null;
-    const direct = metalOptions.find(m => m.slug.toLowerCase() === value.toLowerCase());
+    const lowerVal = value.toLowerCase();
+
+    // 1. Direct slug match
+    const direct = metalOptions.find(m => m.slug.toLowerCase() === lowerVal);
     if (direct) return direct.slug;
+
+    // 2. Normalized token match against metal names
     const normalizedValue = normalizeMetalToken(value);
     const byName = metalOptions.find(m => normalizeMetalToken(m.name) === normalizedValue);
     if (byName) return byName.slug;
-    return value;
+
+    // 3. AI slug → system metal name fuzzy match
+    const searchTerms = AI_SLUG_NAME_MAP[lowerVal];
+    if (searchTerms) {
+      const matched = metalOptions.find(m => {
+        const metalNameLower = m.name.toLowerCase();
+        return searchTerms.some(term => metalNameLower.includes(term));
+      });
+      if (matched) return matched.slug;
+    }
+
+    // 4. Return null for unknown slugs (never return raw AI values)
+    return null;
   };
 
   const normalizePricingMetals = (metals: string[], weights: Record<string, number>) => {
