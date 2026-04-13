@@ -666,8 +666,10 @@ export default function AdminProductForm() {
           const newWeights: Record<string, number> = {};
 
           data.metal_weights.forEach((mw: { metal_slug: string; weight_grams: number }) => {
-            const resolvedSlug = resolveMetalSlug(mw.metal_slug) || mw.metal_slug;
-            if (resolvedSlug && mw.weight_grams > 0) {
+            const resolvedSlug = resolveMetalSlug(mw.metal_slug);
+            // Only add if the slug matches a known metal in our system
+            const isKnownMetal = resolvedSlug && metalOptions.some(m => m.slug === resolvedSlug);
+            if (isKnownMetal && mw.weight_grams > 0) {
               newPricingMetals.push(resolvedSlug);
               newWeights[resolvedSlug] = mw.weight_grams;
             }
