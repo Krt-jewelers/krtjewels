@@ -197,6 +197,7 @@ export default function AdminProductForm() {
     'gold_18k': ['18k', '18 karat'],
     'gold_22k': ['22k', '22 karat'],
     'sterling_silver_925': ['sterling silver', 'silver 925', 'sterling'],
+    'silver_925': ['sterling silver', 'silver 925', 'sterling'],
   };
 
   const resolveMetalSlug = (value?: string | null): string | null => {
