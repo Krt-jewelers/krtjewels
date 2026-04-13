@@ -197,6 +197,7 @@ export default function AdminProductForm() {
     'gold_18k': ['18k', '18 karat'],
     'gold_22k': ['22k', '22 karat'],
     'sterling_silver_925': ['sterling silver', 'silver 925', 'sterling'],
+    'silver_925': ['sterling silver', 'silver 925', 'sterling'],
   };
 
   const resolveMetalSlug = (value?: string | null): string | null => {
@@ -222,7 +223,17 @@ export default function AdminProductForm() {
       if (matched) return matched.slug;
     }
 
-    // 4. Return null for unknown slugs (never return raw AI values)
+    // 4. Partial keyword match: split AI value into tokens and check metal names
+    const tokens = lowerVal.replace(/[_\-]/g, ' ').split(/\s+/).filter(t => t.length > 1);
+    if (tokens.length > 0) {
+      const partialMatch = metalOptions.find(m => {
+        const metalNameLower = m.name.toLowerCase();
+        return tokens.every(token => metalNameLower.includes(token));
+      });
+      if (partialMatch) return partialMatch.slug;
+    }
+
+    // 5. Return null for unknown slugs (never return raw AI values)
     return null;
   };
 
