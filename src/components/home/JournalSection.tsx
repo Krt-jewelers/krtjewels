@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,6 +26,9 @@ export function JournalSection() {
               Stories, Style & Inspiration
             </h2>
           </div>
+          <Link to="/blog" className="hidden md:inline-flex items-center gap-2 text-xs text-primary tracking-wider uppercase font-medium hover:gap-3 transition-all">
+            View All <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -38,7 +42,7 @@ export function JournalSection() {
                 </div>
               ))
             : posts.map((post) => (
-                <article key={post.id} className="group cursor-pointer">
+                <Link to={`/blog/${post.slug}`} key={post.id} className="group cursor-pointer block">
                   <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-secondary mb-5">
                     {post.cover_image_url ? (
                       <img
@@ -67,8 +71,14 @@ export function JournalSection() {
                   <span className="inline-flex items-center gap-1 mt-4 text-xs text-primary tracking-wider uppercase font-medium">
                     Read More <ArrowRight className="w-3 h-3" />
                   </span>
-                </article>
+                </Link>
               ))}
+        </div>
+
+        <div className="mt-10 md:hidden text-center">
+          <Link to="/blog" className="inline-flex items-center gap-2 text-xs text-primary tracking-wider uppercase font-medium border-b border-primary pb-1">
+            View All Articles <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

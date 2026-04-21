@@ -15,6 +15,7 @@ const quickLinks = [
   { name: 'About Us', href: '/about' },
   { name: 'Store Locator', href: '/stores' },
   { name: 'Gold Rate', href: '/gold-rate' },
+  { name: 'Journal / Blog', href: '/blog' },
   { name: 'Contact', href: '/contact' },
   { name: 'Track Order', href: '/track-order' },
 ];
