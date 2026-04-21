@@ -29,6 +29,7 @@ import {
   ImageIcon,
   QrCode,
   CheckCircle2,
+  BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -54,6 +55,7 @@ const menuItems = [
   { name: 'Megamenu', href: '/admin/megamenu', icon: Grid2X2 },
   { name: 'Attributes', href: '/admin/attributes', icon: Layers },
   { name: 'Size Charts', href: '/admin/size-charts', icon: Layers },
+  { name: 'Blog / Journal', href: '/admin/blog', icon: BookOpen },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
