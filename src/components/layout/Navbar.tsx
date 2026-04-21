@@ -205,6 +205,13 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
                     </button>
                   </div>
                 ))}
+                <Link
+                  to="/blog"
+                  onMouseEnter={() => setHoveredCategory(null)}
+                  className="text-xs font-semibold tracking-wider transition-colors h-12 flex items-center text-gray-700 hover:text-primary"
+                >
+                  JOURNAL
+                </Link>
               </div>
             </div>
 

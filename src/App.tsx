@@ -26,6 +26,8 @@ import CheckoutPage from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import ComparePage from "./pages/Compare";
 import ChitFundLookupPage from "./pages/ChitFundLookup";
+import BlogPage from "./pages/Blog";
+import BlogPostPage from "./pages/BlogPost";
 // Customer Account Pages
 import AccountDashboard from "./pages/account/Dashboard";
 import AccountOrders from "./pages/account/Orders";
@@ -135,6 +137,8 @@ const App = () => {
             <Route path="/track-order" element={<TrackOrderPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/chit-fund" element={<ChitFundLookupPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             
             {/* Customer Account Routes */}
             <Route path="/account" element={<AccountDashboard />} />

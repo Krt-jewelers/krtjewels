@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { X, ChevronRight, ChevronDown, User, MapPin, Phone, Package, Heart, Sparkles } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, User, MapPin, Phone, Package, Heart, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useMegamenu, useMegamenuSettings } from '@/hooks/useMegamenu';
@@ -16,6 +16,7 @@ const quickLinks = [
   { name: 'My Account', href: '/account', icon: User },
   { name: 'Track Your Order', href: '/track-order', icon: Package },
   { name: 'Gold Rates', href: '/gold-rate', icon: Sparkles },
+  { name: 'Journal / Blog', href: '/blog', icon: BookOpen },
   { name: 'My Wishlist', href: '/wishlist', icon: Heart },
   { name: 'Store Locator', href: '/stores', icon: MapPin },
   { name: 'Contact Us', href: '/contact', icon: Phone },
