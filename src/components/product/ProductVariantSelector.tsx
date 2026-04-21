@@ -20,6 +20,7 @@ import {
   type ProductCategory,
 } from '@/lib/types';
 import { useProductVariations } from '@/hooks/useProductVariations';
+import { useSizeChart } from '@/hooks/useSizeCharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
