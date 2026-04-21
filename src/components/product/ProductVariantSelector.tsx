@@ -20,6 +20,7 @@ import {
   type ProductCategory,
 } from '@/lib/types';
 import { useProductVariations } from '@/hooks/useProductVariations';
+import { useSizeChart } from '@/hooks/useSizeCharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,7 @@ export function ProductVariantSelector({
 }: ProductVariantSelectorProps) {
   const { data: variations = [], isLoading } = useProductVariations(productId);
   const { data: metalTypes = [] } = useMetalTypes();
+  const { data: sizeChart } = useSizeChart(category || '');
 
   // (debug logs moved below after computed options)
 
@@ -159,7 +161,20 @@ export function ProductVariantSelector({
   const hasCertificateVariations = certificateVariations.length > 0;
   const hasCustomVariations = customVariations.length > 0;
 
-  const sizeOptions = hasSizeVariations 
+  // Build set of valid sizes from admin Size Chart (first column = size value)
+  const sizeChartSizes: Set<string> = (() => {
+    const set = new Set<string>();
+    if (sizeChart?.chart_data?.length) {
+      const firstKey = Object.keys(sizeChart.chart_data[0])[0];
+      sizeChart.chart_data.forEach(row => {
+        const v = String(row[firstKey] ?? '').trim();
+        if (v) set.add(v);
+      });
+    }
+    return set;
+  })();
+
+  const rawSizeOptions = hasSizeVariations 
     ? sizeVariations.filter(v => v.is_available).map(v => ({
         value: v.size_value || '',
         label: v.size_label || '',
@@ -178,6 +193,11 @@ export function ProductVariantSelector({
         isDefault: false,
         imageUrl: null,
       })) || [];
+
+  // If a Size Chart exists for this category, only show sizes that are in the chart
+  const sizeOptions = sizeChartSizes.size > 0
+    ? rawSizeOptions.filter(o => sizeChartSizes.has(String(o.value).trim()))
+    : rawSizeOptions;
 
   const defaultSpecMetalSlug = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
     ? (typeof pricingOptions.metals[0] === 'string'

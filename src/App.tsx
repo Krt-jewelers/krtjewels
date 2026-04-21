@@ -62,6 +62,7 @@ import AdminPaymentVerification from "./pages/admin/PaymentVerification";
 import AdminHeroSlides from "./pages/admin/HeroSlides";
 import AdminCollectionBanners from "./pages/admin/CollectionBanners";
 import AdminSizeCharts from "./pages/admin/SizeCharts";
+import AdminBlog from "./pages/admin/Blog";
 
 
 const queryClient = new QueryClient({
@@ -175,6 +176,7 @@ const App = () => {
             <Route path="/admin/payment-verification" element={<AdminPaymentVerification />} />
             <Route path="/admin/hero-slides" element={<AdminHeroSlides />} />
             <Route path="/admin/size-charts" element={<AdminSizeCharts />} />
+            <Route path="/admin/blog" element={<AdminBlog />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
