@@ -677,7 +677,7 @@ export function ProductVariantSelector({
               })()}
             </label>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {gemstoneOptions.map((option) => (
               <button
                 key={option.value}
@@ -694,18 +694,18 @@ export function ProductVariantSelector({
                   }
                 }}
                 className={cn(
-                  'flex flex-col items-start gap-0.5 rounded-md border-2 px-3 py-2 transition-all text-left',
+                  'flex min-h-14 flex-col items-start justify-center gap-0.5 rounded-md border px-3 py-2 transition-all text-left',
                   (option.selectionMode === 'multi'
                     ? selectedGemstones.includes(option.value)
                     : selectedGemstone === option.value)
-                    ? 'border-primary shadow-md'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
                 )}
               >
-                <span className="text-xs font-medium text-foreground">
+                <span className="text-xs font-medium">
                   {option.label || option.value || 'Option'}
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] opacity-80">
                   {(option as any).subtitle || ' '}
                 </span>
               </button>
@@ -735,7 +735,7 @@ export function ProductVariantSelector({
               })()}
             </label>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {caratOptions.map((option) => (
               <button
                 key={option.value}
@@ -752,15 +752,15 @@ export function ProductVariantSelector({
                   }
                 }}
                 className={cn(
-                  'flex flex-col items-center justify-center rounded-md border-2 px-3 py-2 transition-all min-w-[70px]',
+                  'flex min-h-12 items-center justify-center rounded-md border px-3 py-2 transition-all',
                   (option.selectionMode === 'multi'
                     ? selectedCarats.includes(option.value)
                     : selectedCarat === option.value)
-                    ? 'border-primary shadow-md'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
                 )}
               >
-                <span className="text-xs font-medium text-foreground">{option.label}</span>
+                <span className="text-xs font-medium">{option.label}</span>
               </button>
             ))}
           </div>
@@ -778,17 +778,17 @@ export function ProductVariantSelector({
               </span>
             </label>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {availableMetals.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setSelectedMetal(option.value)}
                 className={cn(
-                  'relative rounded-md border-2 transition-all duration-200 px-3 py-2 text-xs font-medium',
+                  'relative min-h-12 rounded-md border px-3 py-2 text-xs font-medium transition-all duration-200',
                   selectedMetal === option.value
-                    ? 'border-primary shadow-md'
-                    : 'border-border hover:border-primary/50'
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
                 )}
                 // ensure pointer events in case parent overlays exist
                 aria-pressed={selectedMetal === option.value}
@@ -817,7 +817,7 @@ export function ProductVariantSelector({
               Size Guide
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {sizeOptions.map((size) => (
               <button
                 key={size.value}
@@ -825,12 +825,12 @@ export function ProductVariantSelector({
                 onClick={() => setSelectedSize(size.value)}
                 disabled={size.stock <= 0}
                 className={cn(
-                  'relative rounded-md border-2 transition-all duration-200 overflow-hidden',
+                  'relative overflow-hidden rounded-md border transition-all duration-200',
                   selectedSize === size.value
-                    ? 'border-primary shadow-md'
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md'
                     : size.stock <= 0
                     ? 'border-border bg-muted opacity-50 cursor-not-allowed'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
                 )}
               >
                 {/* Show image if available, otherwise show text pill */}
@@ -842,7 +842,7 @@ export function ProductVariantSelector({
                     <span className="text-[9px] font-medium mt-0.5">{size.value}</span>
                   </div>
                 ) : (
-                  <div className="min-w-[34px] h-8 px-2.5 flex items-center justify-center">
+                    <div className="h-10 w-full px-2.5 flex items-center justify-center">
                     <span className="text-[10px] font-medium">{size.value}</span>
                   </div>
                 )}
@@ -871,10 +871,10 @@ export function ProductVariantSelector({
         <div className="border border-border rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-medium text-foreground">
-              {attributeOptions[0]?.groupLabel || 'Add Attribute'}
+              {attributeOptions[0]?.groupLabel || 'Gold Colour'}
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {attributeOptions.map((cert) => {
               const isMulti = cert.selectionMode === 'multi';
               const selected = selectedAttributes.includes(cert.value);
@@ -893,18 +893,20 @@ export function ProductVariantSelector({
                     });
                   }}
                   className={cn(
-                    'flex items-center justify-between gap-2 rounded-md border-2 p-2 text-left transition-all',
-                    selected ? 'border-primary shadow-md' : 'border-border hover:border-primary/50'
+                    'flex min-h-12 items-center justify-between gap-2 rounded-md border p-2 text-left transition-all',
+                    selected
+                      ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                      : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
                   )}
                 >
                   <div className="flex items-center gap-2">
                     {cert.imageUrl && (
                       <img src={cert.imageUrl} alt={cert.label} className="w-8 h-8 object-contain" />
                     )}
-                    <span className="text-xs font-medium">{cert.label}</span>
+                      <span className="text-xs font-medium">{cert.label}</span>
                   </div>
                   {cert.priceAdjustment !== 0 && (
-                    <span className="text-[10px] text-muted-foreground">
+                     <span className="text-[10px] opacity-80">
                       +₹{cert.priceAdjustment.toLocaleString('en-IN')}
                     </span>
                   )}
