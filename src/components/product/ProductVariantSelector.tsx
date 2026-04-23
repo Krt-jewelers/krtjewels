@@ -174,7 +174,7 @@ export function ProductVariantSelector({
     return set;
   })();
 
-  const rawSizeOptions = hasSizeVariations 
+  const rawSizeOptions = hasSizeVariations
     ? sizeVariations.filter(v => v.is_available).map(v => ({
         value: v.size_value || '',
         label: v.size_label || '',
@@ -194,9 +194,30 @@ export function ProductVariantSelector({
         imageUrl: null,
       })) || [];
 
-  // If a Size Chart exists for this category, only show sizes that are in the chart
-  const sizeOptions = sizeChartSizes.size > 0
-    ? rawSizeOptions.filter(o => sizeChartSizes.has(String(o.value).trim()))
+  const sizeVariationMap = new Map(
+    rawSizeOptions.map((option) => [String(option.value).trim(), option])
+  );
+
+  // If a Size Chart exists, it becomes the source of truth for visible sizes.
+  const sizeOptions = sizeChart?.chart_data?.length
+    ? sizeChart.chart_data
+        .map((row) => {
+          const firstKey = Object.keys(row)[0];
+          const sizeValue = String(row[firstKey] ?? '').trim();
+          if (!sizeValue) return null;
+
+          const matchedVariation = sizeVariationMap.get(sizeValue);
+          return {
+            value: sizeValue,
+            label: matchedVariation?.label || categoryConfig?.label || 'Size',
+            priceAdjustment: matchedVariation?.priceAdjustment || 0,
+            weightAdjustment: matchedVariation?.weightAdjustment || 0,
+            stock: matchedVariation ? matchedVariation.stock : 1,
+            isDefault: matchedVariation?.isDefault || false,
+            imageUrl: matchedVariation?.imageUrl || null,
+          };
+        })
+        .filter(Boolean)
     : rawSizeOptions;
 
   const defaultSpecMetalSlug = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
@@ -340,7 +361,7 @@ export function ProductVariantSelector({
         imageUrl: null,
         isDefault: c.is_default,
         selectionMode: 'single',
-        groupLabel: 'Add Attribute',
+        groupLabel: 'Gold Colour',
       }))
     : hasCertificateVariations
     ? certificateVariations.filter(v => v.is_available).map(v => ({
@@ -350,7 +371,7 @@ export function ProductVariantSelector({
         imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
         isDefault: v.is_default,
         selectionMode: v.selection_mode || 'single',
-        groupLabel: v.variation_group || 'Add Attribute',
+        groupLabel: v.variation_group || 'Gold Colour',
       }))
     : [];
 
