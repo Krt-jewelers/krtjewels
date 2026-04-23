@@ -964,7 +964,7 @@ export function ProductVariantSelector({
                   </div>
                   <div className="flex items-center gap-2">
                     {opt.priceAdjustment === 0 && isEngraving && (
-                      <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full">FREE</span>
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">FREE</span>
                     )}
                     {opt.priceAdjustment !== 0 && (
                       <span className="text-xs text-muted-foreground">
@@ -1040,7 +1040,7 @@ export function ProductVariantSelector({
             </div>
             <Button
               type="button"
-              className="w-full bg-black text-white"
+              className="w-full"
               onClick={() => {
                 const text = engravingText.trim();
                 if (!text) {

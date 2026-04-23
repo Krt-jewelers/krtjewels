@@ -529,6 +529,7 @@ export default function AdminProductForm() {
       ...prev,
       name,
       slug: isEditing ? prev.slug : generateSlug(name),
+      sku: isEditing && prev.sku ? prev.sku : generateSku(prev.category_id, name),
     }));
   };
 
@@ -575,7 +576,7 @@ export default function AdminProductForm() {
         stone_cost: calculatedStoneCost || formData.stone_cost,
         stones: formData.stones as unknown as Json,
         images: formData.images,
-        sku: formData.sku || null,
+        sku: formData.sku || generateSku(formData.category_id, formData.name),
         stock_quantity: formData.stock_quantity,
         is_featured: formData.is_featured,
         is_bestseller: formData.is_bestseller,
