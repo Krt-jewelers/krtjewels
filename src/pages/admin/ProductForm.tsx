@@ -118,6 +118,17 @@ interface ProductFormData {
   manufacturer_info: ManufacturerItem[];
 }
 
+const buildSkuPrefix = (categorySlug?: string | null) => {
+  if (!categorySlug) return 'KRT';
+  const compact = categorySlug.replace(/[^a-z0-9]+/gi, ' ').trim();
+  const initials = compact
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+  return initials || categorySlug.slice(0, 3).toUpperCase();
+};
+
 const defaultCertificateItems: CertificateItem[] = [
   { title: 'BIS Hallmark Certified', desc: 'Guaranteeing purity and authenticity of the gold.' },
   { title: 'Certificate of Authenticity', desc: 'Includes weight, purity, and making charges.' },
@@ -499,11 +510,26 @@ export default function AdminProductForm() {
       .replace(/(^-|-$)/g, '') + '-krt';
   };
 
+  const generateSku = (categoryId?: string, productName?: string) => {
+    const category = productCategories.find((item) => item.id === categoryId);
+    const prefix = buildSkuPrefix(category?.slug);
+    const nameToken = (productName || '')
+      .replace(/[^a-z0-9]+/gi, ' ')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.slice(0, 3).toUpperCase())
+      .join('');
+    const uniqueToken = Date.now().toString().slice(-6);
+    return [prefix, nameToken || 'PRD', uniqueToken].filter(Boolean).join('-');
+  };
+
   const handleNameChange = (name: string) => {
     setFormData((prev) => ({
       ...prev,
       name,
       slug: isEditing ? prev.slug : generateSlug(name),
+      sku: isEditing && prev.sku ? prev.sku : generateSku(prev.category_id, name),
     }));
   };
 
@@ -550,7 +576,7 @@ export default function AdminProductForm() {
         stone_cost: calculatedStoneCost || formData.stone_cost,
         stones: formData.stones as unknown as Json,
         images: formData.images,
-        sku: formData.sku || null,
+        sku: formData.sku || generateSku(formData.category_id, formData.name),
         stock_quantity: formData.stock_quantity,
         is_featured: formData.is_featured,
         is_bestseller: formData.is_bestseller,
@@ -884,6 +910,7 @@ export default function AdminProductForm() {
                             ...prev,
                             category_id: value,
                             subcategory_id: '',
+                            sku: isEditing && prev.sku ? prev.sku : generateSku(value, prev.name),
                           }))
                         }
                       >
@@ -1640,8 +1667,22 @@ export default function AdminProductForm() {
                     <Input
                       value={formData.sku}
                       onChange={(e) => setFormData((prev) => ({ ...prev, sku: e.target.value }))}
-                      placeholder="KRT-001"
+                      placeholder="Auto-generated from category"
                     />
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted-foreground">Generated from category + product name + unique ID.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData((prev) => ({
+                          ...prev,
+                          sku: generateSku(prev.category_id, prev.name),
+                        }))}
+                      >
+                        Generate
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label>Legacy Stone Cost (₹)</Label>
