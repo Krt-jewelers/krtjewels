@@ -873,7 +873,7 @@ export function ProductVariantSelector({
               {attributeOptions[0]?.groupLabel || 'Gold Colour'}
             </label>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin">
             {attributeOptions.map((cert) => {
               const isMulti = cert.selectionMode === 'multi';
               const selected = selectedAttributes.includes(cert.value);
@@ -892,10 +892,10 @@ export function ProductVariantSelector({
                     });
                   }}
                   className={cn(
-                    'flex min-h-12 items-center justify-between gap-2 rounded-md border p-2 text-left transition-all',
+                    'shrink-0 snap-start flex min-h-12 items-center justify-between gap-2 rounded-md border-2 px-3 py-2 text-left transition-all whitespace-nowrap',
                     selected
                       ? 'border-primary bg-primary text-primary-foreground shadow-md'
-                      : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
+                      : 'border-foreground/30 bg-background text-foreground hover:border-primary hover:bg-accent/30'
                   )}
                 >
                   <div className="flex items-center gap-2">
