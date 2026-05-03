@@ -816,7 +816,7 @@ export function ProductVariantSelector({
               Size Guide
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin">
             {sizeOptions.map((size) => (
               <button
                 key={size.value}
@@ -824,12 +824,12 @@ export function ProductVariantSelector({
                 onClick={() => setSelectedSize(size.value)}
                 disabled={size.stock <= 0}
                 className={cn(
-                  'relative overflow-hidden rounded-md border transition-all duration-200',
+                  'shrink-0 snap-start relative overflow-hidden rounded-md border-2 transition-all duration-200',
                   selectedSize === size.value
                     ? 'border-primary bg-primary text-primary-foreground shadow-md'
                     : size.stock <= 0
-                    ? 'border-border bg-muted opacity-50 cursor-not-allowed'
-                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
+                    ? 'border-foreground/20 bg-muted opacity-50 cursor-not-allowed'
+                    : 'border-foreground/30 bg-background text-foreground hover:border-primary hover:bg-accent/30'
                 )}
               >
                 {/* Show image if available, otherwise show text pill */}
@@ -838,15 +838,15 @@ export function ProductVariantSelector({
                     <div className="w-10 h-10 rounded overflow-hidden">
                       <img src={size.imageUrl} alt={size.value} className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-[9px] font-medium mt-0.5">{size.value}</span>
+                    <span className="text-[10px] font-medium mt-0.5">{size.value}</span>
                   </div>
                 ) : (
-                    <div className="h-10 w-full px-2.5 flex items-center justify-center">
-                    <span className="text-[10px] font-medium">{size.value}</span>
+                  <div className="h-10 min-w-[3rem] px-3 flex items-center justify-center">
+                    <span className="text-xs font-medium">{size.value}</span>
                   </div>
                 )}
                 {size.priceAdjustment !== 0 && (
-                  <span className="text-[8px] text-muted-foreground block text-center pb-0.5">
+                  <span className="text-[8px] opacity-80 block text-center pb-0.5">
                     {size.priceAdjustment > 0 ? '+' : ''}₹{Math.abs(size.priceAdjustment)}
                   </span>
                 )}
