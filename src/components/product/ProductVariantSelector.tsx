@@ -778,19 +778,18 @@ export function ProductVariantSelector({
               </span>
             </label>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin">
             {availableMetals.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setSelectedMetal(option.value)}
                 className={cn(
-                  'relative min-h-12 rounded-md border px-3 py-2 text-xs font-medium transition-all duration-200',
+                  'shrink-0 snap-start relative min-h-12 rounded-md border-2 px-4 py-2 text-xs font-medium transition-all duration-200 whitespace-nowrap',
                   selectedMetal === option.value
                     ? 'border-primary bg-primary text-primary-foreground shadow-md'
-                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
+                    : 'border-foreground/30 bg-background text-foreground hover:border-primary hover:bg-accent/30'
                 )}
-                // ensure pointer events in case parent overlays exist
                 aria-pressed={selectedMetal === option.value}
                 data-metal-type={option.metalType}
                 style={{ zIndex: 1 }}
