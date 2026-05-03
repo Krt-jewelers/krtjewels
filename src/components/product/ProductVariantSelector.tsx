@@ -735,7 +735,7 @@ export function ProductVariantSelector({
               })()}
             </label>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x scrollbar-thin">
             {caratOptions.map((option) => (
               <button
                 key={option.value}
@@ -752,12 +752,12 @@ export function ProductVariantSelector({
                   }
                 }}
                 className={cn(
-                  'flex min-h-12 items-center justify-center rounded-md border px-3 py-2 transition-all',
+                  'shrink-0 snap-start flex min-h-12 items-center justify-center rounded-md border-2 px-4 py-2 transition-all',
                   (option.selectionMode === 'multi'
                     ? selectedCarats.includes(option.value)
                     : selectedCarat === option.value)
                     ? 'border-primary bg-primary text-primary-foreground shadow-md'
-                    : 'border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent/30'
+                    : 'border-foreground/30 bg-background text-foreground hover:border-primary hover:bg-accent/30'
                 )}
               >
                 <span className="text-xs font-medium">{option.label}</span>
