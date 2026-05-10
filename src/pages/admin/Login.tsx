@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Shield, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 import adminLoginVideo from '@/assets/admin-login-video.mp4.asset.json';
 
 export default function AdminLogin() {
@@ -77,11 +77,9 @@ export default function AdminLogin() {
         </video>
         <div className="absolute inset-0 bg-gradient-to-br from-rich-black/80 via-rich-black/50 to-primary/30" />
         <div className="relative z-10 h-full flex flex-col justify-between p-12 text-ivory">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center">
-              <span className="font-serif text-2xl text-rich-black font-bold">K</span>
-            </div>
-            <span className="text-xs tracking-[0.4em] uppercase text-primary/90">KRT Jewellery</span>
+          <div>
+            <div className="font-serif text-3xl text-primary tracking-wide">KRT</div>
+            <div className="text-[10px] tracking-[0.4em] uppercase text-ivory/70 mt-1">Jewellery</div>
           </div>
 
           <div className="space-y-5 max-w-md">
@@ -107,12 +105,9 @@ export default function AdminLogin() {
       <div className="flex items-center justify-center p-6 sm:p-12 bg-background">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-gold-shimmer flex items-center justify-center mb-4">
-              <Shield className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h2 className="font-serif text-3xl">
-              <span className="text-primary">KRT</span> Admin Panel
-            </h2>
+            <div className="font-serif text-5xl text-primary tracking-wide mb-1">KRT</div>
+            <div className="text-[10px] tracking-[0.5em] uppercase text-muted-foreground mb-5">Jewellery</div>
+            <h2 className="font-serif text-2xl text-foreground">Admin Panel</h2>
             <p className="text-sm text-muted-foreground mt-2">
               Sign in to manage your jewellery store
             </p>

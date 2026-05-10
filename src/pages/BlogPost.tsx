@@ -1,5 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Layout } from '@/components/layout/Layout';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -80,10 +82,8 @@ export default function BlogPost() {
 
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           {post.content ? (
-            <div
-              className="prose prose-lg max-w-none text-foreground/90 leading-relaxed prose-headings:font-serif prose-headings:text-foreground prose-a:text-primary prose-strong:text-foreground prose-img:rounded-lg whitespace-pre-wrap"
-            >
-              {post.content}
+            <div className="prose prose-lg max-w-none text-foreground/90 leading-relaxed prose-headings:font-serif prose-headings:text-foreground prose-h2:text-2xl md:prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-a:text-primary prose-strong:text-foreground prose-img:rounded-lg prose-table:text-sm">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
             </div>
           ) : (
             <p className="text-muted-foreground">Full article coming soon.</p>
@@ -103,7 +103,7 @@ export default function BlogPost() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {related.map((p) => (
                 <Link key={p.id} to={`/blog/${p.slug}`} className="group">
-                  <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-secondary mb-5">
+                  <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-secondary mb-4">
                     {p.cover_image_url ? (
                       <img src={p.cover_image_url} alt={p.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     ) : (

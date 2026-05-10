@@ -75,7 +75,7 @@ export function JournalSection() {
                   className="shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/3 px-2"
                 >
                   <Link to={`/blog/${post.slug}`} className="group cursor-pointer block">
-                    <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-secondary mb-5">
+                    <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-secondary mb-4">
                       {post.cover_image_url ? (
                         <img
                           src={post.cover_image_url}
