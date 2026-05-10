@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,52 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Loader2, BookOpen, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2, BookOpen, Save, Video } from 'lucide-react';
 import { useBlogPosts, useUpsertBlogPost, useDeleteBlogPost, type BlogPost } from '@/hooks/useBlogPosts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+function HomepageVideoSetting() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [url, setUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const { data } = useQuery({
+    queryKey: ['site-settings', 'homepage_craftsmanship_video_url'],
+    queryFn: async () => {
+      const { data } = await supabase.from('site_settings').select('value').eq('key', 'homepage_craftsmanship_video_url').maybeSingle();
+      return typeof data?.value === 'string' ? data.value : '';
+    },
+  });
+  useEffect(() => { if (data !== undefined) setUrl(data); }, [data]);
+
+  const save = async () => {
+    setSaving(true);
+    const { data: existing } = await supabase.from('site_settings').select('id').eq('key', 'homepage_craftsmanship_video_url').maybeSingle();
+    const value = url.trim() as any;
+    const { error } = existing
+      ? await supabase.from('site_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', 'homepage_craftsmanship_video_url')
+      : await supabase.from('site_settings').insert([{ key: 'homepage_craftsmanship_video_url', value, description: 'Homepage craftsmanship cinematic video URL' }]);
+    setSaving(false);
+    if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Saved', description: 'Homepage video updated.' }); qc.invalidateQueries({ queryKey: ['site-settings', 'homepage_craftsmanship_video_url'] }); }
+  };
+
+  return (
+    <Card>
+      <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Video className="w-4 h-4 text-primary" /> Homepage Craftsmanship Video</CardTitle></CardHeader>
+      <CardContent className="space-y-3">
+        <Label className="text-xs">Video URL (MP4). Leave empty to use the default bundled video.</Label>
+        <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://res.cloudinary.com/.../video.mp4" />
+        <Button size="sm" onClick={save} disabled={saving}>
+          {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Save Video
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
@@ -35,6 +79,7 @@ export default function AdminBlog() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        <HomepageVideoSetting />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <BookOpen className="w-6 h-6 text-primary" />

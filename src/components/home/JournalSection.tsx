@@ -59,7 +59,7 @@ export function JournalSection() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[4/5] w-full rounded-lg" />
+                <Skeleton className="aspect-[16/10] w-full rounded-lg" />
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-6 w-full" />
                 <Skeleton className="h-4 w-3/4" />
