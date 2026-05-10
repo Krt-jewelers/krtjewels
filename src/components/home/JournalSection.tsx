@@ -59,7 +59,7 @@ export function JournalSection() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[4/5] w-full rounded-lg" />
+                <Skeleton className="aspect-[16/10] w-full rounded-lg" />
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-6 w-full" />
                 <Skeleton className="h-4 w-3/4" />
@@ -75,7 +75,7 @@ export function JournalSection() {
                   className="shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/3 px-2"
                 >
                   <Link to={`/blog/${post.slug}`} className="group cursor-pointer block">
-                    <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-secondary mb-5">
+                    <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-secondary mb-4">
                       {post.cover_image_url ? (
                         <img
                           src={post.cover_image_url}

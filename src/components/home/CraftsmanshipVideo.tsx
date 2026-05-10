@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import craftVideo from '@/assets/craftsmanship-video.mp4';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 export function CraftsmanshipVideo() {
@@ -8,6 +10,21 @@ export function CraftsmanshipVideo() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+
+  const { data: customUrl } = useQuery({
+    queryKey: ['site-settings', 'homepage_craftsmanship_video_url'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'homepage_craftsmanship_video_url')
+        .maybeSingle();
+      const v = data?.value;
+      return typeof v === 'string' && v.length > 0 ? v : '';
+    },
+  });
+
+  const videoSrc = customUrl || craftVideo;
 
   useEffect(() => {
     const v = videoRef.current;
@@ -46,7 +63,8 @@ export function CraftsmanshipVideo() {
       <div className="relative w-full h-[60vh] md:h-[80vh] max-h-[720px]">
         <video
           ref={videoRef}
-          src={craftVideo}
+          src={videoSrc}
+          key={videoSrc}
           className="absolute inset-0 w-full h-full object-cover"
           autoPlay
           muted
