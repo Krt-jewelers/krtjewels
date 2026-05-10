@@ -613,6 +613,24 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_cache: {
+        Row: {
+          fetched_at: string
+          id: number
+          posts: Json
+        }
+        Insert: {
+          fetched_at?: string
+          id?: number
+          posts?: Json
+        }
+        Update: {
+          fetched_at?: string
+          id?: number
+          posts?: Json
+        }
+        Relationships: []
+      }
       megamenu_categories: {
         Row: {
           category_name: string
