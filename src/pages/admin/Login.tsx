@@ -5,9 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2, Shield } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Shield, Sparkles } from 'lucide-react';
+import adminLoginVideo from '@/assets/admin-login-video.mp4.asset.json';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -18,7 +18,6 @@ export default function AdminLogin() {
   const { toast } = useToast();
   const { isAuthenticated, isAdmin, loading } = useAuth();
 
-  // Redirect if already authenticated as admin
   useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
       navigate('/admin');
@@ -28,53 +27,33 @@ export default function AdminLogin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Check if user is admin
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', data.user.id)
         .eq('role', 'admin')
         .maybeSingle();
-
       if (roleError) throw roleError;
 
       if (!roleData) {
         await supabase.auth.signOut();
-        toast({
-          title: 'Access Denied',
-          description: 'You do not have admin privileges.',
-          variant: 'destructive',
-        });
+        toast({ title: 'Access Denied', description: 'You do not have admin privileges.', variant: 'destructive' });
         return;
       }
 
-      toast({
-        title: 'Welcome Admin!',
-        description: 'Redirecting to dashboard...',
-      });
-
+      toast({ title: 'Welcome Admin!', description: 'Redirecting to dashboard...' });
       navigate('/admin');
     } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error.message || 'Invalid credentials',
-        variant: 'destructive',
-      });
+      toast({ title: 'Login Failed', description: error.message || 'Invalid credentials', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading if checking auth state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-secondary/30">
@@ -84,28 +63,62 @@ export default function AdminLogin() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <Card className="w-full max-w-md shadow-2xl border-primary/20 bg-card/95 backdrop-blur-sm">
-        <CardHeader className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-gold-shimmer flex items-center justify-center">
-            <Shield className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-background">
+      {/* LEFT: cinematic video */}
+      <div className="relative hidden lg:block overflow-hidden">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={adminLoginVideo.url} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-br from-rich-black/80 via-rich-black/50 to-primary/30" />
+        <div className="relative z-10 h-full flex flex-col justify-between p-12 text-ivory">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center">
+              <span className="font-serif text-2xl text-rich-black font-bold">K</span>
+            </div>
+            <span className="text-xs tracking-[0.4em] uppercase text-primary/90">KRT Jewellery</span>
           </div>
-          <div>
-            <CardTitle className="font-serif text-2xl">
+
+          <div className="space-y-5 max-w-md">
+            <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-primary">
+              <Sparkles className="w-3 h-3" /> Admin Console
+            </span>
+            <h1 className="font-serif text-4xl xl:text-5xl leading-tight">
+              Crafting Heritage,<br />
+              <span className="text-primary">One Ornament at a Time.</span>
+            </h1>
+            <p className="text-ivory/70 text-sm leading-relaxed">
+              Manage products, orders, chit funds, and the entire luxury experience from a single place.
+            </p>
+          </div>
+
+          <p className="text-xs text-ivory/50 tracking-wider">
+            © {new Date().getFullYear()} KRT Jewellery — Secure Admin Access
+          </p>
+        </div>
+      </div>
+
+      {/* RIGHT: form */}
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-background">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-gold-shimmer flex items-center justify-center mb-4">
+              <Shield className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h2 className="font-serif text-3xl">
               <span className="text-primary">KRT</span> Admin Panel
-            </CardTitle>
-            <CardDescription>Sign in to manage your jewellery store</CardDescription>
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Sign in to manage your jewellery store
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Admin Email</Label>
               <Input
@@ -141,23 +154,18 @@ export default function AdminLogin() {
             </div>
             <Button type="submit" className="w-full btn-premium py-6" disabled={isLoading}>
               {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In to Admin'
-              )}
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
+              ) : ('Sign In to Admin')}
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-border text-center">
+          <div className="mt-8 pt-6 border-t border-border text-center">
             <p className="text-xs text-muted-foreground">
               This is a secure admin area. Unauthorized access is prohibited.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
