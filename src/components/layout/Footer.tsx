@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Facebook, Instagram } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from 'lucide-react';
 import { FoundifCredit } from './FoundifCredit';
 
 const collections = [
@@ -29,10 +29,22 @@ const policies = [
 ];
 
 export function Footer() {
+
   const mapLink = "https://share.google/zO9ki4MnpiMeXdNiT";
 
   return (
     <footer className="bg-rich-black text-ivory">
+
+      {/* TRUST BADGE STRIP */}
+      <div className="border-b border-charcoal/50 py-4">
+        <div className="container mx-auto px-4 flex flex-wrap gap-6 justify-center text-xs text-ivory/60">
+          <span>✔ BIS Hallmarked Gold</span>
+          <span>✔ IGI Certified Diamonds</span>
+          <span>✔ GIA Graded Stones</span>
+          <span>✔ Secure SSL Checkout</span>
+          <span>✔ Razorpay Verified</span>
+        </div>
+      </div>
 
       {/* MAIN FOOTER */}
       <div className="container mx-auto px-4 py-16">
@@ -50,13 +62,14 @@ export function Footer() {
             </Link>
 
             <p className="text-ivory/60 mb-6 max-w-sm leading-relaxed">
-              Crafted with timeless elegance over three decades, each creation reflects heritage,
-              masterful craftsmanship, and uncompromising excellence in 916 BIS Hallmarked gold jewellery.  
+              Crafted with timeless elegance over three decades. Every piece reflects tradition,
+              craftsmanship, and uncompromising excellence in 916 BIS Hallmarked gold jewellery.
               <br /><br />
               © 2026 KRT JEWELLERS. All rights reserved.
             </p>
 
             <div className="space-y-3 text-ivory/60">
+
               <a href="tel:+919843010986" className="flex items-center gap-3 hover:text-primary">
                 <Phone className="w-4 h-4" />
                 <span>+91 98430 10986</span>
@@ -72,9 +85,9 @@ export function Footer() {
                 href={mapLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-start gap-3 hover:text-primary transition-colors"
+                className="flex items-start gap-3 hover:text-primary"
               >
-                <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
+                <MapPin className="w-4 h-4 mt-1" />
                 <span>
                   1154, Big Bazaar St, Prakasam,<br />
                   Town Hall, Coimbatore,<br />
@@ -128,21 +141,36 @@ export function Footer() {
         </div>
       </div>
 
-      {/* MAP SECTION */}
-      <div className="border-t border-charcoal/50">
-        <div className="container mx-auto px-4 py-10">
+      {/* MAP SECTION (FULL RESTORED YOUR STYLE) */}
+      <div className="relative overflow-hidden border-t border-charcoal/50">
+        <div className="container mx-auto px-4 py-12">
 
           <a
             href={mapLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-2xl overflow-hidden border border-gold-light/40 hover:border-gold-light transition"
+            className="relative block w-full overflow-hidden rounded-2xl border border-gold-light/30 group"
           >
-            <div className="h-[260px] md:h-[320px] flex items-center justify-center bg-black text-gold-light">
-              <div className="text-center">
+            <div className="w-full h-[320px] bg-[#14100e] flex items-center justify-center">
+
+              {/* YOUR ORIGINAL MAP STYLE */}
+              <svg
+                className="absolute inset-0 w-full h-full opacity-80 group-hover:opacity-100 transition"
+                viewBox="0 0 1000 400"
+              >
+                <g stroke="#cca352" strokeWidth="1.5" fill="none" opacity="0.4">
+                  <path d="M-100,250 C200,240 500,280 1100,200" />
+                  <path d="M-100,150 C300,160 600,120 1100,180" />
+                  <path d="M300,-50 C320,100 280,300 350,450" />
+                  <path d="M700,-50 C680,150 720,250 650,450" />
+                </g>
+              </svg>
+
+              <div className="z-10 text-center text-gold-light">
                 <MapPin className="mx-auto mb-2" />
                 <p>Click to open Google Maps</p>
               </div>
+
             </div>
           </a>
 
@@ -159,6 +187,7 @@ export function Footer() {
 
           <FoundifCredit />
 
+          {/* SOCIALS (ONLY INSTAGRAM + FACEBOOK) */}
           <div className="flex gap-4">
             <a href="https://www.instagram.com/krtjewellers/" target="_blank">
               <Instagram className="w-5 h-5" />
