@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { cld, cldSrcSet } from '@/lib/imageOptim';
 
 // Static fallback imports
 import heroSlide1 from '@/assets/hero-slide-1.png';
@@ -96,16 +97,28 @@ export function HeroCarousel() {
             >
               {/* Desktop image */}
               <img
-                src={slide.desktop}
+                src={cld(slide.desktop, { w: 1600, h: 600, crop: 'fill' })}
+                srcSet={cldSrcSet(slide.desktop, [800, 1200, 1600, 1920], 600)}
+                sizes="(max-width: 768px) 100vw, 100vw"
                 alt={slide.alt}
+                width={1600}
+                height={600}
                 loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                decoding="async"
                 className="hidden md:block w-full h-full object-cover object-center"
               />
               {/* Mobile image */}
               <img
-                src={slide.mobile}
+                src={cld(slide.mobile, { w: 800, h: 1244, crop: 'fill' })}
+                srcSet={cldSrcSet(slide.mobile, [480, 640, 800, 1080], 1244)}
+                sizes="100vw"
                 alt={slide.alt}
+                width={800}
+                height={1244}
                 loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : 'auto'}
+                decoding="async"
                 className="block md:hidden w-full h-full object-cover object-top"
               />
             </Link>
