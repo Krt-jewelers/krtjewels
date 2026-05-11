@@ -5,8 +5,6 @@ import {
   MapPin,
   Facebook,
   Instagram,
-  Twitter,
-  Youtube,
   ExternalLink,
   ShieldCheck,
 } from "lucide-react";
@@ -38,52 +36,30 @@ const policies = [
   { name: "FAQ", href: "/faq" },
 ];
 
-// TRUST BADGES
 const trustBadges = [
-  {
-    name: "BIS Hallmarked Gold",
-    desc: "Certified purity assurance",
-  },
-  {
-    name: "IGI Certified Diamonds",
-    desc: "International grading standard",
-  },
-  {
-    name: "GIA Certified Diamonds",
-    desc: "Global diamond authentication",
-  },
-  {
-    name: "Secure SSL Checkout",
-    desc: "Encrypted transactions",
-  },
-  {
-    name: "Razorpay / PayU Verified",
-    desc: "Trusted payment gateways",
-  },
+  { name: "BIS Hallmarked Gold", desc: "Certified purity" },
+  { name: "IGI Certified Diamonds", desc: "Grading assurance" },
+  { name: "GIA Certified Diamonds", desc: "Global standards" },
+  { name: "Secure SSL Checkout", desc: "Safe payments" },
+  { name: "Verified Payments", desc: "Razorpay / PayU" },
 ];
 
 export function Footer() {
-  // FIXED GOOGLE MY BUSINESS LINK (your link)
   const mapLink = "https://share.google/zO9ki4MnpiMeXdNiT";
 
   return (
     <footer className="bg-rich-black text-ivory">
 
-      {/* TRUST BADGE STRIP */}
+      {/* TRUST STRIP */}
       <div className="border-b border-charcoal/50">
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-            {trustBadges.map((badge) => (
-              <div
-                key={badge.name}
-                className="flex flex-col items-center justify-center p-3 rounded-lg border border-gold/20 bg-black/20"
-              >
-                <ShieldCheck className="w-5 h-5 text-primary mb-1" />
-                <p className="text-xs font-medium text-primary">{badge.name}</p>
-                <p className="text-[10px] text-ivory/50">{badge.desc}</p>
-              </div>
-            ))}
-          </div>
+        <div className="container mx-auto px-4 py-6 grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+          {trustBadges.map((b) => (
+            <div key={b.name} className="p-3 border border-gold/20 rounded-lg bg-black/20">
+              <ShieldCheck className="w-5 h-5 text-primary mx-auto mb-1" />
+              <p className="text-xs font-medium text-primary">{b.name}</p>
+              <p className="text-[10px] text-ivory/50">{b.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -94,7 +70,7 @@ export function Footer() {
           {/* BRAND */}
           <div className="lg:col-span-2">
             <Link to="/" className="inline-block mb-6">
-              <h2 className="text-2xl font-medium text-primary">
+              <h2 className="font-serif text-2xl font-medium text-primary">
                 KRT JEWELLERS
               </h2>
               <p className="text-xs text-ivory/50 tracking-widest uppercase mt-1">
@@ -103,35 +79,21 @@ export function Footer() {
             </Link>
 
             <p className="text-ivory/60 mb-6 max-w-sm">
-              Crafting timeless elegance with certified gold & diamond jewellery,
-              built on trust, purity, and craftsmanship.
+              Crafting timeless elegance with purity, tradition, and certified jewellery craftsmanship.
             </p>
 
             <div className="space-y-3 text-ivory/60">
+
               <a href="tel:+919843010986" className="flex items-center gap-3 hover:text-primary">
                 <Phone className="w-4 h-4" />
                 <span>+91 98430 10986</span>
               </a>
 
-              <a href="mailto:info@krtjewels.com" className="flex items-center gap-3 hover:text-primary">
+              <a href="mailto:krtjewellers1990@gmail.com" className="flex items-center gap-3 hover:text-primary">
                 <Mail className="w-4 h-4" />
-                <span>info@krtjewels.com</span>
+                <span>krtjewellers1990@gmail.com</span>
               </a>
 
-              {/* ADDRESS LINK FIXED TO GMB */}
-              <a
-                href={mapLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-3 hover:text-primary"
-              >
-                <MapPin className="w-4 h-4 mt-1" />
-                <span>
-                  1154, Big Bazaar St, Prakasam,<br />
-                  Town Hall, Coimbatore,<br />
-                  Tamil Nadu 641001
-                </span>
-              </a>
             </div>
           </div>
 
@@ -139,10 +101,10 @@ export function Footer() {
           <div>
             <h4 className="text-gold-light mb-6">Collections</h4>
             <ul className="space-y-3">
-              {collections.map((item) => (
-                <li key={item.name}>
-                  <Link to={item.href} className="text-ivory/60 hover:text-primary">
-                    {item.name}
+              {collections.map((i) => (
+                <li key={i.name}>
+                  <Link to={i.href} className="text-ivory/60 hover:text-primary">
+                    {i.name}
                   </Link>
                 </li>
               ))}
@@ -153,10 +115,10 @@ export function Footer() {
           <div>
             <h4 className="text-gold-light mb-6">Quick Links</h4>
             <ul className="space-y-3">
-              {quickLinks.map((item) => (
-                <li key={item.name}>
-                  <Link to={item.href} className="text-ivory/60 hover:text-primary">
-                    {item.name}
+              {quickLinks.map((i) => (
+                <li key={i.name}>
+                  <Link to={i.href} className="text-ivory/60 hover:text-primary">
+                    {i.name}
                   </Link>
                 </li>
               ))}
@@ -167,15 +129,46 @@ export function Footer() {
           <div>
             <h4 className="text-gold-light mb-6">Policies</h4>
             <ul className="space-y-3">
-              {policies.map((item) => (
-                <li key={item.name}>
-                  <Link to={item.href} className="text-ivory/60 hover:text-primary">
-                    {item.name}
+              {policies.map((i) => (
+                <li key={i.name}>
+                  <Link to={i.href} className="text-ivory/60 hover:text-primary">
+                    {i.name}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* MAP SECTION (RESTORED FULL) */}
+      <div className="border-t border-charcoal/50">
+        <div className="container mx-auto px-4 py-12">
+
+          <a
+            href={mapLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-2xl overflow-hidden border border-gold/30 relative group"
+          >
+
+            <div className="h-[260px] md:h-[320px] bg-[#14100e] flex items-center justify-center relative">
+
+              <MapPin className="w-12 h-12 text-primary" />
+
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                <div className="text-center text-primary">
+                  <p className="text-lg font-serif">Get Directions</p>
+                  <div className="flex items-center justify-center gap-2 text-sm text-ivory/60">
+                    Open in Google Maps <ExternalLink size={14} />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </a>
+
         </div>
       </div>
 
@@ -189,12 +182,16 @@ export function Footer() {
 
           <FoundifCredit />
 
+          {/* SOCIAL (ONLY 2) */}
           <div className="flex gap-4">
-            <a href="#" className="hover:text-primary"><Facebook /></a>
-            <a href="https://www.instagram.com/krtjewellers/" className="hover:text-primary"><Instagram /></a>
-            <a href="#" className="hover:text-primary"><Twitter /></a>
-            <a href="#" className="hover:text-primary"><Youtube /></a>
+            <a href="https://facebook.com/krtjewellers" className="hover:text-primary">
+              <Facebook />
+            </a>
+            <a href="https://www.instagram.com/krtjewellers/" className="hover:text-primary">
+              <Instagram />
+            </a>
           </div>
+
         </div>
       </div>
 
