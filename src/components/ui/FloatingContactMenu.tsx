@@ -42,7 +42,13 @@ export function FloatingContactMenu() {
     },
     {
       id: 'whatsapp',
-      icon: MessageCircle,
+      icon: () => (
+  <img
+    src="/images/WhatsApp_icon.png"
+    alt="WhatsApp"
+    className="w-5 h-5 object-contain"
+  />
+),
       label: 'WhatsApp',
       color: 'bg-[#25D366] hover:bg-[#20BD5A]',
       onClick: () => {
