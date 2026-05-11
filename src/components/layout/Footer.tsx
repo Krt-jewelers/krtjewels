@@ -33,7 +33,7 @@ const trustBadges = [
   { name: "IGI Certified Diamonds", desc: "Grading assurance" },
   { name: "GIA Certified Diamonds", desc: "Global standards" },
   { name: "Secure SSL Checkout", desc: "Safe payments" },
-  { name: "Verified Payments", desc: "Razorpay / PayU" },
+  { name: "Verified Payments", desc: "UPI Payments" },
 ];
 
 export function Footer() {
