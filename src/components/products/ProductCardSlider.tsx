@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { cld, cldSrcSet } from '@/lib/imageOptim';
 
 interface ProductCardSliderProps {
   images: string[];
@@ -64,8 +65,13 @@ export function ProductCardSlider({ images, productName }: ProductCardSliderProp
         {images.map((image, index) => (
           <img
             key={index}
-            src={image || '/placeholder.svg'}
+            src={cld(image, { w: 500, h: 625 }) || '/placeholder.svg'}
+            srcSet={image ? cldSrcSet(image, [300, 500, 700], 625) : undefined}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             alt={`${productName} ${index + 1}`}
+            width={500}
+            height={625}
+            decoding="async"
             className="w-full h-full object-cover flex-shrink-0"
             loading={index === 0 ? 'eager' : 'lazy'}
           />

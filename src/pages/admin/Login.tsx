@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
-import adminLoginVideo from '@/assets/admin-login-video.mp4.asset.json';
+import craftVideo from '@/assets/craftsmanship-video.mp4';
+import { useQuery } from '@tanstack/react-query';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,20 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAuthenticated, isAdmin, loading } = useAuth();
+
+  const { data: customVideo } = useQuery({
+    queryKey: ['site-settings', 'homepage_craftsmanship_video_url'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'homepage_craftsmanship_video_url')
+        .maybeSingle();
+      const v = data?.value;
+      return typeof v === 'string' && v.length > 0 ? v : '';
+    },
+  });
+  const videoSrc = customVideo || craftVideo;
 
   useEffect(() => {
     if (!loading && isAuthenticated && isAdmin) {
@@ -73,7 +88,7 @@ export default function AdminLogin() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src={adminLoginVideo.url} type="video/mp4" />
+          <source src={videoSrc} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-br from-rich-black/80 via-rich-black/50 to-primary/30" />
         <div className="relative z-10 h-full flex flex-col justify-between p-12 text-ivory">

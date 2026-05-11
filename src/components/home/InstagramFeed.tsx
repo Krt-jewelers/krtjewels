@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Instagram, ExternalLink, Play } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { cld } from '@/lib/imageOptim';
 
 interface IgPost {
   id: string;
@@ -78,9 +79,12 @@ export function InstagramFeed() {
                 className="group relative aspect-square overflow-hidden rounded-xl bg-secondary"
               >
                 <img
-                  src={img}
+                  src={cld(img, { w: 500, h: 500 })}
                   alt={post.caption || 'Instagram post'}
+                  width={500}
+                  height={500}
                   loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 {post.media_type === 'VIDEO' && (

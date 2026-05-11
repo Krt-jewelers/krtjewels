@@ -5,6 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cld, cldSrcSet } from '@/lib/imageOptim';
 
 function formatDate(s: string) {
   try {
@@ -78,9 +79,14 @@ export function JournalSection() {
                     <div className="aspect-[16/10] w-full overflow-hidden rounded-lg bg-secondary mb-4">
                       {post.cover_image_url ? (
                         <img
-                          src={post.cover_image_url}
+                          src={cld(post.cover_image_url, { w: 700, h: 438 })}
+                          srcSet={cldSrcSet(post.cover_image_url, [400, 600, 800], 438)}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           alt={post.title}
+                          width={700}
+                          height={438}
                           loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                         />
                       ) : (
