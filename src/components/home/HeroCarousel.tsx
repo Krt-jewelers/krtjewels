@@ -84,7 +84,7 @@ export function HeroCarousel() {
 
   return (
     <section className="relative w-full overflow-hidden bg-background">
-      <div className="relative w-full aspect-[9/14] md:aspect-[16/6]">
+      <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] md:aspect-[16/7] lg:aspect-[16/6]">
         <div className="absolute inset-0">
           {slides.map((slide, index) => (
             <Link
