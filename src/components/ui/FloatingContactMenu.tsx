@@ -11,9 +11,9 @@ export function FloatingContactMenu() {
     phone: '+91 98430 10986',
     phoneRaw: '919843010986',
     whatsapp: '919843010986',
-    email: 'info@krtjewels.com',
-    address: 'Your Store Address Here',
-    website: 'https://krtjewels.com',
+    email: 'krtjewellers1990@gmail.com',
+    address: 'https://share.google/SzB0gACMFW5J7HZel',
+    website: 'https://krtjewellers.com',
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -129,7 +129,7 @@ export function FloatingContactMenu() {
             <X className="w-7 h-7" />
           ) : (
             <img
-              src="public/images/icon-livechat.webp"
+              src="/images/icon-livechat.webp"
               alt="Live chat"
               className="w-[30px] h-[30px] object-contain"
               loading="lazy"
