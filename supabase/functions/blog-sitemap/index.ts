@@ -2,7 +2,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") || "https://krtgold.lovable.app").replace(/\/+$/, "");
+const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") || "https://krtjewellers.com").replace(/\/+$/, "");
 
 const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = [
   { path: "/", changefreq: "daily", priority: "1.0" },
