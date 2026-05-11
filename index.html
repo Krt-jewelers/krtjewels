@@ -49,8 +49,13 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://krtgold.lovable.app/" />
 
+    <!-- Security Policies -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://krtgold.lovable.app; connect-src 'self' https://jmlldslairxizflgvpqq.supabase.co;">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYFKR5V5DM"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYFKR5V5DM" crossorigin="anonymous"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -59,7 +64,7 @@
     </script>
 
     <!-- Microsoft Clarity -->
-    <script type="text/javascript">
+    <script type="text/javascript" crossorigin="anonymous">
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
         t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
