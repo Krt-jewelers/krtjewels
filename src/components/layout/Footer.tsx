@@ -29,10 +29,10 @@ const quickLinks = [
 ];
 
 const policies = [
-  { name: 'Privacy Policy', href: '/privacy' },
-  { name: 'Terms & Conditions', href: '/terms' },
-  { name: 'Shipping Policy', href: '/shipping' },
-  { name: 'Return Policy', href: '/returns' },
+  { name: 'Privacy Policy', href: '/privacy-policy' },
+  { name: 'Terms & Conditions', href: '/terms-and-conditions' },
+  { name: 'Shipping Policy', href: '/shipping-policy' },
+  { name: 'Return Policy', href: '/return-policy' },
   { name: 'FAQ', href: '/faq' },
 ];
 
@@ -41,7 +41,6 @@ const trustBadges = [
   { name: "IGI Certified Diamonds", desc: "Grading assurance" },
   { name: "GIA Certified Diamonds", desc: "Global standards" },
   { name: "Secure SSL Checkout", desc: "Safe payments" },
-  { name: "Verified Payments", desc: "UPI Safe Payments" },
 ];
 
 export function Footer() {
