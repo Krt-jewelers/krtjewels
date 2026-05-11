@@ -50,8 +50,19 @@
     <link rel="canonical" href="https://krtgold.lovable.app/" />
 
     <!-- Security Policies -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' https://jmlldslairxizflgvpqq.supabase.co https://vitals.vercel-insights.com;">
-    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+    <meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self';
+script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms;
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+font-src 'self' https://fonts.gstatic.com data:;
+img-src 'self' data: blob: https: http:;
+connect-src 'self' https://jmlldslairxizflgvpqq.supabase.co https://vitals.vercel-insights.com https://www.google-analytics.com https://*.clarity.ms;
+frame-src 'self' https:;
+object-src 'none';
+base-uri 'self';
+form-action 'self';
+">
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HYFKR5V5DM" crossorigin="anonymous"></script>
