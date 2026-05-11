@@ -12,20 +12,7 @@ export default {
   ],
 
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
-
     extend: {
-      fontFamily: {
-        serif: ["Cormorant Garamond", "Georgia", "serif"],
-        sans: ["Inter", "system-ui", "sans-serif"],
-      },
-
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -37,29 +24,15 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
 
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
 
-        // Luxury colors (keep minimal only used ones)
+        /* IMPORTANT FIX: safe Tailwind naming */
+        richBlack: "hsl(var(--rich-black))",
+
         gold: {
           DEFAULT: "hsl(var(--gold))",
           light: "hsl(var(--gold-light))",
@@ -74,7 +47,6 @@ export default {
 
         ivory: "hsl(var(--ivory))",
         cream: "hsl(var(--cream))",
-        charcoal: "hsl(var(--charcoal))",
       },
 
       borderRadius: {
@@ -82,37 +54,8 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-
-      keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(10px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-
-        shimmer: {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
-        },
-
-        float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-      },
-
-      animation: {
-        "fade-in": "fade-in 0.5s ease-out",
-        shimmer: "shimmer 3s ease-in-out infinite",
-        float: "float 3s ease-in-out infinite",
-      },
-
-      boxShadow: {
-        luxury: "0 25px 50px -12px hsl(0 0% 0% / 0.15)",
-        gold: "0 10px 40px -10px hsl(43 74% 49% / 0.3)",
-        soft: "0 4px 20px -4px hsl(0 0% 0% / 0.1)",
-      },
     },
   },
 
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 } satisfies Config;
