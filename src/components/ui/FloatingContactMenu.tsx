@@ -129,7 +129,7 @@ export function FloatingContactMenu() {
             <X className="w-7 h-7" />
           ) : (
             <img
-              src="https://www.grtjewels.com/_next/image/?url=%2Fassests%2Fimages%2Ficon-livechat.png&w=96&q=75"
+              src="public/images/icon-livechat.webp"
               alt="Live chat"
               className="w-[30px] h-[30px] object-contain"
               loading="lazy"
