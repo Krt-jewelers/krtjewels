@@ -129,13 +129,13 @@ export function FloatingContactMenu() {
             <X className="w-7 h-7" />
           ) : (
             <img
-              src="/images/icon-livechat.webp"
-              alt="Live chat"
-              className="w-[30px] h-[30px] object-contain"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
+  src="/images/WhatsApp_icon.png"
+  alt="WhatsApp"
+  className="w-[34px] h-[34px] object-contain"
+  loading="lazy"
+  decoding="async"
+  referrerPolicy="no-referrer"
+/>
           )}
         </Button>
       </div>
