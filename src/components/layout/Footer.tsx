@@ -8,7 +8,10 @@ import {
   Twitter,
   Youtube,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Gem,
+  Medal,
+  Lock
 } from 'lucide-react';
 import { FoundifCredit } from './FoundifCredit';
 
@@ -39,10 +42,10 @@ const policies = [
 ];
 
 const trustBadges = [
-  { name: "BIS Hallmarked Gold", desc: "Certified purity" },
-  { name: "IGI Certified Diamonds", desc: "Grading assurance" },
-  { name: "GIA Certified Diamonds", desc: "Global standards" },
-  { name: "Secure SSL Checkout", desc: "Safe payments" },
+  { name: "BIS Hallmarked Gold", desc: "Certified purity", icon: Medal },
+  { name: "IGI Certified Diamonds", desc: "Grading assurance", icon: Gem },
+  { name: "GIA Certified Diamonds", desc: "Global standards", icon: Gem },
+  { name: "Secure SSL Checkout", desc: "Safe payments", icon: Lock },
 ];
 
 export function Footer() {
@@ -60,7 +63,7 @@ export function Footer() {
               key={b.name}
               className="p-3 border border-gold-light/20 rounded-lg bg-black/20"
             >
-              <ShieldCheck className="w-5 h-5 text-primary mx-auto mb-1" />
+              <b.icon className="w-5 h-5 text-primary mx-auto mb-1" />
               <p className="text-xs font-medium text-primary">{b.name}</p>
               <p className="text-[10px] text-ivory/50">{b.desc}</p>
             </div>
