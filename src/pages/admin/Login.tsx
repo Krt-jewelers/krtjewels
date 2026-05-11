@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
-import adminLoginVideo from '@/assets/admin-login-video.mp4.asset.json';
+import craftVideo from '@/assets/craftsmanship-video.mp4';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
