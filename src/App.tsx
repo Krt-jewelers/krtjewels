@@ -28,6 +28,7 @@ import ComparePage from "./pages/Compare";
 import ChitFundLookupPage from "./pages/ChitFundLookup";
 import BlogPage from "./pages/Blog";
 import BlogPostPage from "./pages/BlogPost";
+import SitePage from "./pages/SitePage";
 // Customer Account Pages
 import AccountDashboard from "./pages/account/Dashboard";
 import AccountOrders from "./pages/account/Orders";
@@ -65,6 +66,7 @@ import AdminHeroSlides from "./pages/admin/HeroSlides";
 import AdminCollectionBanners from "./pages/admin/CollectionBanners";
 import AdminSizeCharts from "./pages/admin/SizeCharts";
 import AdminBlog from "./pages/admin/Blog";
+import AdminSitePages from "./pages/admin/SitePages";
 
 
 const queryClient = new QueryClient({
@@ -139,6 +141,12 @@ const App = () => {
             <Route path="/chit-fund" element={<ChitFundLookupPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
+            <Route path="/privacy-policy" element={<SitePage slug="privacy-policy" />} />
+            <Route path="/terms-and-conditions" element={<SitePage slug="terms-and-conditions" />} />
+            <Route path="/shipping-policy" element={<SitePage slug="shipping-policy" />} />
+            <Route path="/return-policy" element={<SitePage slug="return-policy" />} />
+            <Route path="/faq" element={<SitePage slug="faq" />} />
+            <Route path="/page/:slug" element={<SitePage />} />
             
             {/* Customer Account Routes */}
             <Route path="/account" element={<AccountDashboard />} />
@@ -181,6 +189,7 @@ const App = () => {
             <Route path="/admin/hero-slides" element={<AdminHeroSlides />} />
             <Route path="/admin/size-charts" element={<AdminSizeCharts />} />
             <Route path="/admin/blog" element={<AdminBlog />} />
+            <Route path="/admin/site-pages" element={<AdminSitePages />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

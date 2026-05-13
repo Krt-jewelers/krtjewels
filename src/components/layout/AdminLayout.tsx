@@ -56,6 +56,7 @@ const menuItems = [
   { name: 'Attributes', href: '/admin/attributes', icon: Layers },
   { name: 'Size Charts', href: '/admin/size-charts', icon: Layers },
   { name: 'Blog / Journal', href: '/admin/blog', icon: BookOpen },
+  { name: 'Site Pages', href: '/admin/site-pages', icon: FileText },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },
