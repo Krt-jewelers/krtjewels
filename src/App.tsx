@@ -67,6 +67,7 @@ import AdminCollectionBanners from "./pages/admin/CollectionBanners";
 import AdminSizeCharts from "./pages/admin/SizeCharts";
 import AdminBlog from "./pages/admin/Blog";
 import AdminSitePages from "./pages/admin/SitePages";
+import AdminFooterSettings from "./pages/admin/FooterSettings";
 
 
 const queryClient = new QueryClient({
