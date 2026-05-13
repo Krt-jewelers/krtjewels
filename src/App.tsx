@@ -66,6 +66,7 @@ import AdminHeroSlides from "./pages/admin/HeroSlides";
 import AdminCollectionBanners from "./pages/admin/CollectionBanners";
 import AdminSizeCharts from "./pages/admin/SizeCharts";
 import AdminBlog from "./pages/admin/Blog";
+import AdminSitePages from "./pages/admin/SitePages";
 
 
 const queryClient = new QueryClient({
