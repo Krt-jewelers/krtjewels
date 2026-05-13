@@ -8,12 +8,12 @@ import {
   Twitter,
   Youtube,
   ExternalLink,
-  ShieldCheck,
   Gem,
   Medal,
-  Lock
+  Lock,
 } from 'lucide-react';
 import { FoundifCredit } from './FoundifCredit';
+import { useFooterContact } from '@/hooks/useFooterContact';
 
 const collections = [
   { name: 'Necklaces', href: '/collections/necklaces' },
@@ -49,8 +49,8 @@ const trustBadges = [
 ];
 
 export function Footer() {
-  const mapLink =
-    'https://www.google.com/maps/place/?q=place_id:ChIJX0yR63xeUjoRgA_6Yatp91k';
+  const { data: contact } = useFooterContact();
+  const mapLink = contact?.map_share_url || 'https://share.google/JX7VmoorksTO98o9m';
 
   return (
     <footer className="bg-rich-black text-ivory">
