@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet-async';
+import { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,13 +25,21 @@ export default function SitePage({ slug: slugProp }: { slug?: string }) {
     },
   });
 
+  useEffect(() => {
+    if (data?.title) document.title = `${data.title} | KRT Jewellers`;
+    if (data?.meta_description) {
+      let m = document.querySelector('meta[name="description"]');
+      if (!m) {
+        m = document.createElement('meta');
+        m.setAttribute('name', 'description');
+        document.head.appendChild(m);
+      }
+      m.setAttribute('content', data.meta_description);
+    }
+  }, [data]);
+
   return (
     <Layout>
-      <Helmet>
-        <title>{data?.title ? `${data.title} | KRT Jewellers` : 'KRT Jewellers'}</title>
-        {data?.meta_description && <meta name="description" content={data.meta_description} />}
-        <link rel="canonical" href={`https://krtgold.lovable.app/${slug}`} />
-      </Helmet>
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         {isLoading ? (
           <div className="space-y-3">
