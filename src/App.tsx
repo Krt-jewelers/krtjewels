@@ -191,6 +191,7 @@ const App = () => {
             <Route path="/admin/size-charts" element={<AdminSizeCharts />} />
             <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/site-pages" element={<AdminSitePages />} />
+            <Route path="/admin/footer-settings" element={<AdminFooterSettings />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
