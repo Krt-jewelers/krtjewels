@@ -50,7 +50,7 @@ const trustBadges = [
 
 export function Footer() {
   const mapLink =
-    'https://www.google.com/maps/place/1154,+Big+Bazaar+St,+Prakasam,+Town+Hall,+Coimbatore,+Tamil+Nadu+641001';
+    'https://www.google.com/maps/place/?q=place_id:ChIJX0yR63xeUjoRgA_6Yatp91k';
 
   return (
     <footer className="bg-rich-black text-ivory">
