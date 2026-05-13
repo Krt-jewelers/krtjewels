@@ -67,6 +67,7 @@ import AdminCollectionBanners from "./pages/admin/CollectionBanners";
 import AdminSizeCharts from "./pages/admin/SizeCharts";
 import AdminBlog from "./pages/admin/Blog";
 import AdminSitePages from "./pages/admin/SitePages";
+import AdminFooterSettings from "./pages/admin/FooterSettings";
 
 
 const queryClient = new QueryClient({
@@ -190,6 +191,7 @@ const App = () => {
             <Route path="/admin/size-charts" element={<AdminSizeCharts />} />
             <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/site-pages" element={<AdminSitePages />} />
+            <Route path="/admin/footer-settings" element={<AdminFooterSettings />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -8,12 +8,12 @@ import {
   Twitter,
   Youtube,
   ExternalLink,
-  ShieldCheck,
   Gem,
   Medal,
-  Lock
+  Lock,
 } from 'lucide-react';
 import { FoundifCredit } from './FoundifCredit';
+import { useFooterContact } from '@/hooks/useFooterContact';
 
 const collections = [
   { name: 'Necklaces', href: '/collections/necklaces' },
@@ -49,8 +49,8 @@ const trustBadges = [
 ];
 
 export function Footer() {
-  const mapLink =
-    'https://www.google.com/maps/place/?q=place_id:ChIJX0yR63xeUjoRgA_6Yatp91k';
+  const { data: contact } = useFooterContact();
+  const mapLink = contact?.map_share_url || 'https://share.google/JX7VmoorksTO98o9m';
 
   return (
     <footer className="bg-rich-black text-ivory">
@@ -88,18 +88,38 @@ export function Footer() {
               craftsmanship, and uncompromising quality in 916 BIS Hallmarked gold jewellery.
             </p>
             <div className="space-y-3 text-ivory/60">
-              <a href="tel:+919843010986" className="flex items-center gap-3 hover:text-primary transition-colors">
-                <Phone className="w-4 h-4" />
-                <span>+91 98430 10986</span>
-              </a>
-              <a href="mailto:info@krtjewels.com" className="flex items-center gap-3 hover:text-primary transition-colors">
-                <Mail className="w-4 h-4" />
-                <span>info@krtjewels.com</span>
-              </a>
-              <div className="flex items-start gap-3">
+              {(contact?.phones ?? []).map((p) => (
+                <a
+                  key={p}
+                  href={`tel:${p.replace(/\s+/g, '')}`}
+                  className="flex items-center gap-3 hover:text-primary transition-colors"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>{p}</span>
+                </a>
+              ))}
+              {contact?.email && (
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="flex items-center gap-3 hover:text-primary transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>{contact.email}</span>
+                </a>
+              )}
+              <a
+                href={mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-3 hover:text-primary transition-colors"
+              >
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                <span>1154, Big Bazaar St, Prakasam,<br />Town Hall, Coimbatore,<br />Tamil Nadu 641001</span>
-              </div>
+                <span>
+                  {contact?.address_line1}
+                  <br />
+                  {contact?.address_line2}
+                </span>
+              </a>
             </div>
 
           </div>
