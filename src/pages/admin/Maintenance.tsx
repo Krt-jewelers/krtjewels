@@ -20,6 +20,50 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function useLiveNow() {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function CountdownTimer({ endsAtMs }: { endsAtMs: number | null }) {
+  const now = useLiveNow();
+  if (!endsAtMs) return null;
+  const remaining = Math.max(0, endsAtMs - now);
+  const total = Math.floor(remaining / 1000);
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+
+  const units = [
+    { label: 'Days', value: d },
+    { label: 'Hours', value: h },
+    { label: 'Minutes', value: m },
+    { label: 'Seconds', value: s },
+  ];
+
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <Clock className="w-4 h-4 text-gold animate-pulse" />
+      <div className="flex gap-1.5">
+        {units.map((u) => (
+          <div key={u.label} className="flex items-baseline gap-0.5">
+            <span className="inline-block min-w-[22px] text-center font-mono text-sm font-semibold text-foreground bg-muted rounded px-1">
+              {String(u.value).padStart(2, '0')}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{u.label.slice(0, 1)}</span>
+          </div>
+        ))}
+      </div>
+      <span className="text-xs text-muted-foreground">until auto-publish</span>
+    </div>
+  );
+}
+
 export default function AdminMaintenance() {
   const { settings, isActive, endsAtMs, now } = useMaintenanceMode();
   const { toast } = useToast();
