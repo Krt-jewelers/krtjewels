@@ -135,9 +135,12 @@ export default function AdminMaintenance() {
                   ? 'Visitors see the maintenance page. Toggle off to publish immediately.'
                   : 'Visitors can browse the storefront normally.'}
               </p>
-              {isActive && remaining != null && (
-                <p className="text-sm text-foreground flex items-center gap-1 pt-2">
-                  <Clock className="w-4 h-4" /> Auto-reveal in {Math.floor(remaining / 60000)}m {Math.floor((remaining % 60000) / 1000)}s — confetti will launch automatically.
+              {isActive && endsAtMs != null && (
+                <CountdownTimer endsAtMs={endsAtMs} />
+              )}
+              {isActive && endsAtMs == null && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1 pt-2">
+                  <Clock className="w-4 h-4" /> No auto-publish timer set. Toggle off to publish manually.
                 </p>
               )}
             </div>
