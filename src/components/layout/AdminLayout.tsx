@@ -30,6 +30,7 @@ import {
   QrCode,
   CheckCircle2,
   BookOpen,
+  Power,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ const menuItems = [
   { name: 'Blog / Journal', href: '/admin/blog', icon: BookOpen },
   { name: 'Site Pages', href: '/admin/site-pages', icon: FileText },
   { name: 'Footer & Contact', href: '/admin/footer-settings', icon: Mail },
+  { name: 'Maintenance Mode', href: '/admin/maintenance', icon: Power },
   { name: 'Coupons', href: '/admin/coupons', icon: Tag },
   { name: 'Shipping', href: '/admin/shipping', icon: Truck },
   { name: 'Tax Settings', href: '/admin/tax-settings', icon: Settings },

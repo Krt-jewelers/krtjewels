@@ -68,6 +68,10 @@ import AdminSizeCharts from "./pages/admin/SizeCharts";
 import AdminBlog from "./pages/admin/Blog";
 import AdminSitePages from "./pages/admin/SitePages";
 import AdminFooterSettings from "./pages/admin/FooterSettings";
+import AdminMaintenance from "./pages/admin/Maintenance";
+import { MaintenanceGate } from "@/components/maintenance/MaintenanceGate";
+
+
 
 
 const queryClient = new QueryClient({
@@ -121,7 +125,9 @@ const App = () => {
         {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
         <BrowserRouter>
           <ScrollToTop />
+          <MaintenanceGate>
           <Routes>
+
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
@@ -192,13 +198,16 @@ const App = () => {
             <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/site-pages" element={<AdminSitePages />} />
             <Route path="/admin/footer-settings" element={<AdminFooterSettings />} />
+            <Route path="/admin/maintenance" element={<AdminMaintenance />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </MaintenanceGate>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
 };
+
 
 export default App;
