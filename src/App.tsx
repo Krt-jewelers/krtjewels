@@ -198,13 +198,16 @@ const App = () => {
             <Route path="/admin/blog" element={<AdminBlog />} />
             <Route path="/admin/site-pages" element={<AdminSitePages />} />
             <Route path="/admin/footer-settings" element={<AdminFooterSettings />} />
+            <Route path="/admin/maintenance" element={<AdminMaintenance />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </MaintenanceGate>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
 };
+
 
 export default App;
