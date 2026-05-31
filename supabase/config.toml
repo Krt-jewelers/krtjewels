@@ -1,16 +1,4 @@
 project_id = "jmlldslairxizflgvpqq"
 
-[functions.cloudinary-upload]
-verify_jwt = false
-
-[functions.cloudinary-usage]
-verify_jwt = false
-
-[functions.cloudinary-list]
-verify_jwt = false
-
-[functions.cloudinary-migrate]
-verify_jwt = false
-
 [functions.blog-sitemap]
 verify_jwt = false
