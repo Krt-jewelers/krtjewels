@@ -1,7 +1,14 @@
 import imageCompression from 'browser-image-compression';
+import { supabase } from '@/integrations/supabase/client';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('You must be signed in as an admin');
+  return { Authorization: `Bearer ${token}` };
+}
 
 export async function compressImage(file: File): Promise<File> {
   const options = {
@@ -36,9 +43,7 @@ export async function uploadToCloudinary(file: File, folder = 'products'): Promi
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-upload`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
-    },
+    headers: await authHeaders(),
     body: formData,
   });
 
@@ -70,7 +75,7 @@ export async function getCloudinaryUsage(): Promise<CloudinaryUsage> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-usage`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(await authHeaders()),
       'Content-Type': 'application/json',
     },
   });
@@ -110,7 +115,7 @@ export async function listCloudinaryImages(folder?: string, nextCursor?: string)
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-list?${params}`, {
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(await authHeaders()),
       'Content-Type': 'application/json',
     },
   });
@@ -134,7 +139,7 @@ export async function migrateToCloudinary(): Promise<MigrationResult> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-migrate`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(await authHeaders()),
       'Content-Type': 'application/json',
     },
   });
@@ -159,7 +164,7 @@ export async function deleteCloudinaryImages(publicIds: string[]): Promise<Delet
   const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-delete`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(await authHeaders()),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ public_ids: publicIds }),
