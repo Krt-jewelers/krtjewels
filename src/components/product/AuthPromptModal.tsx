@@ -154,6 +154,7 @@ export function AuthPromptModal({ isOpen, onClose, action = 'add items to cart' 
                 <div className="flex items-center gap-4">
                   <button
                     onClick={prevSlide}
+                    aria-label="Previous ring slide"
                     className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -163,6 +164,7 @@ export function AuthPromptModal({ isOpen, onClose, action = 'add items to cart' 
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
+                        aria-label={`Go to slide ${index + 1}`}
                         className={cn(
                           "w-2 h-2 rounded-full transition-all duration-300",
                           index === currentSlide
@@ -174,6 +176,7 @@ export function AuthPromptModal({ isOpen, onClose, action = 'add items to cart' 
                   </div>
                   <button
                     onClick={nextSlide}
+                    aria-label="Next ring slide"
                     className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
                   >
                     <ChevronRight className="w-5 h-5" />
@@ -248,6 +251,7 @@ export function AuthPromptModal({ isOpen, onClose, action = 'add items to cart' 
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -341,9 +345,9 @@ export function AuthPromptModal({ isOpen, onClose, action = 'add items to cart' 
 
             <p className="text-center text-xs text-muted-foreground mt-4">
               By continuing, you agree to our{' '}
-              <Link to="/terms" className="text-primary hover:underline" onClick={onClose}>Terms</Link>
+              <Link to="/terms-and-conditions" className="text-primary hover:underline" onClick={onClose}>Terms & Conditions</Link>
               {' '}&{' '}
-              <Link to="/privacy" className="text-primary hover:underline" onClick={onClose}>Privacy Policy</Link>
+              <Link to="/privacy-policy" className="text-primary hover:underline" onClick={onClose}>Privacy Policy</Link>
             </p>
           </div>
         </div>
