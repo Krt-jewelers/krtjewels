@@ -5,9 +5,10 @@ import { Mail, Gift, Bell, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 
+  
+export function NewsletterSection() {
   const [honeypot, setHoneypot] = useState('');
 
-export function NewsletterSection() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
