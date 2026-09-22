@@ -86,8 +86,9 @@ export function Layout({ children }: LayoutProps) {
         location.pathname !== '/checkout' &&
         !location.pathname.startsWith('/product/') && <FloatingContactMenu />}
       <ComparisonBar />
+      <CookieConsent />
     </div>
-          <CookieConsent />
+          
 
   );
 }
