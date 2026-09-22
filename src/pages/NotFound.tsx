@@ -32,10 +32,14 @@ export default function NotFound() {
                 Return to Home
               </Link>
             </Button>
-            <Button asChild variant="outline" className="border-gold/40 text-ivory hover:bg-white/10 w-full sm:w-auto h-12 px-6">
-              <Link to="/shop" className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Explore Jewellery
+            <Button
+              asChild
+              variant="outline"
+              className="border-primary/50 bg-transparent text-ivory hover:bg-primary hover:text-rich-black hover:border-primary w-full sm:w-auto h-12 px-6 transition-all"
+            >
+              <Link to="/shop" className="flex items-center gap-2 group">
+                <Sparkles className="w-4 h-4 text-primary group-hover:text-inherit transition-colors" />
+                <span>Explore Jewellery</span>
               </Link>
             </Button>
           </div>
