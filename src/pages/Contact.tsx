@@ -10,15 +10,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-  const [honeypot, setHoneypot] = useState('');
-  const [lastSubmitted, setLastSubmitted] = useState<number>(0);
-
-
   
 
-    
-
 export default function ContactPage() {
+  const [honeypot, setHoneypot] = useState('');
+  const [lastSubmitted, setLastSubmitted] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
