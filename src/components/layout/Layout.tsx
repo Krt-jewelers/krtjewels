@@ -7,6 +7,8 @@ import { FloatingContactMenu } from '@/components/ui/FloatingContactMenu';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageViewTracker } from '@/hooks/useAnalyticsTracker';
+import { CookieConsent } from './CookieConsent';
+
 
 interface LayoutProps {
   children: ReactNode;
@@ -85,5 +87,7 @@ export function Layout({ children }: LayoutProps) {
         !location.pathname.startsWith('/product/') && <FloatingContactMenu />}
       <ComparisonBar />
     </div>
+          <CookieConsent />
+
   );
 }
