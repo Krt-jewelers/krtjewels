@@ -14,7 +14,23 @@ import { useAuth } from '@/hooks/useAuth';
   const [lastSubmitted, setLastSubmitted] = useState<number>(0);
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  
+
+    
+
+export default function ContactPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: '',
+  });
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // 1. Bot Honeypot Check (Silently drop spam)
@@ -88,51 +104,6 @@ import { useAuth } from '@/hooks/useAuth';
     }
   };
 
-
-export default function ContactPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-  });
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await supabase.from('enquiries').insert({
-        user_id: user?.id || null,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        subject: formData.subject,
-        message: formData.message,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Message sent!',
-        description: 'We will get back to you within 24 hours.',
-      });
-
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    } catch (error: any) {
-      toast({
-        title: 'Failed to send message',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <Layout>
