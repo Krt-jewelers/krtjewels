@@ -21,7 +21,10 @@ export function useRealtimeSync() {
           table: 'products',
         },
         (payload) => {
-          console.log('Products changed:', payload.eventType);
+          if (import.meta.env.DEV) {
+            console.debug('Products changed:', payload.eventType);
+          }
+
           // Invalidate all product-related queries
           queryClient.invalidateQueries({ queryKey: ['products'] });
           queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
@@ -45,10 +48,14 @@ export function useRealtimeSync() {
           table: 'gold_rates',
         },
         (payload) => {
-          console.log('Gold rates changed:', payload.eventType);
+          if (import.meta.env.DEV) {
+            console.debug('Gold rates changed:', payload.eventType);
+          }
+
           // Invalidate gold rate queries - this triggers price recalculation
           queryClient.invalidateQueries({ queryKey: ['goldRate'] });
           queryClient.invalidateQueries({ queryKey: ['goldRateHistory'] });
+
           // Also invalidate products since prices depend on gold rate
           queryClient.invalidateQueries({ queryKey: ['products'] });
           queryClient.invalidateQueries({ queryKey: ['featuredProducts'] });
@@ -68,7 +75,10 @@ export function useRealtimeSync() {
           table: 'orders',
         },
         () => {
-          console.log('New order placed - refreshing stock');
+          if (import.meta.env.DEV) {
+            console.debug('New order placed - refreshing stock');
+          }
+
           // Refresh products to get updated stock
           queryClient.invalidateQueries({ queryKey: ['products'] });
           queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
@@ -83,4 +93,4 @@ export function useRealtimeSync() {
       supabase.removeChannel(ordersChannel);
     };
   }, [queryClient]);
-}
+              }
