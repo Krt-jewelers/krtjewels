@@ -10,6 +10,85 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
+  const [honeypot, setHoneypot] = useState('');
+  const [lastSubmitted, setLastSubmitted] = useState<number>(0);
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 1. Bot Honeypot Check (Silently drop spam)
+    if (honeypot.trim().length > 0) {
+      toast({ title: 'Message sent!', description: 'We will get back to you within 24 hours.' });
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      return;
+    }
+
+    // 2. Cooldown check (prevent repeated rapid spam)
+    const now = Date.now();
+    if (now - lastSubmitted < 15000) {
+      toast({
+        title: 'Please wait',
+        description: 'You sent a message recently. Please wait a few seconds before trying again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // 3. Indian Phone number validation
+    const cleanedPhone = formData.phone.replace(/[\s\-+]/g, '').replace(/^91/, '');
+    if (cleanedPhone && !/^[6-9]\d{9}$/.test(cleanedPhone)) {
+      toast({
+        title: 'Invalid Phone Number',
+        description: 'Please enter a valid 10-digit Indian mobile number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // 4. Basic Email regex check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.from('enquiries').insert({
+        user_id: user?.id || null,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+      });
+
+      if (error) throw error;
+
+      setLastSubmitted(Date.now());
+      toast({
+        title: 'Message sent!',
+        description: 'We will get back to you within 24 hours.',
+      });
+
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to send message',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -226,6 +305,21 @@ export default function ContactPage() {
                       <Send className="w-4 h-4" />
                       {isSubmitting ? 'Sending...' : 'Send Message'}
                     </Button>
+
+                        {/* Hidden Honeypot field for bot protection */}
+    <div className="hidden" aria-hidden="true">
+      <label htmlFor="website_url">Do not fill this</label>
+      <input
+        type="text"
+        id="website_url"
+        name="website_url"
+        tabIndex={-1}
+        autoComplete="off"
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+      />
+    </div>
+
                   </form>
                 </CardContent>
               </Card>
