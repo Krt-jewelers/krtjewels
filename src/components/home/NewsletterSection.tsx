@@ -4,16 +4,27 @@ import { Input } from '@/components/ui/input';
 import { Mail, Gift, Bell, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+
+  const [honeypot, setHoneypot] = useState('');
+
 export function NewsletterSection() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { toast } = useToast();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || honeypot) return;
     
-    // Simulate subscription
+    // Email regex validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSubmitted(true);
     toast({
       title: 'Welcome to KRT Jewels!',
