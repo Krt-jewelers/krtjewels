@@ -6,8 +6,14 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 async function authHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  if (!token) throw new Error('You must be signed in as an admin');
-  return { Authorization: `Bearer ${token}` };
+
+  if (!token) {
+    throw new Error('You must be signed in as an admin');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 export async function compressImage(file: File): Promise<File> {
@@ -23,29 +29,45 @@ export async function compressImage(file: File): Promise<File> {
   const originalSizeMB = file.size / (1024 * 1024);
 
   const compressed = await imageCompression(file, options);
-  
+
   // Rename to .webp extension
   const webpName = file.name.replace(/\.[^.]+$/, '.webp');
-  const webpFile = new File([compressed], webpName, { type: 'image/webp' });
-  
-  console.log(
-    `Optimized ${file.name} → WebP: ${originalSizeMB.toFixed(2)}MB → ${(webpFile.size / (1024 * 1024)).toFixed(2)}MB`
+
+  const webpFile = new File(
+    [compressed],
+    webpName,
+    { type: 'image/webp' }
   );
+
+  // Only log optimization details during development
+  if (import.meta.env.DEV) {
+    console.debug(
+      `Optimized ${file.name} → WebP: ${originalSizeMB.toFixed(2)}MB → ${(webpFile.size / (1024 * 1024)).toFixed(2)}MB`
+    );
+  }
+
   return webpFile;
 }
 
-export async function uploadToCloudinary(file: File, folder = 'products'): Promise<string> {
+export async function uploadToCloudinary(
+  file: File,
+  folder = 'products'
+): Promise<string> {
   const compressed = await compressImage(file);
 
   const formData = new FormData();
+
   formData.append('file', compressed);
   formData.append('folder', folder);
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-upload`, {
-    method: 'POST',
-    headers: await authHeaders(),
-    body: formData,
-  });
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/cloudinary-upload`,
+    {
+      method: 'POST',
+      headers: await authHeaders(),
+      body: formData,
+    }
+  );
 
   const result = await response.json();
 
@@ -72,13 +94,16 @@ export interface CloudinaryUsage {
 }
 
 export async function getCloudinaryUsage(): Promise<CloudinaryUsage> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-usage`, {
-    method: 'GET',
-    headers: {
-      ...(await authHeaders()),
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/cloudinary-usage`,
+    {
+      method: 'GET',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   const result = await response.json();
 
@@ -106,19 +131,32 @@ export interface CloudinaryListResponse {
   total_count: number;
 }
 
-export async function listCloudinaryImages(folder?: string, nextCursor?: string): Promise<CloudinaryListResponse> {
+export async function listCloudinaryImages(
+  folder?: string,
+  nextCursor?: string
+): Promise<CloudinaryListResponse> {
   const params = new URLSearchParams();
-  if (folder) params.append('folder', folder);
-  if (nextCursor) params.append('next_cursor', nextCursor);
+
+  if (folder) {
+    params.append('folder', folder);
+  }
+
+  if (nextCursor) {
+    params.append('next_cursor', nextCursor);
+  }
+
   params.append('max_results', '50');
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-list?${params}`, {
-    method: 'GET',
-    headers: {
-      ...(await authHeaders()),
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/cloudinary-list?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   const result = await response.json();
 
@@ -131,18 +169,36 @@ export async function listCloudinaryImages(folder?: string, nextCursor?: string)
 
 export interface MigrationResult {
   success: boolean;
-  results: { table: string; field: string; migrated: number; skipped: number; total: number; errors: string[] }[];
-  summary: { total_items: number; total_migrated: number; total_skipped: number; total_errors: number; deduplicated_uploads: number };
+
+  results: {
+    table: string;
+    field: string;
+    migrated: number;
+    skipped: number;
+    total: number;
+    errors: string[];
+  }[];
+
+  summary: {
+    total_items: number;
+    total_migrated: number;
+    total_skipped: number;
+    total_errors: number;
+    deduplicated_uploads: number;
+  };
 }
 
 export async function migrateToCloudinary(): Promise<MigrationResult> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-migrate`, {
-    method: 'POST',
-    headers: {
-      ...(await authHeaders()),
-      'Content-Type': 'application/json',
-    },
-  });
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/cloudinary-migrate`,
+    {
+      method: 'POST',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 
   const result = await response.json();
 
@@ -155,20 +211,37 @@ export async function migrateToCloudinary(): Promise<MigrationResult> {
 
 export interface DeleteResult {
   success: boolean;
+
   deleted: string[];
-  failed: { public_id: string; error: string }[];
-  summary: { total_requested: number; total_deleted: number; total_failed: number };
+
+  failed: {
+    public_id: string;
+    error: string;
+  }[];
+
+  summary: {
+    total_requested: number;
+    total_deleted: number;
+    total_failed: number;
+  };
 }
 
-export async function deleteCloudinaryImages(publicIds: string[]): Promise<DeleteResult> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/cloudinary-delete`, {
-    method: 'POST',
-    headers: {
-      ...(await authHeaders()),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ public_ids: publicIds }),
-  });
+export async function deleteCloudinaryImages(
+  publicIds: string[]
+): Promise<DeleteResult> {
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/cloudinary-delete`,
+    {
+      method: 'POST',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        public_ids: publicIds,
+      }),
+    }
+  );
 
   const result = await response.json();
 
