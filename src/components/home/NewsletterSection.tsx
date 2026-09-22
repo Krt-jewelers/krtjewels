@@ -103,6 +103,17 @@ export function NewsletterSection() {
                 'Subscribe'
               )}
             </Button>
+
+                <input
+      type="text"
+      className="hidden"
+      tabIndex={-1}
+      autoComplete="off"
+      value={honeypot}
+      onChange={(e) => setHoneypot(e.target.value)}
+      aria-hidden="true"
+    />
+
           </form>
 
           <p className="text-sm text-ivory/50 mt-6">
