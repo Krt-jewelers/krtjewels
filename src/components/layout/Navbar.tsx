@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
-// Category route slugs for the navigation bar
 interface NavbarProps {
   isCartOpen: boolean;
   onCartOpenChange: (isOpen: boolean) => void;
@@ -104,6 +103,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               {/* Inline search */}
               <button
                 onClick={() => setIsSearchOpen(true)}
+                aria-label="Search jewellery collections"
                 className="flex items-center gap-2 border border-border rounded px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/50 transition-colors w-44"
               >
                 <Search className="w-4 h-4" />
@@ -114,7 +114,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Account menu">
                       <User className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -150,13 +150,13 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/auth')}>
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/auth')} aria-label="Sign in to your account">
                   <User className="w-5 h-5" />
                 </Button>
               )}
 
               {/* Wishlist */}
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')}>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')} aria-label="View wishlist">
                 <Heart className="w-5 h-5" />
               </Button>
 
@@ -166,6 +166,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
                 size="icon"
                 className="h-9 w-9 relative"
                 onClick={() => onCartOpenChange(true)}
+                aria-label={`Shopping bag with ${itemCount} items`}
               >
                 <ShoppingBag className="w-5 h-5" />
                 {itemCount > 0 && (
@@ -234,6 +235,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               size="icon"
               className="h-9 w-9"
               onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -251,10 +253,11 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               size="icon"
               className="h-9 w-9"
               onClick={() => setIsSearchOpen(true)}
+              aria-label="Search jewellery"
             >
               <Search className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => navigate('/wishlist')} aria-label="View wishlist">
               <Heart className="w-5 h-5" />
             </Button>
             <Button
@@ -262,6 +265,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               size="icon"
               className="h-9 w-9 relative"
               onClick={() => onCartOpenChange(true)}
+              aria-label={`Shopping bag with ${itemCount} items`}
             >
               <ShoppingBag className="w-5 h-5" />
               {itemCount > 0 && (
@@ -272,7 +276,6 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
             </Button>
           </div>
         </div>
-
       </header>
 
       {/* Search Overlay */}
@@ -281,7 +284,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
       {/* Mobile Sidebar */}
       <MobileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      {/* Flying Cart Sidebar */}
+      {/* Flying Cart animation */}
       <FlyingCart isOpen={isCartOpen} onClose={() => onCartOpenChange(false)} />
     </>
   );
