@@ -199,6 +199,9 @@ const App = () => {
             <Route path="/admin/site-pages" element={<AdminSitePages />} />
             <Route path="/admin/footer-settings" element={<AdminFooterSettings />} />
             <Route path="/admin/maintenance" element={<AdminMaintenance />} />
+            <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
+            <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+
             
             <Route path="*" element={<NotFound />} />
           </Routes>
