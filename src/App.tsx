@@ -6,7 +6,8 @@ import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import DebugPanel from '@/components/dev/DebugPanel';
 import NetworkWatcher from '@/components/dev/NetworkWatcher';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import Index from "./pages/Index";
