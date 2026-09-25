@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { useProduct, useBestsellerProducts, calculateProductPrice } from '@/hooks/useProducts';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { CATEGORY_NAMES } from '@/lib/types';
@@ -101,6 +102,7 @@ export default function ProductDetail() {
   if (!product) {
     return (
       <Layout>
+        <SEO title="Product Not Found" noindex />
         <div className="container mx-auto px-4 py-20 text-center">
           <h1 className="text-3xl font-medium mb-4">Product Not Found</h1>
           <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
@@ -169,8 +171,89 @@ export default function ProductDetail() {
       }
     : null;
 
+  // Structured Data: Product + Breadcrumbs (Schema.org JSON-LD)
+  const productImageUrl = product.images?.[0] || 'https://www.krtjewellers.com/og-image.png';
+  const categoryLabel = CATEGORY_NAMES[product.category] || 'Jewellery';
+  const productUrl = `https://www.krtjewellers.com/product/${product.slug}`;
+  const categoryUrl = `https://www.krtjewellers.com/collections/${product.category.replace('_', '-')}`;
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.images?.length > 0 ? product.images : [productImageUrl],
+    description:
+      product.description ||
+      `Buy handcrafted ${product.name} in ${product.metal_type.replace('_', ' ').toUpperCase()} at KRT Jewellers. Guaranteed BIS Hallmarked purity.`,
+    sku: product.sku || product.id,
+    brand: {
+      '@type': 'Brand',
+      name: 'KRT Jewellers',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'INR',
+      price: adjustedCalculatedPrice.total || product.base_price,
+      priceValidUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      itemCondition: 'https://schema.org/NewCondition',
+      availability:
+        product.stock_quantity > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'JewelryStore',
+        name: 'KRT Jewellers',
+      },
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.krtjewellers.com/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Jewellery',
+        item: 'https://www.krtjewellers.com/shop',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: categoryLabel,
+        item: categoryUrl,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
+  };
+
   return (
     <Layout>
+      {/* Route-Aware SEO & Structured Data */}
+      <SEO
+        title={`${product.name} – Buy Online`}
+        description={
+          product.description ||
+          `Handcrafted ${product.name} in ${product.metal_type.replace('_', ' ').toUpperCase()} at KRT Jewellers. 100% BIS Hallmarked purity, certified gemstones & live transparent pricing.`
+        }
+        path={`/product/${product.slug}`}
+        image={productImageUrl}
+        type="product"
+        schema={[productSchema, breadcrumbSchema]}
+      />
+
       {/* Breadcrumb */}
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-3">
@@ -180,7 +263,7 @@ export default function ProductDetail() {
             <Link to="/shop" className="hover:text-foreground">Jewellery</Link>
             <ChevronRight className="w-3 h-3" />
             <Link to={`/collections/${product.category.replace('_', '-')}`} className="hover:text-foreground">
-              {CATEGORY_NAMES[product.category]}
+              {categoryLabel}
             </Link>
             <ChevronRight className="w-3 h-3" />
             <span className="text-foreground font-medium truncate max-w-[200px]">{product.name}</span>
@@ -192,14 +275,14 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-6 md:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
           {/* Left — Image Gallery */}
-            <ProductImageGallery
-              images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
-              productName={product.name}
-              videoUrl={(product as any).video_url}
-              variationImageUrl={null}
-              badges={{
-                isNewArrival: product.is_new_arrival,
-                isBestseller: product.is_bestseller,
+          <ProductImageGallery
+            images={product.images.length > 0 ? product.images : ['/placeholder.svg']}
+            productName={product.name}
+            videoUrl={(product as any).video_url}
+            variationImageUrl={null}
+            badges={{
+              isNewArrival: product.is_new_arrival,
+              isBestseller: product.is_bestseller,
               isBridal: product.is_bridal,
             }}
             onOpenLightbox={handleOpenLightbox}
@@ -316,7 +399,7 @@ export default function ProductDetail() {
                   Bestsellers
                 </TabsTrigger>
                 <TabsTrigger value="same-category" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4">
-                  {CATEGORY_NAMES[product.category]}
+                  {categoryLabel}
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="bestsellers">
