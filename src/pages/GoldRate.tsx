@@ -1,4 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { useGoldRate, useGoldRateHistory } from '@/hooks/useGoldRate';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { formatPrice } from '@/lib/types';
@@ -31,6 +32,13 @@ export default function GoldRatePage() {
     <Layout>
 
       {/* Hero */}
+
+            <SEO 
+        title="Today's Live Gold Rate – 22K & 24K Gold Price Today"
+        description="Check live 22K and 24K gold rates per gram today at KRT Jewellers. Daily updated rates with transparent breakdown & GST calculation."
+        path="/gold-rate"
+      />
+
       <section className="relative py-16 bg-gradient-to-r from-rich-black via-charcoal to-rich-black overflow-hidden">
         <div className="absolute inset-0 bg-pattern-dots opacity-10" />
 
