@@ -253,19 +253,13 @@ export function Footer() {
             </p>
             <FoundifCredit />
             
-                       {/* Social Links */}
+                                 {/* Social Links */}
             <div className="flex items-center gap-4">
-              <a href="https://facebook.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="https://www.instagram.com/krtjewellers/" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
+              <a href="https://www.instagram.com/krtjewellers/" target="_blank" rel="noopener noreferrer" aria-label="Visit KRT Jewellers on Instagram" className="text-ivory/40 hover:text-primary transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="https://twitter.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="https://youtube.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
-                <Youtube className="w-5 h-5" />
+              <a href="https://facebook.com/krtjewels" target="_blank" rel="noopener noreferrer" aria-label="Visit KRT Jewellers on Facebook" className="text-ivory/40 hover:text-primary transition-colors">
+                <Facebook className="w-5 h-5" />
               </a>
             </div>
 
