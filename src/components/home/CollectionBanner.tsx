@@ -78,7 +78,7 @@ export function CollectionBanner() {
               
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-center">
                 <span className="text-gold-light text-xs uppercase tracking-widest font-medium mb-2">
-                  Bridal 2025
+                  Bridal 2026
                 </span>
                 <h3 className="font-serif text-2xl md:text-3xl font-medium text-ivory mb-2">
                   Wedding Collection
