@@ -18,6 +18,22 @@ export function CookieConsent() {
 
   const handleAccept = () => {
     localStorage.setItem(STORAGE_KEY, 'accepted');
+
+    // 1. Grant Google Consent Mode v2
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
+        ad_storage: 'granted',
+        ad_user_data: 'granted',
+        ad_personalization: 'granted',
+        analytics_storage: 'granted',
+      });
+    }
+
+    // 2. Initialize Microsoft Clarity
+    if (typeof window !== 'undefined' && typeof (window as any).initClarity === 'function') {
+      (window as any).initClarity();
+    }
+
     setIsOpen(false);
   };
 
