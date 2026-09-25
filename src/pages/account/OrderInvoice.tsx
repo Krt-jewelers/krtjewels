@@ -398,7 +398,7 @@ export default function OrderInvoice() {
           {/* Footer */}
           <div className="mt-12 pt-6 border-t text-center text-sm text-muted-foreground">
             <p>Thank you for shopping with KRT Jewels!</p>
-            <p className="mt-1">For queries, contact us at info@krtjewels.com or +91 98430 10986</p>
+             <p className="mt-1">For queries, contact us at krtjewellers1990@gmail.com or +91 98430 10986</p>
             <p className="mt-4 text-xs">This is a computer-generated invoice and does not require a signature.</p>
           </div>
         </div>
