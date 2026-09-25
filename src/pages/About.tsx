@@ -1,10 +1,18 @@
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
+
 import { Award, Users, Heart, Gem, Shield, Truck } from 'lucide-react';
 
 export default function AboutPage() {
   return (
     <Layout>
       {/* Hero */}
+            <SEO 
+        title="About Us – Crafting Elegance for 30+ Years"
+        description="Learn about KRT Jewellers' 30+ year heritage in 916 BIS hallmarked gold and handcrafted diamond jewellery in Tamil Nadu."
+        path="/about"
+      />
+
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0">
           <img
