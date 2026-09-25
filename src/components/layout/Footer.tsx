@@ -253,7 +253,7 @@ export function Footer() {
             </p>
             <FoundifCredit />
             
-            {/* Social Links */}
+                       {/* Social Links */}
             <div className="flex items-center gap-4">
               <a href="https://facebook.com/krtjewels" target="_blank" rel="noopener noreferrer" className="text-ivory/40 hover:text-primary transition-colors">
                 <Facebook className="w-5 h-5" />
@@ -268,6 +268,7 @@ export function Footer() {
                 <Youtube className="w-5 h-5" />
               </a>
             </div>
+
           </div>
         </div>
       </div>
