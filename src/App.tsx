@@ -202,6 +202,9 @@ const App = () => {
             <Route path="/admin/maintenance" element={<AdminMaintenance />} />
             <Route path="/terms" element={<Navigate to="/terms-and-conditions" replace />} />
             <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+            <Route path="/returns" element={<Navigate to="/return-policy" replace />} />
+            <Route path="/shipping" element={<Navigate to="/shipping-policy" replace />} />
+
 
             
             <Route path="*" element={<NotFound />} />
