@@ -58,27 +58,27 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- Policies -->
+   <!-- Policies -->
   <url>
-    <loc>https://www.krtjewellers.com/privacy</loc>
+    <loc>https://www.krtjewellers.com/privacy-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://www.krtjewellers.com/returns</loc>
+    <loc>https://www.krtjewellers.com/return-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://www.krtjewellers.com/shipping</loc>
+    <loc>https://www.krtjewellers.com/shipping-policy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://www.krtjewellers.com/terms</loc>
+    <loc>https://www.krtjewellers.com/terms-and-conditions</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
