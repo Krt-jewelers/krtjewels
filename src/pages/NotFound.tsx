@@ -1,12 +1,16 @@
+import { SEO } from '@/components/layout/SEO';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Compass, Home, Sparkles, Phone } from 'lucide-react';
 
+
 export default function NotFound() {
   return (
     <Layout>
+      <SEO title="404 – Page Not Found" noindex={true} />
       <div className="min-h-[70vh] flex items-center justify-center py-16 px-4 bg-gradient-to-b from-rich-black via-charcoal to-rich-black text-ivory">
+
         <div className="max-w-xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 border border-primary/30 text-primary">
             <Compass className="w-10 h-10 animate-spin-slow" />
