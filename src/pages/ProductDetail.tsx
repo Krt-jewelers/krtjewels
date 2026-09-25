@@ -194,7 +194,7 @@ export default function ProductDetail() {
       '@type': 'Offer',
       url: productUrl,
       priceCurrency: 'INR',
-      price: adjustedCalculatedPrice.total || product.base_price,
+       price: adjustedCalculatedPrice.total || product.calculated_price.total || 0,
       priceValidUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       itemCondition: 'https://schema.org/NewCondition',
       availability:
