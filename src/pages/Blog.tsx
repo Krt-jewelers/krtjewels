@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -16,6 +17,12 @@ export default function Blog() {
 
   return (
     <Layout>
+      <SEO 
+        title="The KRT Journal – Stories, Style & Jewellery Guides"
+        description="Explore the world of fine jewellery — from craftsmanship secrets to bridal trends and styling guides curated by KRT Jewellers."
+        path="/blog"
+      />
+
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/40 to-background py-16 md:py-24 border-b border-border">
         <div className="max-w-5xl mx-auto px-4 md:px-8 text-center">
