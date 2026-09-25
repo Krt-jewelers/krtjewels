@@ -15,7 +15,7 @@ const DEFAULTS: FooterContact = {
   address_line1: '1154, Big Bazaar Street, Prakasam',
   address_line2: 'Town Hall, Coimbatore, Tamil Nadu 641001',
   phones: ['+91 98430 10986', '+91 422 2390505'],
-  email: 'info@krtjewels.com',
+  email: 'krtjewellers1990@gmail.com',
   map_share_url: 'https://share.google/JX7VmoorksTO98o9m',
   place_id: 'ChIJX0yR63xeUjoRgA_6Yatp91k',
 };
