@@ -1,8 +1,10 @@
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -17,6 +19,63 @@ export default function BlogPost() {
   const { data: posts = [], isLoading } = useBlogPosts({ publishedOnly: true });
   const post = posts.find((p) => p.slug === slug);
   const related = posts.filter((p) => p.slug !== slug).slice(0, 3);
+
+  const articleSchema = useMemo(() => {
+    if (!post) return undefined;
+    return [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: post.excerpt || post.title,
+        image: post.cover_image_url
+          ? [post.cover_image_url]
+          : ['https://www.krtjewellers.com/og-image.png'],
+        datePublished: post.published_at || new Date().toISOString(),
+        dateModified: post.published_at || new Date().toISOString(),
+        author: {
+          '@type': 'Person',
+          name: post.author || 'KRT Jewellers',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'KRT Jewellers',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://www.krtjewellers.com/icon-512.png',
+          },
+        },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `https://www.krtjewellers.com/blog/${post.slug}`,
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://www.krtjewellers.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'The Journal',
+            item: 'https://www.krtjewellers.com/blog',
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: post.title,
+            item: `https://www.krtjewellers.com/blog/${post.slug}`,
+          },
+        ],
+      },
+    ];
+  }, [post]);
 
   if (isLoading) {
     return (
@@ -36,6 +95,11 @@ export default function BlogPost() {
   if (!post) {
     return (
       <Layout>
+        <SEO
+          title="Article Not Found – KRT Journal"
+          description="The requested article could not be found."
+          noindex={true}
+        />
         <div className="max-w-3xl mx-auto px-4 md:px-8 py-24 text-center">
           <h1 className="font-serif text-3xl text-foreground mb-4">Article not found</h1>
           <Link to="/blog" className="inline-flex items-center gap-2 text-primary tracking-wider uppercase text-sm font-medium">
@@ -48,6 +112,15 @@ export default function BlogPost() {
 
   return (
     <Layout>
+      <SEO
+        title={post.title}
+        description={post.excerpt || `Read "${post.title}" on the KRT Jewellers Journal.`}
+        path={`/blog/${post.slug}`}
+        image={post.cover_image_url || 'https://www.krtjewellers.com/og-image.png'}
+        type="article"
+        schema={articleSchema}
+      />
+
       <article className="py-12 md:py-20">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <Link to="/blog" className="inline-flex items-center gap-2 text-xs md:text-sm text-muted-foreground hover:text-primary tracking-wider uppercase font-medium mb-8">
