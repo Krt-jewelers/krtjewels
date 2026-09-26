@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { SEO } from '@/components/layout/SEO';
 import { Layout } from '@/components/layout/Layout';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
@@ -551,6 +552,13 @@ export default function ShopPage() {
 
   return (
     <Layout>
+
+      <SEO
+        title="Shop All Jewellery – Handcrafted Gold & Diamond Collections"
+        description="Explore our complete collection of handcrafted gold and diamond jewellery. Rings, necklaces, earrings, bangles and bridal sets from KRT Jewellers Coimbatore."
+        path="/shop"
+      />
+
       {/* Page Header */}
       <section className="bg-secondary/30 border-b">
         <div className="container mx-auto px-4 py-8">
