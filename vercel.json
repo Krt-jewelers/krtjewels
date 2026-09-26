@@ -9,7 +9,6 @@
       "destination": "/index.html"
     }
   ],
-
   "headers": [
     {
       "source": "/(.*)",
@@ -18,11 +17,10 @@
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
-         {
+        {
           "key": "X-Frame-Options",
           "value": "SAMEORIGIN"
         },
-
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
@@ -45,14 +43,10 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob: https://api.qrserver.com https://res.cloudinary.com https://*.supabase.co https://images.unsplash.com https://www.google-analytics.com https://www.googletagmanager.com https://*.clarity.ms https://lh3.googleusercontent.com https://scontent.cdninstagram.com https://*.cdninstagram.com https://i.ytimg.com https://img.youtube.com; media-src 'self' blob: https://res.cloudinary.com https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.clarity.ms; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.clarity.ms https://api.cloudinary.com https://res.cloudinary.com https://api.qrserver.com; frame-src 'self' https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com;"
-          
-          
-
+          "value": "default-src 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob: https://api.qrserver.com https://res.cloudinary.com https://*.supabase.co https://images.unsplash.com https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.clarity.ms https://c.bing.com https://lh3.googleusercontent.com https://scontent.cdninstagram.com https://*.cdninstagram.com https://i.ytimg.com https://img.youtube.com; media-src 'self' blob: https://res.cloudinary.com https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://*.clarity.ms; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.clarity.ms https://api.cloudinary.com https://res.cloudinary.com https://api.qrserver.com; frame-src 'self' https://www.google.com https://www.youtube.com https://www.youtube-nocookie.com;"
         }
       ]
     },
-
     {
       "source": "/sitemap.xml",
       "headers": [
@@ -66,7 +60,6 @@
         }
       ]
     },
-
     {
       "source": "/images/(.*)",
       "headers": [
