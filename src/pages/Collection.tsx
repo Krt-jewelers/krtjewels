@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { useProducts } from '@/hooks/useProducts';
 import { CATEGORY_NAMES, type ProductCategory, formatPrice } from '@/lib/types';
@@ -93,6 +94,38 @@ export default function CollectionPage() {
   });
 
   const categoryName = category ? CATEGORY_NAMES[category] : 'All Jewellery';
+  const categoryPath = categorySlug ? `/collection/${categorySlug}` : '/shop';
+  const categoryTitle = category 
+    ? `${categoryName} Collection – Handcrafted Gold Jewellery | KRT Jewellers` 
+    : 'Fine Jewellery Collections | KRT Jewellers';
+  const categoryDescription = category
+    ? `Explore our exquisite collection of handcrafted ${categoryName.toLowerCase()} in 916 BIS hallmarked gold. Transparent live pricing, authentic craftsmanship, insured shipping.`
+    : 'Browse our complete collection of handcrafted gold and diamond jewellery at KRT Jewellers.';
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://www.krtjewellers.com',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Collections',
+        item: 'https://www.krtjewellers.com/shop',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: categoryName,
+        item: `https://www.krtjewellers.com${categoryPath}`,
+      },
+    ],
+  };
 
   const hasActiveFilters = metalFilter !== 'all' || weightRange[0] > 0 || weightRange[1] < 200 || priceRange[0] > 0 || priceRange[1] < 1000000;
 
@@ -104,6 +137,14 @@ export default function CollectionPage() {
 
   return (
     <Layout>
+      <SEO
+        title={categoryTitle}
+        description={categoryDescription}
+        path={categoryPath}
+        image={bannerImage}
+        schema={breadcrumbSchema}
+      />
+
       {/* Hero Banner */}
       <section className="relative h-64 md:h-80 overflow-hidden">
         <div className="absolute inset-0">
