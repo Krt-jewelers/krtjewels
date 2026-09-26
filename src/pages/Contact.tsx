@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,8 +10,6 @@ import { Phone, Mail, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-  
 
 export default function ContactPage() {
   const [honeypot, setHoneypot] = useState('');
@@ -26,7 +25,7 @@ export default function ContactPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // 1. Bot Honeypot Check (Silently drop spam)
@@ -100,9 +99,14 @@ export default function ContactPage() {
     }
   };
 
-
   return (
     <Layout>
+      <SEO
+        title="Contact Us – KRT Jewellers Showroom & Customer Care"
+        description="Get in touch with KRT Jewellers. Visit our showroom in Coimbatore, call our jewellery specialists, or send an enquiry for bridal jewellery and bespoke orders."
+        path="/contact"
+      />
+
       {/* Hero */}
       <section className="relative py-16 bg-gradient-to-r from-rich-black via-charcoal to-rich-black">
         <div className="container mx-auto px-4 text-center">
@@ -145,10 +149,9 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                                    <a href="mailto:krtjewellers1990@gmail.com" className="text-lg hover:text-primary transition-colors">
+                  <a href="mailto:krtjewellers1990@gmail.com" className="text-lg hover:text-primary transition-colors">
                     krtjewellers1990@gmail.com
                   </a>
-
                   <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
                 </CardContent>
               </Card>
@@ -274,20 +277,19 @@ export default function ContactPage() {
                       {isSubmitting ? 'Sending...' : 'Send Message'}
                     </Button>
 
-                        {/* Hidden Honeypot field for bot protection */}
-    <div className="hidden" aria-hidden="true">
-      <label htmlFor="website_url">Do not fill this</label>
-      <input
-        type="text"
-        id="website_url"
-        name="website_url"
-        tabIndex={-1}
-        autoComplete="off"
-        value={honeypot}
-        onChange={(e) => setHoneypot(e.target.value)}
-      />
-    </div>
-
+                    {/* Hidden Honeypot field for bot protection */}
+                    <div className="hidden" aria-hidden="true">
+                      <label htmlFor="website_url">Do not fill this</label>
+                      <input
+                        type="text"
+                        id="website_url"
+                        name="website_url"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                      />
+                    </div>
                   </form>
                 </CardContent>
               </Card>
