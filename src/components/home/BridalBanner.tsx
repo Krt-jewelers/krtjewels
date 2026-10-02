@@ -9,6 +9,8 @@ export function BridalBanner() {
           src="https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=1920&h=800&fit=crop"
           alt="Bridal Collection"
           className="w-full h-full object-cover scale-105"
+           loading="lazy"
+           decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-maroon/95 via-maroon/80 to-maroon/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-maroon/60 via-transparent to-transparent" />

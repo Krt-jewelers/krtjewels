@@ -79,7 +79,7 @@ export function Layout({ children }: LayoutProps) {
         )}
       </div>
       <Navbar isCartOpen={isCartOpen} onCartOpenChange={setIsCartOpen} />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 scroll-mt-24 outline-none">{children}</main>
       <Footer />
       {!isCartOpen &&
         location.pathname !== '/cart' &&

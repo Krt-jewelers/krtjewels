@@ -98,14 +98,14 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
-    const hasVisited = localStorage.getItem('krt_visited');
-    if (!hasVisited) {
+    const sessionLoaded = sessionStorage.getItem('krt_session_loaded');
+    if (!sessionLoaded) {
       setShowSplash(true);
     }
   }, []);
   
   const handleSplashComplete = () => {
-    localStorage.setItem('krt_visited', 'true');
+    sessionStorage.setItem('krt_session_loaded', 'true');
     setShowSplash(false);
   };
   

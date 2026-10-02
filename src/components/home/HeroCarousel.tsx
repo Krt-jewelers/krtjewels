@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { cld } from '@/lib/imageOptim';
 
 // Static fallback imports
 import heroSlide1 from '@/assets/hero-slide-1.png';
@@ -35,6 +36,7 @@ export function HeroCarousel() {
   const [slides, setSlides] = useState<Slide[]>(fallbackSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [loadedSlides, setLoadedSlides] = useState<Set<string>>(new Set());
 
   // Fetch dynamic slides from DB
   useEffect(() => {
@@ -96,18 +98,27 @@ export function HeroCarousel() {
             >
               {/* Desktop image */}
               <img
-                src={slide.desktop}
+                src={cld(slide.desktop, { w: 1920, quality: 'auto', crop: 'fill' })}
                 alt={slide.alt}
                 loading={index === 0 ? 'eager' : 'lazy'}
-                className="hidden md:block w-full h-full object-cover object-center"
+                fetchPriority={index === currentSlide ? 'high' : 'auto'}
+                decoding="async"
+                onLoad={() => setLoadedSlides((previous) => new Set(previous).add(`${slide.id}-desktop`))}
+                className={`hidden md:block w-full h-full object-cover object-center transition-opacity duration-300 ${loadedSlides.has(`${slide.id}-desktop`) ? 'opacity-100' : 'opacity-0'}`}
               />
               {/* Mobile image */}
               <img
-                src={slide.mobile}
+                src={cld(slide.mobile, { w: 768, quality: 'auto', crop: 'fill' })}
                 alt={slide.alt}
                 loading={index === 0 ? 'eager' : 'lazy'}
-                className="block md:hidden w-full h-full object-cover object-top"
+                fetchPriority={index === currentSlide ? 'high' : 'auto'}
+                decoding="async"
+                onLoad={() => setLoadedSlides((previous) => new Set(previous).add(`${slide.id}-mobile`))}
+                className={`block md:hidden w-full h-full object-cover object-top transition-opacity duration-300 ${loadedSlides.has(`${slide.id}-mobile`) ? 'opacity-100' : 'opacity-0'}`}
               />
+              {!loadedSlides.has(`${slide.id}-desktop`) && !loadedSlides.has(`${slide.id}-mobile`) && (
+                <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />
+              )}
             </Link>
           ))}
         </div>

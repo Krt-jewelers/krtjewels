@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Sparkles, Star, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { cld } from '@/lib/imageOptim';
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -56,6 +57,7 @@ export function ProductImageGallery({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
     const [isDragging, setIsDragging] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
     const lensSize = 150;
 
     const updateLensFromPoint = useCallback((clientX: number, clientY: number) => {
@@ -95,13 +97,17 @@ export function ProductImageGallery({
         onPointerCancel={hideLens}
         onPointerLeave={hideLens}
       >
+        {!isLoaded && <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />}
         <img
-          src={src}
+          src={cld(src, { w: 1200, quality: 'auto', crop: 'fit' })}
           alt={alt}
           className={cn(
-            'w-full h-full object-cover will-change-transform',
+            'relative w-full h-full object-cover will-change-transform transition-opacity duration-300',
+            isLoaded ? 'opacity-100' : 'opacity-0',
             lens.visible ? 'scale-[1.85]' : 'scale-100'
           )}
+          decoding="async"
+          onLoad={() => setIsLoaded(true)}
           style={{
             transformOrigin: `${lens.x}% ${lens.y}%`,
             transition: lens.visible ? 'transform 80ms linear' : 'transform 300ms ease',
@@ -211,9 +217,11 @@ export function ProductImageGallery({
           onClick={() => onOpenLightbox(selectedImage)}
         >
           <img
-            src={displayImages[selectedImage] || '/placeholder.svg'}
+            src={cld(displayImages[selectedImage], { w: 1000, quality: 'auto', crop: 'fit' }) || '/placeholder.svg'}
             alt={`${productName} - Image ${selectedImage + 1}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="eager"
+            decoding="async"
             style={{
               transform: `translate3d(${mobileTranslate.x}px, ${mobileTranslate.y}px, 0) scale(${mobileScale})`,
               transformOrigin: 'center',
