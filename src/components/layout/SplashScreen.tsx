@@ -8,12 +8,10 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Start exit animation after delay
     const animationTimer = setTimeout(() => {
       setIsAnimating(true);
     }, 2000);
 
-    // Complete after animation finishes
     const completeTimer = setTimeout(() => {
       onComplete();
     }, 2800);
@@ -46,12 +44,12 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
         
         {/* Subtitle */}
         <p className="text-center font-serif text-xl md:text-2xl tracking-[0.3em] text-ivory/80 mt-2">
-          JEWELS
+          JEWELLERY
         </p>
         
         {/* Tagline */}
         <p className="text-center text-xs md:text-sm tracking-[0.2em] text-primary/70 mt-6 uppercase">
-          Elegance Redefined
+          Est. 1990 · Elegance Redefined
         </p>
         
         {/* Decorative elements */}

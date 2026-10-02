@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { cld } from '@/lib/imageOptim';
 
 interface ProductCardSliderProps {
   images: string[];
@@ -10,10 +11,16 @@ interface ProductCardSliderProps {
 export function ProductCardSlider({ images, productName }: ProductCardSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
 
   const hasMultipleImages = images.length > 1;
+  const mountedIndices = new Set([
+    0,
+    ...(hasInteracted ? [currentIndex, (currentIndex + 1) % images.length, (currentIndex - 1 + images.length) % images.length] : []),
+  ]);
 
   const goToNext = (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -51,9 +58,15 @@ export function ProductCardSlider({ images, productName }: ProductCardSliderProp
   return (
     <div
       className="relative w-full h-full overflow-hidden"
-      onMouseEnter={() => setIsHovering(true)}
+      onMouseEnter={() => {
+        setIsHovering(true);
+        setHasInteracted(true);
+      }}
       onMouseLeave={() => setIsHovering(false)}
-      onTouchStart={handleTouchStart}
+      onTouchStart={(e) => {
+        setHasInteracted(true);
+        handleTouchStart(e);
+      }}
       onTouchEnd={handleTouchEnd}
     >
       {/* Images container */}
@@ -61,15 +74,26 @@ export function ProductCardSlider({ images, productName }: ProductCardSliderProp
         className="flex transition-transform duration-300 ease-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {images.map((image, index) => (
-          <img
-            key={index}
-            src={image || '/placeholder.svg'}
-            alt={`${productName} ${index + 1}`}
-            className="w-full h-full object-cover flex-shrink-0"
-            loading={index === 0 ? 'eager' : 'lazy'}
-          />
-        ))}
+        {images.map((image, index) => {
+          if (!mountedIndices.has(index)) {
+            return <div key={index} className="w-full h-full flex-shrink-0 bg-muted" aria-hidden="true" />;
+          }
+
+          const isLoaded = loadedImages.has(index);
+          return (
+            <div key={index} className="relative w-full h-full flex-shrink-0 bg-muted">
+              {!isLoaded && <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />}
+              <img
+                src={cld(image, { w: 500, quality: 'auto', crop: 'fill' }) || '/placeholder.svg'}
+                alt={`${productName} ${index + 1}`}
+                className={cn('relative w-full h-full object-cover transition-opacity duration-300', isLoaded ? 'opacity-100' : 'opacity-0')}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                onLoad={() => setLoadedImages((previous) => new Set(previous).add(index))}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {/* Navigation arrows */}

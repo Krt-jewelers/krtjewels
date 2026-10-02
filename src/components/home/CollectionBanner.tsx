@@ -16,6 +16,8 @@ export function CollectionBanner() {
               src="https://images.unsplash.com/photo-1601121141461-9d6647bca1ed?w=800&h=600&fit=crop"
               alt="Gold Collection"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-rich-black/80 via-rich-black/40 to-transparent" />
             
@@ -48,6 +50,8 @@ export function CollectionBanner() {
                 src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&h=300&fit=crop"
                 alt="Diamond Collection"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-rich-black/70 to-transparent" />
               
@@ -73,6 +77,8 @@ export function CollectionBanner() {
                 src="https://images.unsplash.com/photo-1590548784585-643d2b9f2925?w=600&h=300&fit=crop"
                 alt="Wedding Collection"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-maroon/80 to-transparent" />
               
