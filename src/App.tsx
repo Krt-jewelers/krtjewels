@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NetworkWatcher from '@/components/dev/NetworkWatcher';
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AuthProvider } from "@/hooks/AuthProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SplashScreen } from "@/components/layout/SplashScreen";
@@ -87,11 +89,15 @@ const queryClient = new QueryClient({
 // Luxury fallback while admin chunks load
 function AdminLoadingFallback() {
   return (
-    <div className="min-h-screen bg-rich-black text-ivory flex flex-col items-center justify-center p-6 space-y-4">
+    <div className="min-h-screen bg-secondary/20 flex items-center justify-center p-6">
       <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      <p className="font-serif text-sm tracking-widest text-gold-light uppercase">Loading Portal...</p>
     </div>
   );
+}
+
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>;
 }
 
 const App = () => {
@@ -124,7 +130,9 @@ const App = () => {
         <Sonner />
         {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
         <BrowserRouter>
+          <AuthProvider>
           <ScrollToTop />
+          <RouteErrorBoundary>
           <MaintenanceGate>
             <Suspense fallback={<AdminLoadingFallback />}>
               <Routes>
@@ -210,6 +218,8 @@ const App = () => {
               </Routes>
             </Suspense>
           </MaintenanceGate>
+          </RouteErrorBoundary>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

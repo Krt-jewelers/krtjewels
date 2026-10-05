@@ -37,16 +37,28 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
   const { data: megamenuSettings } = useMegamenuSettings();
   const navigate = useNavigate();
   const isMegamenuEnabled = megamenuSettings?.is_enabled !== false;
-  const megamenuData =
-    isMegamenuLoading ? [] : (megamenu && megamenu.length > 0 ? megamenu : buildFallbackMegamenu());
-  const activeMegamenuCategory = megamenuData.find(
-    (category) => category.category_slug === hoveredCategory
-  );
-  const desktopCategories: typeof megamenuData = megamenuData.filter(
+  // Desktop links are ALWAYS shown. The saved megamenu only controls the hover panel.
+  const hasLiveMegamenu = !isMegamenuLoading && !!megamenu && megamenu.length > 0;
+  const megamenuData = hasLiveMegamenu ? megamenu! : buildFallbackMegamenu();
+  const showMegaPanel = isMegamenuEnabled && !isMegamenuLoading;
+  const activeMegamenuCategory = showMegaPanel
+    ? megamenuData.find((category) => category.category_slug === hoveredCategory)
+    : undefined;
+  const filteredCategories = megamenuData.filter(
     (category) =>
       (category.megamenu_sections && category.megamenu_sections.length > 0) ||
       (category.featured_products && category.featured_products.length > 0)
   );
+  const desktopCategories: typeof megamenuData =
+    filteredCategories.length > 0 ? filteredCategories : megamenuData;
+  const extraDesktopLinks = [
+    { label: 'GOLD RATE', to: '/gold-rate' },
+    { label: 'CHIT FUND', to: '/chit-fund' },
+    { label: 'STORES', to: '/stores' },
+    { label: 'ABOUT', to: '/about' },
+    { label: 'CONTACT', to: '/contact' },
+    { label: 'JOURNAL', to: '/blog' },
+  ];
 
   return (
     <>
@@ -187,48 +199,53 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
         </div>
 
         {/* Row 2: Category Navigation with Megamenu */}
-        {isMegamenuEnabled && desktopCategories.length > 0 && (
-          <div
-            className="border-t border-border bg-white relative"
-            onMouseLeave={() => setHoveredCategory(null)}
-          >
-            <div className="container mx-auto px-4">
-              <div className="flex items-center justify-center gap-8 h-12">
-                {desktopCategories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="relative group"
-                    onMouseEnter={() => setHoveredCategory(category.category_slug)}
-                  >
-                    <button
-                      onClick={() => navigate(getCategoryHref(category.category_slug))}
-                      className={cn(
-                        "text-xs font-semibold tracking-wider transition-colors h-12 flex items-center",
-                        hoveredCategory === category.category_slug
-                          ? 'text-primary'
-                          : 'text-gray-700 hover:text-primary'
-                      )}
-                    >
-                      {category.category_name}
-                    </button>
-                  </div>
-                ))}
-                <Link
-                  to="/blog"
-                  onMouseEnter={() => setHoveredCategory(null)}
-                  className="text-xs font-semibold tracking-wider transition-colors h-12 flex items-center text-gray-700 hover:text-primary"
+        <nav
+          aria-label="Main navigation"
+          className="border-t border-border bg-background relative"
+          onMouseLeave={() => setHoveredCategory(null)}
+        >
+          <div className="container mx-auto px-4">
+            <div className="overflow-x-auto [scrollbar-width:none]">
+            <div className="flex items-center gap-6 xl:gap-8 h-12 w-max mx-auto whitespace-nowrap">
+              {desktopCategories.map((category) => (
+                <div
+                  key={category.id}
+                  className="relative group shrink-0"
+                  onMouseEnter={() => setHoveredCategory(category.category_slug)}
                 >
-                  JOURNAL
+                  <Link
+                    to={getCategoryHref(category.category_slug)}
+                    className={cn(
+                      "text-xs font-semibold tracking-wider uppercase transition-colors h-12 flex items-center",
+                      hoveredCategory === category.category_slug
+                        ? 'text-primary'
+                        : 'text-foreground/80 hover:text-primary'
+                    )}
+                  >
+                    {category.category_name}
+                  </Link>
+                </div>
+              ))}
+              <span className="h-4 w-px bg-border shrink-0" aria-hidden="true" />
+              {extraDesktopLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  onMouseEnter={() => setHoveredCategory(null)}
+                  className="shrink-0 text-xs font-semibold tracking-wider transition-colors h-12 flex items-center text-foreground/80 hover:text-primary"
+                >
+                  {link.label}
                 </Link>
-              </div>
+              ))}
             </div>
-
-            {/* Full-width megamenu panel */}
-            {isMegamenuEnabled && activeMegamenuCategory && (
-              <MegamenuPanel category={activeMegamenuCategory} />
-            )}
+            </div>
           </div>
-        )}
+
+          {/* Full-width megamenu panel */}
+          {activeMegamenuCategory && (
+            <MegamenuPanel category={activeMegamenuCategory} />
+          )}
+        </nav>
       </header>
 
       {/* ── MOBILE HEADER ── */}

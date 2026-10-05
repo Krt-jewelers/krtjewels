@@ -60,10 +60,17 @@ export default function AdminLogin() {
         return;
       }
 
-      toast({ title: 'Welcome Admin!', description: 'Redirecting to dashboard...' });
-      navigate('/admin');
+      toast({ title: 'Welcome Admin!', description: 'Opening dashboard...' });
+      // Navigation happens automatically once the shared session reports admin access.
     } catch (error: any) {
-      toast({ title: 'Login Failed', description: error.message || 'Invalid credentials', variant: 'destructive' });
+      const msg = String(error?.message || '');
+      toast({
+        title: 'Login Failed',
+        description: /failed to fetch|network|load failed/i.test(msg)
+          ? 'Connection problem. Please check your internet and try again.'
+          : msg || 'Invalid credentials',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
