@@ -6,6 +6,7 @@ import "./index.css";
 // If a new service worker is available, we force a one-time reload.
 import { registerSW } from 'virtual:pwa-register';
 
+import { installNetworkRetry } from '@/lib/networkRetry';
 import { ensureBuildFreshness, installPwaSelfHealingHandlers, hardResetPWA } from '@/lib/pwaRecovery';
 
 async function bootstrap() {
@@ -30,7 +31,10 @@ async function bootstrap() {
   // During development this can cause reload loops when Vite injects
   // __reload query params; disabling here helps reproduce and debug
   // runtime errors locally without automatic hard resets.
+  installNetworkRetry();
+
   if (import.meta.env.PROD) {
+    const hadController = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
     // If the user is stuck on an old cached build, reset caches once.
     await ensureBuildFreshness();
 
@@ -54,8 +58,9 @@ async function bootstrap() {
         // Proactively check updates on load
         registration?.update();
 
-        // If a new SW takes control, reload once to ensure fresh assets
-        if ('serviceWorker' in navigator) {
+        // If a NEW SW replaces an existing one, reload once to ensure fresh assets.
+        // Skip on first install (no previous controller) to avoid needless reloads.
+        if ('serviceWorker' in navigator && hadController) {
           navigator.serviceWorker.addEventListener('controllerchange', () => {
             const key = 'krt_pwa_controllerchange';
             if (sessionStorage.getItem(key)) return;

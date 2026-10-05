@@ -50,11 +50,13 @@ export async function hardResetPWA(reason: string) {
 export async function ensureBuildFreshness() {
   try {
     const prev = localStorage.getItem(BUILD_STORAGE_KEY);
+    // Save the new build id FIRST so the reset happens only once per deploy
+    // (previously it re-ran on every visit, reloading the page mid-request and
+    // causing "Failed to fetch" sign-in errors and empty product lists).
+    localStorage.setItem(BUILD_STORAGE_KEY, __APP_BUILD_ID__);
     if (prev && prev !== __APP_BUILD_ID__) {
       await hardResetPWA('New build detected');
-      return;
     }
-    localStorage.setItem(BUILD_STORAGE_KEY, __APP_BUILD_ID__);
   } catch {
     // Ignore storage errors
   }

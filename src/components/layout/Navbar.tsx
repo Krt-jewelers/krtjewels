@@ -40,7 +40,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
   // Desktop links are ALWAYS shown. The saved megamenu only controls the hover panel.
   const hasLiveMegamenu = !isMegamenuLoading && !!megamenu && megamenu.length > 0;
   const megamenuData = hasLiveMegamenu ? megamenu! : buildFallbackMegamenu();
-  const showMegaPanel = isMegamenuEnabled && hasLiveMegamenu;
+  const showMegaPanel = isMegamenuEnabled && !isMegamenuLoading;
   const activeMegamenuCategory = showMegaPanel
     ? megamenuData.find((category) => category.category_slug === hoveredCategory)
     : undefined;
@@ -205,7 +205,8 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
           onMouseLeave={() => setHoveredCategory(null)}
         >
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center gap-6 xl:gap-8 h-12 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+            <div className="overflow-x-auto [scrollbar-width:none]">
+            <div className="flex items-center gap-6 xl:gap-8 h-12 w-max mx-auto whitespace-nowrap">
               {desktopCategories.map((category) => (
                 <div
                   key={category.id}
@@ -236,6 +237,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
                   {link.label}
                 </Link>
               ))}
+            </div>
             </div>
           </div>
 
