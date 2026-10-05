@@ -1,5 +1,5 @@
 import { useEffect, ReactNode } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -71,29 +71,31 @@ const menuItems = [
   { name: 'Admin Users', href: '/admin/users', icon: Users },
 ];
 
+// Preload all admin screens in the background so switching pages is instant.
+const adminPageLoaders = import.meta.glob('../../pages/admin/*.tsx');
+let adminPagesPrefetched = false;
+function prefetchAdminPages() {
+  if (adminPagesPrefetched) return;
+  adminPagesPrefetched = true;
+  const run = () => Object.values(adminPageLoaders).forEach((load) => { load().catch(() => {}); });
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+  if (ric) ric(run); else setTimeout(run, 1500);
+}
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, isAuthenticated, isAdmin, loading, signOut } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate('/auth?redirect=/admin');
-    }
-  }, [loading, isAuthenticated, navigate]);
-
-  useEffect(() => {
-    if (!loading && isAuthenticated && !isAdmin) {
-      navigate('/');
-    }
-  }, [loading, isAuthenticated, isAdmin, navigate]);
 
   // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (isAdmin) prefetchAdminPages();
+  }, [isAdmin]);
 
   const handleRefreshData = () => {
     // Invalidate all queries to refresh data
@@ -102,14 +104,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30">
+      <div className="min-h-screen flex items-center justify-center bg-secondary/20">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!isAuthenticated || !isAdmin) {
-    return null;
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   // Get current page title
