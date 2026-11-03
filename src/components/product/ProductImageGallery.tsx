@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Play, Sparkles, Star, Gem } from 'lucide-react';
+import { Play, Sparkles, Star, Gem, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { cld } from '@/lib/imageOptim';
@@ -21,15 +21,21 @@ interface LensImageProps {
   src: string;
   alt: string;
   priority?: boolean;
+  showZoomHint?: boolean;
 }
 
-const LensImage = memo(function LensImage({ src, alt, priority = false }: LensImageProps) {
+const LensImage = memo(function LensImage({ 
+  src, 
+  alt, 
+  priority = false,
+  showZoomHint = false 
+}: LensImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
   const [isDragging, setIsDragging] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [imgSrc, setImgSrc] = useState(src);
-  const lensSize = 150;
+  const lensSize = 160;
 
   useEffect(() => {
     setImgSrc(src);
@@ -55,7 +61,6 @@ const LensImage = memo(function LensImage({ src, alt, priority = false }: LensIm
     setLens((prev) => ({ ...prev, visible: false }));
   }, []);
 
-  // Check if image is already cached in browser memory on mount/render
   const imgRefCallback = useCallback((img: HTMLImageElement | null) => {
     if (img && img.complete && img.naturalWidth > 0) {
       setIsLoaded(true);
@@ -68,7 +73,9 @@ const LensImage = memo(function LensImage({ src, alt, priority = false }: LensIm
     <div
       ref={containerRef}
       className={cn(
-        'relative w-full h-full overflow-hidden select-none bg-secondary/20',
+        'relative w-full h-full overflow-hidden select-none',
+        // High-contrast luxury framing: warm subtle backdrop, crisp border, soft shadow
+        'bg-[#FAF8F5] dark:bg-stone-900/60 border border-stone-200/90 dark:border-stone-800 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/50',
         isDragging ? 'cursor-grabbing' : 'cursor-crosshair'
       )}
       onPointerEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
@@ -83,16 +90,17 @@ const LensImage = memo(function LensImage({ src, alt, priority = false }: LensIm
       onPointerLeave={hideLens}
     >
       {!isLoaded && (
-        <div className="absolute inset-0 animate-pulse bg-muted/60" aria-hidden="true" />
+        <div className="absolute inset-0 animate-pulse bg-muted/70" aria-hidden="true" />
       )}
+
       <img
         ref={imgRefCallback}
         src={optimizedSrc}
         alt={alt}
         className={cn(
-          'relative w-full h-full object-cover will-change-transform transition-opacity duration-300',
+          'relative w-full h-full object-contain p-4 will-change-transform transition-all duration-300',
           isLoaded ? 'opacity-100' : 'opacity-0',
-          lens.visible ? 'scale-[1.85]' : 'scale-100'
+          lens.visible ? 'scale-[1.95]' : 'scale-100'
         )}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'low'}
@@ -111,9 +119,20 @@ const LensImage = memo(function LensImage({ src, alt, priority = false }: LensIm
         draggable={false}
       />
 
+      {/* Floating Zoom Hint (hides during active zoom) */}
+      {showZoomHint && !lens.visible && (
+        <div className="absolute bottom-3 right-3 pointer-events-none transition-opacity duration-200 opacity-90 group-hover:opacity-100">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-background/90 text-foreground/80 shadow-sm border border-border/60 backdrop-blur-sm">
+            <ZoomIn className="w-3.5 h-3.5 text-primary" />
+            <span>Hover to zoom</span>
+          </span>
+        </div>
+      )}
+
+      {/* High-Contrast Luxury Magnifying Lens */}
       {lens.visible && (
         <div
-          className="pointer-events-none absolute rounded-full border-2 border-primary/80 bg-background/10 shadow-xl ring-1 ring-background/70"
+          className="pointer-events-none absolute rounded-full border-2 border-primary bg-primary/5 shadow-2xl ring-2 ring-background/90 backdrop-contrast-125"
           style={{
             width: `${lensSize}px`,
             height: `${lensSize}px`,
@@ -167,7 +186,7 @@ export function ProductImageGallery({
       {/* Mobile Single Image Carousel */}
       <div className="block md:hidden">
         <div
-          className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
+          className="relative aspect-square rounded-2xl overflow-hidden bg-[#FAF8F5] dark:bg-stone-900/60 border border-stone-200/90 dark:border-stone-800 shadow-sm group"
           style={{ touchAction: 'none' }}
           onTouchStart={(e) => {
             if (e.touches.length === 2) {
@@ -252,7 +271,7 @@ export function ProductImageGallery({
           <img
             src={cld(displayImages[selectedImage], { w: 700, quality: 'auto', crop: 'fit' }) || '/placeholder.svg'}
             alt={`${productName} - Image ${selectedImage + 1}`}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
             loading="eager"
             decoding="async"
             style={{
@@ -262,6 +281,7 @@ export function ProductImageGallery({
             }}
             draggable={false}
           />
+
           {selectedImage === 0 && (
             <div className="absolute top-3 left-3 flex items-center gap-2">
               {badges?.isNewArrival && (
@@ -293,7 +313,7 @@ export function ProductImageGallery({
                 onClick={() => setSelectedImage(index)}
                 className={cn(
                   'h-2 w-2 rounded-full transition-colors',
-                  selectedImage === index ? 'bg-primary' : 'bg-border'
+                  selectedImage === index ? 'bg-primary w-4' : 'bg-stone-300 dark:bg-stone-700'
                 )}
               />
             ))}
@@ -301,12 +321,12 @@ export function ProductImageGallery({
         )}
       </div>
 
-      {/* Desktop Gallery */}
+      {/* Desktop Gallery Grid */}
       {mediaItems.length === 1 && mediaItems[0]?.type === 'image' ? (
         <div
           role="button"
           tabIndex={0}
-          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-crosshair"
+          className="hidden md:block relative aspect-square rounded-2xl overflow-hidden group cursor-crosshair"
           onClick={() => onOpenLightbox(mediaItems[0]?.index ?? 0)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -319,8 +339,9 @@ export function ProductImageGallery({
             src={mediaItems[0]?.url || '/placeholder.svg'}
             alt={`${productName} - Image 1`}
             priority
+            showZoomHint
           />
-          <div className="absolute top-3 left-3 flex items-center gap-2">
+          <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
             {badges?.isNewArrival && (
               <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
                 <Sparkles className="w-4 h-4" />
@@ -339,13 +360,13 @@ export function ProductImageGallery({
           </div>
         </div>
       ) : (
-        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 gap-4">
           {mediaItems.map((item, idx) => {
             if (item.type === 'video') {
               return (
                 <div
                   key={`video-${idx}`}
-                  className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20"
+                  className="relative aspect-square rounded-2xl overflow-hidden bg-[#FAF8F5] dark:bg-stone-900/60 border border-stone-200/90 dark:border-stone-800 shadow-sm"
                 >
                   <div className="absolute inset-0 flex items-center justify-center bg-black/10 z-10 pointer-events-none">
                     <div className="bg-white/90 rounded-full p-3 shadow-lg">
@@ -354,7 +375,7 @@ export function ProductImageGallery({
                   </div>
                   <video
                     src={item.url}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain p-2"
                     controls
                     playsInline
                   />
@@ -363,7 +384,6 @@ export function ProductImageGallery({
             }
 
             const imageIndex = item.index ?? 0;
-            // Eager load only the first two images in the 2-column grid
             const isPriority = idx < 2;
 
             return (
@@ -371,7 +391,7 @@ export function ProductImageGallery({
                 key={`image-${imageIndex}`}
                 role="button"
                 tabIndex={0}
-                className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group cursor-crosshair"
+                className="relative aspect-square rounded-2xl overflow-hidden group cursor-crosshair"
                 onClick={() => {
                   setSelectedImage(imageIndex);
                   onOpenLightbox(imageIndex);
@@ -388,9 +408,10 @@ export function ProductImageGallery({
                   src={item.url || '/placeholder.svg'}
                   alt={`${productName} - Image ${imageIndex + 1}`}
                   priority={isPriority}
+                  showZoomHint={idx === 0}
                 />
                 {imageIndex === 0 && (
-                  <div className="absolute top-3 left-3 flex items-center gap-2">
+                  <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
                     {badges?.isNewArrival && (
                       <Badge className="badge-luxury w-8 h-8 p-0 rounded-full flex items-center justify-center" title="New Arrival">
                         <Sparkles className="w-4 h-4" />
