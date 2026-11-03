@@ -141,11 +141,12 @@ export function CategoryCarousel() {
               touchAction: 'pan-x',
             }}
           >
-            {isLoading ? (
+                       {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="flex-shrink-0 lg:flex-shrink snap-start">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-2xl bg-muted animate-pulse" />
+                    {/* Circular skeleton */}
+                    <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-full bg-muted animate-pulse" />
                     <div className="w-12 h-3 bg-muted animate-pulse rounded" />
                   </div>
                 </div>
@@ -161,16 +162,24 @@ export function CategoryCarousel() {
                 onClick={handleInteractionStart}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-2xl border-2 border-transparent group-hover:border-primary overflow-hidden transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
-                    {!loadedCategories.has(category.slug) && <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />}
-                    <img
-                      src={cld(category.image_url, { w: 320, h: 320, quality: 'auto', crop: 'fill' }) || '/placeholder.svg'}
-                      alt={category.name}
-                      className={cn('relative w-full h-full object-cover transition-opacity duration-300', loadedCategories.has(category.slug) ? 'opacity-100' : 'opacity-0')}
-                      loading="lazy"
-                      decoding="async"
-                      onLoad={() => setLoadedCategories((previous) => new Set(previous).add(category.slug))}
-                    />
+                  {/* Luxury Circular Card with Gold Rim */}
+                  <div className="w-24 h-24 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 xl:w-36 xl:h-36 rounded-full border-2 border-primary/30 group-hover:border-primary p-1 bg-background overflow-hidden transition-all duration-300 group-hover:shadow-gold group-hover:scale-105">
+                    <div className="w-full h-full rounded-full overflow-hidden relative">
+                      {!loadedCategories.has(category.slug) && (
+                        <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />
+                      )}
+                      <img
+                        src={cld(category.image_url, { w: 320, h: 320, quality: 'auto', crop: 'fill' }) || '/placeholder.svg'}
+                        alt={category.name}
+                        className={cn(
+                          'relative w-full h-full object-cover transition-opacity duration-300 group-hover:scale-110 transition-transform duration-500',
+                          loadedCategories.has(category.slug) ? 'opacity-100' : 'opacity-0'
+                        )}
+                        loading="lazy"
+                        decoding="async"
+                        onLoad={() => setLoadedCategories((previous) => new Set(previous).add(category.slug))}
+                      />
+                    </div>
                   </div>
                   <span className="text-xs md:text-sm font-medium text-center whitespace-nowrap group-hover:text-primary transition-colors select-none">
                     {category.name}
@@ -178,6 +187,7 @@ export function CategoryCarousel() {
                 </div>
               </Link>
             ))}
+
           </div>
         </div>
       </div>
