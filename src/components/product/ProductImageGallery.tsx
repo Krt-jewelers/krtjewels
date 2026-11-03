@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Play, Sparkles, Star, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,115 @@ interface ProductImageGalleryProps {
   };
   onOpenLightbox: (index: number) => void;
 }
+
+interface LensImageProps {
+  src: string;
+  alt: string;
+  priority?: boolean;
+}
+
+const LensImage = memo(function LensImage({ src, alt, priority = false }: LensImageProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(src);
+  const lensSize = 150;
+
+  useEffect(() => {
+    setImgSrc(src);
+    setIsLoaded(false);
+  }, [src]);
+
+  const updateLensFromPoint = useCallback((clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = Math.min(Math.max(clientX - rect.left, 0), rect.width);
+    const y = Math.min(Math.max(clientY - rect.top, 0), rect.height);
+
+    setLens({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+      visible: true,
+    });
+  }, []);
+
+  const hideLens = useCallback(() => {
+    setIsDragging(false);
+    setLens((prev) => ({ ...prev, visible: false }));
+  }, []);
+
+  // Check if image is already cached in browser memory on mount/render
+  const imgRefCallback = useCallback((img: HTMLImageElement | null) => {
+    if (img && img.complete && img.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  }, []);
+
+  const optimizedSrc = cld(imgSrc, { w: 700, quality: 'auto', crop: 'fit' }) || '/placeholder.svg';
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        'relative w-full h-full overflow-hidden select-none bg-secondary/20',
+        isDragging ? 'cursor-grabbing' : 'cursor-crosshair'
+      )}
+      onPointerEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
+      onPointerMove={(e) => updateLensFromPoint(e.clientX, e.clientY)}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+        updateLensFromPoint(e.clientX, e.clientY);
+      }}
+      onPointerUp={() => setIsDragging(false)}
+      onPointerCancel={hideLens}
+      onPointerLeave={hideLens}
+    >
+      {!isLoaded && (
+        <div className="absolute inset-0 animate-pulse bg-muted/60" aria-hidden="true" />
+      )}
+      <img
+        ref={imgRefCallback}
+        src={optimizedSrc}
+        alt={alt}
+        className={cn(
+          'relative w-full h-full object-cover will-change-transform transition-opacity duration-300',
+          isLoaded ? 'opacity-100' : 'opacity-0',
+          lens.visible ? 'scale-[1.85]' : 'scale-100'
+        )}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'low'}
+        decoding="async"
+        onLoad={() => setIsLoaded(true)}
+        onError={() => {
+          if (imgSrc !== '/placeholder.svg') {
+            setImgSrc('/placeholder.svg');
+          }
+          setIsLoaded(true);
+        }}
+        style={{
+          transformOrigin: `${lens.x}% ${lens.y}%`,
+          transition: lens.visible ? 'transform 80ms linear' : 'transform 300ms ease',
+        }}
+        draggable={false}
+      />
+
+      {lens.visible && (
+        <div
+          className="pointer-events-none absolute rounded-full border-2 border-primary/80 bg-background/10 shadow-xl ring-1 ring-background/70"
+          style={{
+            width: `${lensSize}px`,
+            height: `${lensSize}px`,
+            left: `calc(${lens.x}% - ${lensSize / 2}px)`,
+            top: `calc(${lens.y}% - ${lensSize / 2}px)`,
+          }}
+        />
+      )}
+    </div>
+  );
+});
 
 export function ProductImageGallery({
   images,
@@ -53,85 +162,9 @@ export function ProductImageGallery({
     ...displayImages.map((url, index) => ({ type: 'image' as const, url, index })),
   ];
 
-  const LensImage = ({ src, alt }: { src: string; alt: string }) => {
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const [lens, setLens] = useState({ x: 50, y: 50, visible: false });
-    const [isDragging, setIsDragging] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const lensSize = 150;
-
-    const updateLensFromPoint = useCallback((clientX: number, clientY: number) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const x = Math.min(Math.max(clientX - rect.left, 0), rect.width);
-      const y = Math.min(Math.max(clientY - rect.top, 0), rect.height);
-
-      setLens({
-        x: (x / rect.width) * 100,
-        y: (y / rect.height) * 100,
-        visible: true,
-      });
-    }, []);
-
-    const hideLens = useCallback(() => {
-      setIsDragging(false);
-      setLens((prev) => ({ ...prev, visible: false }));
-    }, []);
-
-    return (
-      <div
-        ref={containerRef}
-        className={cn(
-          'relative w-full h-full overflow-hidden select-none',
-          isDragging ? 'cursor-grabbing' : 'cursor-crosshair'
-        )}
-        onPointerEnter={(e) => updateLensFromPoint(e.clientX, e.clientY)}
-        onPointerMove={(e) => updateLensFromPoint(e.clientX, e.clientY)}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-          updateLensFromPoint(e.clientX, e.clientY);
-        }}
-        onPointerUp={() => setIsDragging(false)}
-        onPointerCancel={hideLens}
-        onPointerLeave={hideLens}
-      >
-        {!isLoaded && <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />}
-        <img
-          src={cld(src, { w: 1200, quality: 'auto', crop: 'fit' })}
-          alt={alt}
-          className={cn(
-            'relative w-full h-full object-cover will-change-transform transition-opacity duration-300',
-            isLoaded ? 'opacity-100' : 'opacity-0',
-            lens.visible ? 'scale-[1.85]' : 'scale-100'
-          )}
-          decoding="async"
-          onLoad={() => setIsLoaded(true)}
-          style={{
-            transformOrigin: `${lens.x}% ${lens.y}%`,
-            transition: lens.visible ? 'transform 80ms linear' : 'transform 300ms ease',
-          }}
-          draggable={false}
-        />
-
-        {lens.visible && (
-          <div
-            className="pointer-events-none absolute rounded-full border-2 border-primary/80 bg-background/10 shadow-xl ring-1 ring-background/70"
-            style={{
-              width: `${lensSize}px`,
-              height: `${lensSize}px`,
-              left: `calc(${lens.x}% - ${lensSize / 2}px)`,
-              top: `calc(${lens.y}% - ${lensSize / 2}px)`,
-            }}
-          />
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-4">
+      {/* Mobile Single Image Carousel */}
       <div className="block md:hidden">
         <div
           className="relative aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-secondary/50 to-secondary/20 group"
@@ -217,7 +250,7 @@ export function ProductImageGallery({
           onClick={() => onOpenLightbox(selectedImage)}
         >
           <img
-            src={cld(displayImages[selectedImage], { w: 1000, quality: 'auto', crop: 'fit' }) || '/placeholder.svg'}
+            src={cld(displayImages[selectedImage], { w: 700, quality: 'auto', crop: 'fit' }) || '/placeholder.svg'}
             alt={`${productName} - Image ${selectedImage + 1}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="eager"
@@ -268,6 +301,7 @@ export function ProductImageGallery({
         )}
       </div>
 
+      {/* Desktop Gallery */}
       {mediaItems.length === 1 && mediaItems[0]?.type === 'image' ? (
         <div
           role="button"
@@ -284,6 +318,7 @@ export function ProductImageGallery({
           <LensImage
             src={mediaItems[0]?.url || '/placeholder.svg'}
             alt={`${productName} - Image 1`}
+            priority
           />
           <div className="absolute top-3 left-3 flex items-center gap-2">
             {badges?.isNewArrival && (
@@ -328,6 +363,9 @@ export function ProductImageGallery({
             }
 
             const imageIndex = item.index ?? 0;
+            // Eager load only the first two images in the 2-column grid
+            const isPriority = idx < 2;
+
             return (
               <div
                 key={`image-${imageIndex}`}
@@ -349,6 +387,7 @@ export function ProductImageGallery({
                 <LensImage
                   src={item.url || '/placeholder.svg'}
                   alt={`${productName} - Image ${imageIndex + 1}`}
+                  priority={isPriority}
                 />
                 {imageIndex === 0 && (
                   <div className="absolute top-3 left-3 flex items-center gap-2">
