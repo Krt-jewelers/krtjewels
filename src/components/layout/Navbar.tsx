@@ -110,12 +110,13 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               <span>+91 98430 10986</span>
             </div>
 
-            {/* Center – Logo */}
+                       {/* Center – Logo */}
             <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.15em] text-foreground whitespace-nowrap">
+              <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.15em] text-primary whitespace-nowrap drop-shadow-sm hover:opacity-90 transition-opacity">
                 KRT JEWELLERS
               </h1>
             </Link>
+
 
             {/* Right – Search bar + icons */}
             <div className="flex items-center gap-3 min-w-[200px] justify-end">
@@ -263,11 +264,12 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <Link to="/">
-              <h1 className="font-serif text-lg font-medium tracking-[0.15em] text-foreground whitespace-nowrap">
+                        <Link to="/">
+              <h1 className="font-serif text-lg font-medium tracking-[0.15em] text-primary whitespace-nowrap">
                 KRT JEWELLERS
               </h1>
             </Link>
+
           </div>
 
           {/* Right – Icons */}
