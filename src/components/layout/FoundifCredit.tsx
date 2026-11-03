@@ -17,9 +17,9 @@ export function FoundifCredit() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-ivory/30 text-xs hover:text-primary/60 transition-colors"
+        className="text-ivory/60 text-sm md:text-base font-medium hover:text-primary transition-colors inline-flex items-center gap-1.5"
       >
-        Crafted by <span className="font-bold text-primary/50 hover:text-primary transition-colors">Foundif Innovations</span>
+        Crafted by <span className="font-bold text-primary hover:underline transition-colors">Foundif Innovations</span>
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
