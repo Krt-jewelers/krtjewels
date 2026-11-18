@@ -52,7 +52,7 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
             <span className="font-serif text-lg font-medium">Shopping Cart</span>
             <span className="text-sm text-muted-foreground">({itemCount} items)</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button aria-label="Close cart" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -104,7 +104,7 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
                   
                   {/* Quantity Controls */}
                   <div className="flex items-center gap-2 mt-2">
-                    <Button
+                    <Button aria-label="Decrease quantity" data-tap-target=""
                       variant="outline"
                       size="icon"
                       className="w-6 h-6"
@@ -113,7 +113,7 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
                       <Minus className="w-3 h-3" />
                     </Button>
                     <span className="w-6 text-center text-sm">{item.quantity}</span>
-                    <Button
+                    <Button aria-label="Increase quantity" data-tap-target=""
                       variant="outline"
                       size="icon"
                       className="w-6 h-6"
@@ -121,7 +121,7 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
                     >
                       <Plus className="w-3 h-3" />
                     </Button>
-                    <Button
+                    <Button aria-label="Remove from cart" data-tap-target=""
                       variant="ghost"
                       size="icon"
                       className="w-6 h-6 text-destructive hover:text-destructive ml-auto"

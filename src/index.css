@@ -523,3 +523,50 @@
     font-weight: 500 !important;
   }
 }
+
+/* Small icon buttons marked data-tap-target get a touch area of at least
+   44×44px without changing how they look. :where() keeps the position rule at
+   zero specificity so a button's own absolute/fixed positioning still wins. */
+:where([data-tap-target]) {
+  position: relative;
+}
+[data-tap-target]::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* Gold text on light backgrounds. The brand gold (43 72% 54%) has 2.1:1
+   contrast on white; body text needs 4.5:1. Text set with text-primary uses a
+   deeper gold on light surfaces (5.4:1 on white) and keeps the brand gold on
+   dark ones. Backgrounds, borders and icons on dark bands are unchanged. */
+:root {
+  --primary-text: 38 72% 32%;
+}
+.dark,
+.bg-rich-black,
+.bg-black,
+.bg-foreground,
+.bg-accent,
+.bg-maroon,
+.bg-maroon-dark,
+.bg-charcoal,
+.from-rich-black,
+.from-black,
+.from-maroon,
+[class*="bg-[#14100e]"],
+[class*="bg-[#1a1512]"],
+[data-surface="dark"] {
+  --primary-text: var(--primary);
+}
+.text-primary,
+.hover\:text-primary:hover,
+.group:hover .group-hover\:text-primary,
+.focus\:text-primary:focus,
+.prose-a\:text-primary a {
+  color: hsl(var(--primary-text));
+}

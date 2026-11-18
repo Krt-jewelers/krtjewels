@@ -20,6 +20,9 @@ const Index = () => {
   
   return (
     <Layout>
+      {/* The hero is image-only; this gives the page its one h1 for search
+          engines and screen readers. */}
+      <h1 className="sr-only">KRT Jewellers – BIS hallmarked gold and diamond jewellery in Coimbatore</h1>
       <HeroCarousel />
       <CategoryCarousel />
       <MarqueeSection />

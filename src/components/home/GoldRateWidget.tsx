@@ -66,7 +66,7 @@ export function GoldRateWidget() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-10 w-full lg:w-auto">
             {/* 22K Rate */}
             <div className="text-center px-5 py-4 rounded-2xl bg-ivory/5 backdrop-blur-sm border border-ivory/10 w-full md:w-auto">
-              <span className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">22K Gold</span>
+              <span className="text-primary text-xs uppercase tracking-[0.2em] font-semibold">22K Gold</span>
               <div className="flex items-baseline justify-center gap-1.5 mt-2">
                 <span className="font-semibold text-2xl md:text-4xl text-gold-gradient">
                   {formatPrice(goldRate.rate_22k)}
@@ -80,7 +80,7 @@ export function GoldRateWidget() {
 
             {/* 24K Rate */}
             <div className="text-center px-5 py-4 rounded-2xl bg-ivory/5 backdrop-blur-sm border border-ivory/10 w-full md:w-auto">
-              <span className="text-primary text-[11px] uppercase tracking-[0.2em] font-semibold">24K Gold</span>
+              <span className="text-primary text-xs uppercase tracking-[0.2em] font-semibold">24K Gold</span>
               <div className="flex items-baseline justify-center gap-1.5 mt-2">
                 <span className="font-semibold text-2xl md:text-4xl text-gold-gradient">
                   {formatPrice(goldRate.rate_24k)}

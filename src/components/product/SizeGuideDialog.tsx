@@ -75,7 +75,7 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
                 <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">Steps</span>
               </div>
               <div className="flex items-center justify-center gap-2 mb-4">
-                <button
+                <button aria-label="Previous step"
                   onClick={() => setStep(Math.max(1, step - 1))}
                   disabled={step === 1}
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
@@ -96,7 +96,7 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
                     {s}
                   </button>
                 ))}
-                <button
+                <button aria-label="Next step"
                   onClick={() => setStep(Math.min(totalSteps, step + 1))}
                   disabled={step === totalSteps}
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
@@ -177,7 +177,7 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
             )}
 
             {/* Contact Info */}
-            <p className="text-[10px] text-center text-muted-foreground">
+            <p className="text-xs text-center text-muted-foreground">
               If in need of assistance? Please contact Customer Service at +919843010986
             </p>
           </div>

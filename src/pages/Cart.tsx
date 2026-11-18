@@ -108,7 +108,7 @@ export default function CartPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       {/* Quantity */}
                       <div className="flex items-center border rounded-lg">
-                        <Button
+                        <Button aria-label="Decrease quantity" data-tap-target=""
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
@@ -117,7 +117,7 @@ export default function CartPage() {
                           <Minus className="w-3 h-3" />
                         </Button>
                         <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                        <Button
+                        <Button aria-label="Increase quantity" data-tap-target=""
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
@@ -135,7 +135,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Remove */}
-                  <Button
+                  <Button aria-label="Remove from cart"
                     variant="ghost"
                     size="icon"
                     className="m-2 text-muted-foreground hover:text-destructive"

@@ -8,7 +8,11 @@ export function GoogleReviewBadge() {
       href={googleReviewUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-40 group"
+      aria-label="Review us on Google (opens in a new tab)"
+      // Sits low on the right, clear of carousel arrows (which are centred
+      // vertically) and above the floating contact button. Hidden on phones,
+      // where it covered the hero arrow; the reviews section links to Google.
+      className="hidden md:block fixed right-0 bottom-32 z-40 group"
     >
       <div className="flex flex-col items-center bg-card shadow-luxury border border-border/50 rounded-l-xl overflow-hidden transition-all duration-300 hover:shadow-gold group-hover:translate-x-0 translate-x-2">
         {/* Google G Logo */}

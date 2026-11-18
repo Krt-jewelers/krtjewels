@@ -96,27 +96,24 @@ export function HeroCarousel() {
               }`}
               aria-hidden={index !== currentSlide}
             >
-              {/* Desktop image */}
-              <img
-                src={cld(slide.desktop, { w: 1920, quality: 'auto', crop: 'fill' })}
-                alt={slide.alt}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === currentSlide ? 'high' : 'auto'}
-                decoding="async"
-                onLoad={() => setLoadedSlides((previous) => new Set(previous).add(`${slide.id}-desktop`))}
-                className={`hidden md:block w-full h-full object-cover object-center transition-opacity duration-300 ${loadedSlides.has(`${slide.id}-desktop`) ? 'opacity-100' : 'opacity-0'}`}
-              />
-              {/* Mobile image */}
-              <img
-                src={cld(slide.mobile, { w: 768, quality: 'auto', crop: 'fill' })}
-                alt={slide.alt}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === currentSlide ? 'high' : 'auto'}
-                decoding="async"
-                onLoad={() => setLoadedSlides((previous) => new Set(previous).add(`${slide.id}-mobile`))}
-                className={`block md:hidden w-full h-full object-cover object-top transition-opacity duration-300 ${loadedSlides.has(`${slide.id}-mobile`) ? 'opacity-100' : 'opacity-0'}`}
-              />
-              {!loadedSlides.has(`${slide.id}-desktop`) && !loadedSlides.has(`${slide.id}-mobile`) && (
+              {/* One <picture> so each device downloads only its own image;
+                  separate eager <img>s made phones fetch the desktop image too. */}
+              <picture>
+                <source
+                  media="(min-width: 768px)"
+                  srcSet={cld(slide.desktop, { w: 1920, quality: 'auto', crop: 'fill' })}
+                />
+                <img
+                  src={cld(slide.mobile, { w: 768, quality: 'auto', crop: 'fill' })}
+                  alt={slide.alt}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={index === 0 ? 'high' : 'auto'}
+                  decoding={index === 0 ? 'sync' : 'async'}
+                  onLoad={() => setLoadedSlides((previous) => new Set(previous).add(`${slide.id}-image`))}
+                  className={`block w-full h-full object-cover object-top md:object-center transition-opacity duration-300 ${loadedSlides.has(`${slide.id}-image`) ? 'opacity-100' : 'opacity-0'}`}
+                />
+              </picture>
+              {!loadedSlides.has(`${slide.id}-image`) && (
                 <div className="absolute inset-0 animate-pulse bg-muted" aria-hidden="true" />
               )}
             </Link>

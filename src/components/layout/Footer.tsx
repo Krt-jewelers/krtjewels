@@ -65,7 +65,7 @@ export function Footer() {
             >
               <b.icon className="w-5 h-5 text-primary mx-auto mb-1" />
               <p className="text-xs font-medium text-primary">{b.name}</p>
-              <p className="text-[10px] text-ivory/50">{b.desc}</p>
+              <p className="text-xs text-ivory/50">{b.desc}</p>
             </div>
           ))}
 

@@ -101,7 +101,7 @@ export default function WishlistPage() {
                     <ShoppingBag className="w-4 h-4" />
                     Add to Cart
                   </Button>
-                  <Button
+                  <Button aria-label="Remove from wishlist"
                     variant="outline"
                     size="icon"
                     className="text-destructive hover:bg-destructive hover:text-destructive-foreground"

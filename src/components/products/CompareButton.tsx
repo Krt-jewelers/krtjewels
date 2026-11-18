@@ -57,7 +57,7 @@ export function CompareButton({ product, variant = 'icon', className }: CompareB
   }
 
   return (
-    <Button
+    <Button aria-label={isComparing ? 'Remove from comparison' : 'Add to comparison'}
       variant="ghost"
       size="icon"
       className={cn(

@@ -328,14 +328,14 @@ export default function AccountAddresses() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Button
+                      <Button aria-label="Edit address"
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(address)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button
+                      <Button aria-label="Delete address"
                         variant="ghost"
                         size="icon"
                         className="text-red-500 hover:text-red-600"

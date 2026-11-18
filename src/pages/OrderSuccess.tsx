@@ -3,6 +3,7 @@ import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +46,22 @@ export default function OrderSuccess() {
   // from the database) still see their summary.
   const location = useLocation();
   const placed = (location.state as { order?: PlacedOrder } | null)?.order;
+  const { clearCart } = useCart();
+
+  // Empty the cart once for a newly placed order (not again if the customer
+  // comes back to this page after shopping more).
+  useEffect(() => {
+    if (!placed?.order_number) return;
+    const key = `krt_cart_cleared_${placed.order_number}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // storage unavailable: clear anyway
+    }
+    clearCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [placed?.order_number]);
   const { user, loading: authLoading } = useAuth();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;

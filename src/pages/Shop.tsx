@@ -668,7 +668,7 @@ export default function ShopPage() {
                         (selectedProductSubcategoryId ? 1 : 0)}{' '}
                       Active
                     </span>
-                    <Button 
+                    <Button aria-label="Clear all filters" 
                       variant="ghost" 
                       size="sm"
                       onClick={clearAllFilters}
@@ -687,7 +687,7 @@ export default function ShopPage() {
                         <SlidersHorizontal className="w-4 h-4" />
                         <span>Filters</span>
                         {hasActiveFilters && (
-                          <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                          <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
                             {selectedCategories.length +
                               selectedMetalTypes.length +
                               (priceRange[0] > 0 || priceRange[1] < 2000000 ? 1 : 0) +
@@ -738,7 +738,7 @@ export default function ShopPage() {
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm"
                   >
                     {CATEGORY_NAMES[category]}
-                    <button onClick={() => toggleCategory(category)}>
+                    <button aria-label="Remove category filter" onClick={() => toggleCategory(category)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -749,7 +749,7 @@ export default function ShopPage() {
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm"
                   >
                     {METAL_TYPE_NAMES[metalType]}
-                    <button onClick={() => toggleMetalType(metalType)}>
+                    <button aria-label="Remove metal filter" onClick={() => toggleMetalType(metalType)}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -757,7 +757,7 @@ export default function ShopPage() {
                 {(priceRange[0] > 0 || priceRange[1] < 2000000) && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                     {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
-                    <button onClick={() => setPriceRange([0, 2000000])}>
+                    <button aria-label="Clear price filter" onClick={() => setPriceRange([0, 2000000])}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -765,7 +765,7 @@ export default function ShopPage() {
                 {(weightRange[0] > 0 || weightRange[1] < 200) && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                     {weightRange[0]}g - {weightRange[1]}g
-                    <button onClick={() => setWeightRange([0, 200])}>
+                    <button aria-label="Clear weight filter" onClick={() => setWeightRange([0, 200])}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>

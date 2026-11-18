@@ -292,7 +292,7 @@ export function ProductVariantSelector({
                 <span className="text-xs font-medium">
                   {option.label || option.value || 'Option'}
                 </span>
-                <span className="text-[10px] opacity-80">
+                <span className="text-xs opacity-80">
                   {(option as any).subtitle || ' '}
                 </span>
               </button>
@@ -397,7 +397,7 @@ export function ProductVariantSelector({
               {selectedSize && <span className="text-primary font-semibold ml-1">: {selectedSize}</span>}
             </label>
             <button 
-              className="text-[10px] text-primary hover:underline"
+              className="text-xs text-primary hover:underline"
               onClick={() => setIsSizeGuideOpen(!isSizeGuideOpen)}
             >
               Size Guide
@@ -425,7 +425,7 @@ export function ProductVariantSelector({
                     <div className="w-10 h-10 rounded overflow-hidden">
                       <img src={size.imageUrl} alt={size.value} className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-[10px] font-medium mt-0.5">{size.value}</span>
+                    <span className="text-xs font-medium mt-0.5">{size.value}</span>
                   </div>
                 ) : (
                   <div className="h-10 min-w-[3rem] px-3 flex items-center justify-center">
@@ -492,7 +492,7 @@ export function ProductVariantSelector({
                       <span className="text-xs font-medium">{cert.label}</span>
                   </div>
                   {cert.priceAdjustment !== 0 && (
-                     <span className="text-[10px] opacity-80">
+                     <span className="text-xs opacity-80">
                       +₹{cert.priceAdjustment.toLocaleString('en-IN')}
                     </span>
                   )}
@@ -550,7 +550,7 @@ export function ProductVariantSelector({
                   </div>
                   <div className="flex items-center gap-2">
                     {opt.priceAdjustment === 0 && isEngraving && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">FREE</span>
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">FREE</span>
                     )}
                     {opt.priceAdjustment !== 0 && (
                       <span className="text-xs text-muted-foreground">
@@ -585,7 +585,7 @@ export function ProductVariantSelector({
                   {engravingText.trim() || 'Your Text Here'}
                 </span>
               </div>
-              <div className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-muted-foreground">
+              <div className="absolute bottom-2 left-0 right-0 text-center text-xs text-muted-foreground">
                 Preview
               </div>
             </div>

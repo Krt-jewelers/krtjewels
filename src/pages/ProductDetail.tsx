@@ -286,7 +286,7 @@ export default function ProductDetail() {
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <Icon className="w-4 h-4 text-primary" />
                     </div>
-                    <span className="text-[10px] text-muted-foreground leading-tight whitespace-pre-line">{label}</span>
+                    <span className="text-xs text-muted-foreground leading-tight whitespace-pre-line">{label}</span>
                   </div>
                 ))}
               </div>

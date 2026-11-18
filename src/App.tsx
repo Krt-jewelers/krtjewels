@@ -12,33 +12,34 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AuthPage from "./pages/Auth";
-import CollectionPage from "./pages/Collection";
-import ShopPage from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import GoldRatePage from "./pages/GoldRate";
-import CartPage from "./pages/Cart";
-import WishlistPage from "./pages/Wishlist";
-import StoresPage from "./pages/Stores";
-import AboutPage from "./pages/About";
-import ContactPage from "./pages/Contact";
-import TrackOrderPage from "./pages/TrackOrder";
-import CheckoutPage from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
-import ComparePage from "./pages/Compare";
-import ChitFundLookupPage from "./pages/ChitFundLookup";
-import BlogPage from "./pages/Blog";
-import BlogPostPage from "./pages/BlogPost";
-import SitePage from "./pages/SitePage";
+// Only the homepage ships in the first bundle; other pages load when opened.
+const NotFound = lazy(() => import("./pages/NotFound"));
+const AuthPage = lazy(() => import("./pages/Auth"));
+const CollectionPage = lazy(() => import("./pages/Collection"));
+const ShopPage = lazy(() => import("./pages/Shop"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const GoldRatePage = lazy(() => import("./pages/GoldRate"));
+const CartPage = lazy(() => import("./pages/Cart"));
+const WishlistPage = lazy(() => import("./pages/Wishlist"));
+const StoresPage = lazy(() => import("./pages/Stores"));
+const AboutPage = lazy(() => import("./pages/About"));
+const ContactPage = lazy(() => import("./pages/Contact"));
+const TrackOrderPage = lazy(() => import("./pages/TrackOrder"));
+const CheckoutPage = lazy(() => import("./pages/Checkout"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const ComparePage = lazy(() => import("./pages/Compare"));
+const ChitFundLookupPage = lazy(() => import("./pages/ChitFundLookup"));
+const BlogPage = lazy(() => import("./pages/Blog"));
+const BlogPostPage = lazy(() => import("./pages/BlogPost"));
+const SitePage = lazy(() => import("./pages/SitePage"));
 
 // Customer Account Pages
-import AccountDashboard from "./pages/account/Dashboard";
-import AccountOrders from "./pages/account/Orders";
-import AccountProfile from "./pages/account/Profile";
-import AccountAddresses from "./pages/account/Addresses";
-import AccountCoupons from "./pages/account/Coupons";
-import OrderInvoice from "./pages/account/OrderInvoice";
+const AccountDashboard = lazy(() => import("./pages/account/Dashboard"));
+const AccountOrders = lazy(() => import("./pages/account/Orders"));
+const AccountProfile = lazy(() => import("./pages/account/Profile"));
+const AccountAddresses = lazy(() => import("./pages/account/Addresses"));
+const AccountCoupons = lazy(() => import("./pages/account/Coupons"));
+const OrderInvoice = lazy(() => import("./pages/account/OrderInvoice"));
 
 // Lazy-loaded Admin Pages (shoppers do not download this heavy code)
 const AdminLogin = lazy(() => import("./pages/admin/Login"));
@@ -87,9 +88,9 @@ const queryClient = new QueryClient({
 });
 
 // Luxury fallback while admin chunks load
-function AdminLoadingFallback() {
+function PageLoadingFallback() {
   return (
-    <div className="min-h-screen bg-secondary/20 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6" role="status" aria-label="Loading page">
       <div className="w-10 h-10 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
   );
@@ -134,7 +135,7 @@ const App = () => {
           <ScrollToTop />
           <RouteErrorBoundary>
           <MaintenanceGate>
-            <Suspense fallback={<AdminLoadingFallback />}>
+            <Suspense fallback={<PageLoadingFallback />}>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />

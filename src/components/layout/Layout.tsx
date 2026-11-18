@@ -5,7 +5,6 @@ import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { FloatingContactMenu } from '@/components/ui/FloatingContactMenu';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
-import { useAuth } from '@/hooks/useAuth';
 import { usePageViewTracker } from '@/hooks/useAnalyticsTracker';
 import { CookieConsent } from './CookieConsent';
 
@@ -15,7 +14,6 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { authReady } = useAuth();
   const touchStartY = useRef<number | null>(null);
   const [pullDistance, setPullDistance] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -55,19 +53,16 @@ export function Layout({ children }: LayoutProps) {
     };
   }, [pullDistance]);
 
-  if (!authReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gold border-t-transparent" />
-          <div className="text-sm text-muted-foreground">Loading...</div>
-        </div>
-      </div>
-    );
-  }
-
+  // Pages render straight away; ones that need sign-in (account, admin,
+  // checkout) wait for auth themselves. Waiting here delayed every page.
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-md focus:bg-rich-black focus:px-4 focus:py-3 focus:text-ivory focus:outline-none focus:ring-2 focus:ring-primary"
+      >
+        Skip to content
+      </a>
       <div
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pointer-events-none transition-transform"
         style={{ transform: `translateY(${pullDistance - 60}px)` }}

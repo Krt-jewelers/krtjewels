@@ -96,7 +96,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Wishlist - Minimal */}
-            <Button
+            <Button aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'} data-tap-target=""
               variant="secondary"
               size="icon"
               onClick={handleToggleWishlist}

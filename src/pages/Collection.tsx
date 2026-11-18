@@ -262,7 +262,7 @@ export default function CollectionPage() {
               {metalFilter !== 'all' && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   {metalFilter.replace('_', ' ').toUpperCase()}
-                  <button onClick={() => setMetalFilter('all')}>
+                  <button aria-label="Clear metal filter" onClick={() => setMetalFilter('all')}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -270,7 +270,7 @@ export default function CollectionPage() {
               {(weightRange[0] > 0 || weightRange[1] < 200) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   Weight: {weightRange[0]}g - {weightRange[1]}g
-                  <button onClick={() => setWeightRange([0, 200])}>
+                  <button aria-label="Clear weight filter" onClick={() => setWeightRange([0, 200])}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -278,7 +278,7 @@ export default function CollectionPage() {
               {(priceRange[0] > 0 || priceRange[1] < 1000000) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   Price: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
-                  <button onClick={() => setPriceRange([0, 1000000])}>
+                  <button aria-label="Clear price filter" onClick={() => setPriceRange([0, 1000000])}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>

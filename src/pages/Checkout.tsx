@@ -55,7 +55,7 @@ function matchState(value: string | null | undefined): string {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, gstTotal, total, clearCart, isLoading: cartLoading, isPricing, hasPricingIssue } = useCart();
+  const { items, subtotal, gstTotal, total, isLoading: cartLoading, isPricing, hasPricingIssue } = useCart();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const { user, loading: authLoading } = useAuth();
@@ -63,6 +63,9 @@ export default function CheckoutPage() {
   const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Set once an order is placed: the cart then empties while the success page
+  // loads, and the empty-cart redirect below must not win that race.
+  const [orderPlaced, setOrderPlaced] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiAmount, setUpiAmount] = useState(0);
@@ -129,7 +132,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !orderPlaced) {
     return <Navigate to="/cart" replace />;
   }
 
@@ -192,7 +195,9 @@ export default function CheckoutPage() {
       handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
       return null;
     }
-    clearCart();
+    // The success page empties the cart; doing it here raced the page change
+    // and sent customers to the empty cart instead.
+    setOrderPlaced(true);
     return data;
   };
 

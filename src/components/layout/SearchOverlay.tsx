@@ -75,7 +75,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
             className="flex-1 border-0 text-lg focus-visible:ring-0 bg-transparent"
           />
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button aria-label="Close search" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>
