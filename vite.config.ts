@@ -11,6 +11,12 @@ export default defineConfig(({ mode }) => ({
   define: {
     __APP_BUILD_ID__: JSON.stringify(new Date().toISOString()),
   },
+  // Drop console.log/debug/info calls from production bundles (warnings and
+  // errors stay). Source maps are not generated for production builds.
+  esbuild: mode === "production" ? { pure: ["console.log", "console.debug", "console.info"] } : undefined,
+  build: {
+    sourcemap: false,
+  },
   server: {
     host: "::",
     port: 8080,

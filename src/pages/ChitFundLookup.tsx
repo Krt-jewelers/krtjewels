@@ -35,6 +35,8 @@ interface ChitFundData {
   total_gold_grams: number | null;
   notes: string | null;
   payments: ChitPayment[];
+  // Phone lookups return a summary only; the scheme ID shows everything.
+  limited?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -191,11 +193,13 @@ export default function ChitFundLookup() {
                     <p className="font-serif font-semibold text-lg">{formatPrice(chitFund.monthly_amount)}</p>
                   </div>
                   
-                  <div className="bg-secondary/50 rounded-xl p-4 text-center">
-                    <Coins className="w-6 h-6 mx-auto text-primary mb-2" />
-                    <p className="text-xs text-muted-foreground mb-1">Total Gold</p>
-                    <p className="font-serif font-semibold text-lg">{(chitFund.total_gold_grams || 0).toFixed(3)}g</p>
-                  </div>
+                  {!chitFund.limited && (
+                    <div className="bg-secondary/50 rounded-xl p-4 text-center">
+                      <Coins className="w-6 h-6 mx-auto text-primary mb-2" />
+                      <p className="text-xs text-muted-foreground mb-1">Total Gold</p>
+                      <p className="font-serif font-semibold text-lg">{(chitFund.total_gold_grams || 0).toFixed(3)}g</p>
+                    </div>
+                  )}
                   
                   <div className="bg-secondary/50 rounded-xl p-4 text-center">
                     <CheckCircle className="w-6 h-6 mx-auto text-green-600 mb-2" />
@@ -240,7 +244,20 @@ export default function ChitFundLookup() {
               </CardContent>
             </Card>
 
+            {chitFund.limited && (
+              <Card>
+                <CardContent className="p-6 text-sm text-muted-foreground flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
+                  <p>
+                    For privacy, a phone number search shows a summary only. Enter the scheme ID from your
+                    scheme card to see your gold balance and payment history, or call us on +91 98430 10986.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Payment History */}
+            {!chitFund.limited && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -289,6 +306,7 @@ export default function ChitFundLookup() {
                 )}
               </CardContent>
             </Card>
+            )}
           </div>
         )}
 
