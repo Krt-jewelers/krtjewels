@@ -97,9 +97,9 @@ export function FlyingCart({ isOpen, onClose }: FlyingCartProps) {
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm line-clamp-2">{item.product.name}</h4>
-                  <p className="text-xs text-muted-foreground">{item.product.weight_grams}g</p>
+                  <p className="text-xs text-muted-foreground">{item.line.weightGrams.toFixed(2)}g</p>
                   <p className="text-primary font-semibold mt-1">
-                    {formatPrice(item.product.calculated_price.total)}
+                    {formatPrice(item.line.lineTotal)}
                   </p>
                   
                   {/* Quantity Controls */}

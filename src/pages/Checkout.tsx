@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
-import { useGoldRate } from '@/hooks/useGoldRate';
 import { supabase } from '@/integrations/supabase/client';
-import type { Json } from '@/integrations/supabase/types';
 import { formatPrice } from '@/lib/types';
+import { INDIAN_STATES } from '@/lib/pricing';
+import {
+  callOrderFunction,
+  isValidPincode,
+  normalizeIndianPhone,
+  type OrderFunctionError,
+  type OrderPayload,
+  type OrderQuote,
+  type PlacedOrder,
+} from '@/lib/orders';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,18 +45,27 @@ interface UpiSettings {
   is_active: boolean;
 }
 
+// Saved addresses may spell the state differently ("tamilnadu", "TN").
+const STATE_ALIASES: Record<string, string> = { tn: 'Tamil Nadu', ka: 'Karnataka', kl: 'Kerala', ap: 'Andhra Pradesh', ts: 'Telangana', py: 'Puducherry' };
+function matchState(value: string | null | undefined): string {
+  const key = (value || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!key) return '';
+  return STATE_ALIASES[key] || INDIAN_STATES.find((s) => s.toLowerCase().replace(/[^a-z]/g, '') === key) || '';
+}
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, gstTotal, total, clearCart, isLoading: cartLoading } = useCart();
+  const { items, subtotal, gstTotal, total, clearCart, isLoading: cartLoading, isPricing, hasPricingIssue } = useCart();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const { user, loading: authLoading } = useAuth();
-  const { data: goldRate } = useGoldRate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [upiAmount, setUpiAmount] = useState(0);
   const [upiSettings, setUpiSettings] = useState<UpiSettings | null>(null);
   const [address, setAddress] = useState<AddressForm>({
     full_name: '',
@@ -91,7 +110,7 @@ export default function CheckoutPage() {
           address_line1: data.address_line1,
           address_line2: data.address_line2 || '',
           city: data.city,
-          state: data.state,
+          state: matchState(data.state),
           pincode: data.pincode,
         });
       }
@@ -114,139 +133,77 @@ export default function CheckoutPage() {
     return <Navigate to="/cart" replace />;
   }
 
-  const generateOrderNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `KRT${year}${month}${random}`;
-  };
-
-  const createOrder = async (orderNumber: string, opts?: {
-    paymentMethod?: string;
-    paymentId?: string;
-    paymentProofUrl?: string;
-    paymentUtr?: string;
-    upiPhone?: string;
-    upiProvider?: string;
-    status?: string;
-  }) => {
-    if (!goldRate) return null;
-    const method = opts?.paymentMethod || paymentMethod;
-
-    if (!user) {
-      const orderItems = items.map((item) => ({
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_image: item.product.images[0] || null,
-        weight_grams: item.product.weight_grams + (item.variation_weight_adjustment || 0),
-        gold_rate_applied: item.product.calculated_price.gold_rate_applied,
-        making_charges: item.product.calculated_price.making_charges,
-        diamond_cost: item.product.diamond_cost || 0,
-        stone_cost: item.product.stone_cost || 0,
-        quantity: item.quantity,
-        unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
-        total_price: (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) * item.quantity,
-        selected_variations: item.selected_variations || {},
-        variation_price_adjustment: item.variation_price_adjustment || 0,
-        variation_weight_adjustment: item.variation_weight_adjustment || 0,
-      }));
-
-      const { data: guestData, error: guestError } = await supabase.functions.invoke('create-guest-order', {
-        body: {
-          order_number: orderNumber,
-          subtotal,
-          gst_amount: gstTotal,
-          total_amount: total,
-          gold_rate_at_order: goldRate.rate_22k,
-          shipping_address: address as unknown as Json,
-          payment_method: method,
-          payment_id: opts?.paymentId || null,
-          notes: notes || null,
-          items: orderItems,
-        },
-      });
-      if (guestError) throw new Error(guestError.message);
-      return guestData;
-    }
-
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert([{
-        order_number: orderNumber,
-        user_id: user.id,
-        status: (opts?.status || 'pending') as 'pending' | 'confirmed',
-        gold_rate_at_order: goldRate.rate_22k,
-        subtotal,
-        gst_amount: gstTotal,
-        total_amount: total,
-        shipping_address: address as unknown as Json,
-        payment_method: method,
-        payment_id: opts?.paymentId || null,
-        payment_proof_url: opts?.paymentProofUrl || null,
-        payment_utr: opts?.paymentUtr || null,
-        upi_phone: opts?.upiPhone || null,
-        upi_provider: opts?.upiProvider || null,
-        notes: notes || null,
-      }])
-      .select()
-      .single();
-
-    if (orderError) throw orderError;
-
-    const orderItems = items.map((item) => ({
-      order_id: order.id,
-      product_id: item.product.id,
-      product_name: item.product.name,
-      product_image: item.product.images[0] || null,
-      weight_grams: item.product.weight_grams + (item.variation_weight_adjustment || 0),
-      gold_rate_applied: item.product.calculated_price.gold_rate_applied,
-      making_charges: item.product.calculated_price.making_charges,
-      diamond_cost: item.product.diamond_cost || 0,
-      stone_cost: item.product.stone_cost || 0,
+  const orderItems = (): OrderPayload['items'] =>
+    items.map((item) => ({
+      product_id: item.product_id,
       quantity: item.quantity,
-      unit_price: item.product.calculated_price.total + (item.variation_price_adjustment || 0),
-      total_price: (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) * item.quantity,
       selected_variations: item.selected_variations || {},
-      variation_price_adjustment: item.variation_price_adjustment || 0,
-      variation_weight_adjustment: item.variation_weight_adjustment || 0,
     }));
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-    if (itemsError) throw itemsError;
+  const shippingAddress = () => ({
+    ...address,
+    phone: normalizeIndianPhone(address.phone) || address.phone,
+    pincode: address.pincode.replace(/\s/g, ''),
+  });
 
-    for (const item of items) {
-      if (item.product.stock_quantity !== null) {
-        await supabase
-          .from('products')
-          .update({ stock_quantity: item.product.stock_quantity - item.quantity })
-          .eq('id', item.product.id);
-      }
+  // Prices are re-checked on the server; if they moved, show the new total.
+  const handleOrderError = (error: OrderFunctionError) => {
+    if (error.code === 'PRICE_CHANGED' || error.code === 'RATE_UNAVAILABLE') {
+      queryClient.invalidateQueries({ queryKey: ['goldRate'] });
+      queryClient.invalidateQueries({ queryKey: ['metalTypes'] });
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     }
+    if (error.code === 'ITEM_OPTIONS_CHANGED' || error.code === 'PRODUCT_UNAVAILABLE' || error.code === 'OUT_OF_STOCK') {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    }
+    toast({
+      title: error.code === 'PRICE_CHANGED' ? 'Prices updated' : 'Could not place order',
+      description: error.message,
+      variant: 'destructive',
+    });
+  };
 
-    return order;
+  const validateForm = (): boolean => {
+    const problems: string[] = [];
+    if (address.full_name.trim().length < 2) problems.push('full name');
+    if (!normalizeIndianPhone(address.phone)) problems.push('a 10-digit mobile number');
+    if (address.address_line1.trim().length < 3) problems.push('address line 1');
+    if (address.city.trim().length < 2) problems.push('city');
+    if (!INDIAN_STATES.includes(address.state)) problems.push('state');
+    if (!isValidPincode(address.pincode)) problems.push('a 6-digit pincode');
+    if (problems.length > 0) {
+      toast({ title: 'Please check your address', description: `Enter ${problems.join(', ')}.`, variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
+
+  const placeOrder = async (method: 'cod' | 'upi', payment?: OrderPayload['payment']) => {
+    const { data, error } = await callOrderFunction<PlacedOrder>({
+      mode: 'place',
+      items: orderItems(),
+      shipping_address: shippingAddress(),
+      payment_method: method,
+      payment,
+      notes: notes || null,
+      expected_total: method === 'upi' ? upiAmount : total,
+    });
+    if (error || !data) {
+      handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
+      return null;
+    }
+    clearCart();
+    return data;
   };
 
   const handleUpiSubmit = async (data: { utr: string; screenshotUrl: string | null; upiPhone: string; upiProvider: string }) => {
     setIsSubmitting(true);
     try {
-      const orderNumber = generateOrderNumber();
-      await createOrder(orderNumber, {
-        paymentMethod: 'upi',
-        paymentUtr: data.utr || undefined,
-        paymentProofUrl: data.screenshotUrl || undefined,
-        upiPhone: data.upiPhone || undefined,
-        upiProvider: data.upiProvider || undefined,
-        status: 'pending',
-      });
-
-      clearCart();
+      const order = await placeOrder('upi', { utr: data.utr, upi_phone: data.upiPhone, upi_provider: data.upiProvider });
+      if (!order) return;
       setShowUpiModal(false);
-      toast({ title: 'Order Placed!', description: 'We will verify your payment and process your order.' });
-      navigate(`/order-success?order=${orderNumber}&upi=1`);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Something went wrong';
-      toast({ title: 'Failed to place order', description: message, variant: 'destructive' });
+      toast({ title: 'Order placed', description: 'We will verify your payment and confirm your order.' });
+      navigate(`/order-success?order=${order.order_number}&upi=1`, { state: { order } });
     } finally {
       setIsSubmitting(false);
     }
@@ -254,37 +211,53 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!goldRate) return;
-
-    if (!address.full_name || !address.phone || !address.address_line1 || !address.city || !address.pincode) {
-      toast({ title: 'Missing Information', description: 'Please fill in all required address fields.', variant: 'destructive' });
+    if (isPricing) {
+      toast({ title: "Loading today's gold rate", description: 'Please wait a moment and try again.' });
       return;
     }
+    if (hasPricingIssue) {
+      toast({ title: 'Please review your cart', description: 'Some items need to be added again.', variant: 'destructive' });
+      return;
+    }
+    if (!validateForm()) return;
 
     if (paymentMethod === 'upi') {
       if (!upiSettings?.qr_code_url) {
         toast({ title: 'UPI not available', description: 'UPI payment is not configured yet.', variant: 'destructive' });
         return;
       }
-      setShowUpiModal(true);
+      // Confirm the amount with the server before showing the QR code.
+      setIsSubmitting(true);
+      try {
+        const { data, error } = await callOrderFunction<{ quote: OrderQuote }>({
+          mode: 'quote',
+          items: orderItems(),
+          expected_total: total,
+        });
+        if (error || !data) {
+          handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
+          return;
+        }
+        setUpiAmount(data.quote.total_amount);
+        setShowUpiModal(true);
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
-    // COD order
     setIsSubmitting(true);
     try {
-      const orderNumber = generateOrderNumber();
-      await createOrder(orderNumber);
-      clearCart();
-      toast({ title: 'Order Placed Successfully!', description: `Your order #${orderNumber} has been confirmed.` });
-      navigate(`/order-success?order=${orderNumber}`);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Something went wrong';
-      toast({ title: 'Failed to place order', description: message, variant: 'destructive' });
+      const order = await placeOrder('cod');
+      if (!order) return;
+      toast({ title: 'Order placed', description: `Your order #${order.order_number} has been received.` });
+      navigate(`/order-success?order=${order.order_number}`, { state: { order } });
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const canSubmit = !isSubmitting && !isPricing && !hasPricingIssue;
 
   return (
     <Layout>
@@ -306,33 +279,42 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="full_name">Full Name *</Label>
-                      <Input id="full_name" value={address.full_name} onChange={(e) => setAddress(prev => ({ ...prev, full_name: e.target.value }))} required />
+                      <Input id="full_name" autoComplete="name" maxLength={100} value={address.full_name} onChange={(e) => setAddress(prev => ({ ...prev, full_name: e.target.value }))} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number *</Label>
-                      <Input id="phone" type="tel" value={address.phone} onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))} required />
+                      <Input id="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={16} placeholder="10-digit mobile number" value={address.phone} onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))} required />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_line1">Address Line 1 *</Label>
-                    <Input id="address_line1" value={address.address_line1} onChange={(e) => setAddress(prev => ({ ...prev, address_line1: e.target.value }))} placeholder="House/Flat No., Building, Street" required />
+                    <Input id="address_line1" autoComplete="address-line1" maxLength={200} value={address.address_line1} onChange={(e) => setAddress(prev => ({ ...prev, address_line1: e.target.value }))} placeholder="House/Flat No., Building, Street" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address_line2">Address Line 2</Label>
-                    <Input id="address_line2" value={address.address_line2} onChange={(e) => setAddress(prev => ({ ...prev, address_line2: e.target.value }))} placeholder="Landmark, Area (optional)" />
+                    <Input id="address_line2" autoComplete="address-line2" maxLength={200} value={address.address_line2} onChange={(e) => setAddress(prev => ({ ...prev, address_line2: e.target.value }))} placeholder="Landmark, Area (optional)" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">City *</Label>
-                      <Input id="city" value={address.city} onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))} required />
+                      <Input id="city" autoComplete="address-level2" maxLength={80} value={address.city} onChange={(e) => setAddress(prev => ({ ...prev, city: e.target.value }))} required />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="state">State *</Label>
-                      <Input id="state" value={address.state} onChange={(e) => setAddress(prev => ({ ...prev, state: e.target.value }))} required />
+                      <Select value={address.state} onValueChange={(value) => setAddress(prev => ({ ...prev, state: value }))}>
+                        <SelectTrigger id="state" aria-label="State">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {INDIAN_STATES.map((state) => (
+                            <SelectItem key={state} value={state}>{state}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pincode">Pincode *</Label>
-                      <Input id="pincode" value={address.pincode} onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))} required />
+                      <Input id="pincode" inputMode="numeric" autoComplete="postal-code" maxLength={6} pattern="[1-9][0-9]{5}" value={address.pincode} onChange={(e) => setAddress(prev => ({ ...prev, pincode: e.target.value }))} required />
                     </div>
                   </div>
                 </CardContent>
@@ -382,7 +364,7 @@ export default function CheckoutPage() {
                   <CardTitle className="font-medium">Order Notes (Optional)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special instructions for your order..." rows={3} />
+                  <Textarea aria-label="Order notes" maxLength={500} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Any special instructions for your order..." rows={3} />
                 </CardContent>
               </Card>
             </div>
@@ -404,7 +386,7 @@ export default function CheckoutPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium line-clamp-1">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                          <p className="text-sm font-semibold text-primary">{formatPrice(item.product.calculated_price.total * item.quantity)}</p>
+                          <p className="text-sm font-semibold text-primary">{formatPrice(item.line.lineTotal)}</p>
                         </div>
                       </div>
                     ))}
@@ -429,7 +411,17 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full btn-premium py-6 text-lg" disabled={isSubmitting}>
+                  {isPricing && (
+                    <p className="text-sm text-muted-foreground" role="status">
+                      Loading today's gold rate before we can confirm your total…
+                    </p>
+                  )}
+                  {hasPricingIssue && (
+                    <p className="text-sm text-destructive" role="alert">
+                      Some items in your cart need to be added again. <Link to="/cart" className="underline">Review cart</Link>
+                    </p>
+                  )}
+                  <Button type="submit" className="w-full btn-premium py-6 text-lg" disabled={!canSubmit}>
                     {isSubmitting ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
                     ) : paymentMethod === 'upi' ? (
@@ -460,7 +452,7 @@ export default function CheckoutPage() {
           open={showUpiModal}
           onClose={() => setShowUpiModal(false)}
           onSubmit={handleUpiSubmit}
-          amount={total}
+          amount={upiAmount || total}
           qrCodeUrl={upiSettings.qr_code_url}
           upiId={upiSettings.upi_id || undefined}
           merchantName={upiSettings.merchant_name || undefined}

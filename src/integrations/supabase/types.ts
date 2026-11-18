@@ -2048,6 +2048,10 @@ export type Database = {
           total: number
         }[]
       }
+      create_order_with_items: {
+        Args: { p_items: Json; p_order: Json }
+        Returns: Json
+      }
       get_current_gold_rate: {
         Args: never
         Returns: {
@@ -2063,6 +2067,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      lookup_order: {
+        Args: { p_order_number: string; p_phone: string }
+        Returns: Json
       }
     }
     Enums: {

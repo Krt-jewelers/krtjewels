@@ -1,5 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
+import { describeSelections, LINE_ERROR_MESSAGES } from '@/lib/selections';
 import { formatPrice } from '@/lib/types';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { Link } from 'react-router-dom';
@@ -84,18 +85,23 @@ export default function CartPage() {
                         </h3>
                       </Link>
                       <p className="text-sm text-muted-foreground">
-                        {(item.product.weight_grams + (item.variation_weight_adjustment || 0)).toFixed(2)}g •{' '}
-                        {formatPrice(item.product.calculated_price.gold_rate_applied)}/g
+                        {item.line.weightGrams.toFixed(2)}g •{' '}
+                        {formatPrice(item.line.goldRateApplied)}/g
                       </p>
-                      {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                      {describeSelections(item.selected_variations).length > 0 && (
                         <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-                          {Object.entries(item.selected_variations).map(([key, value]) => (
+                          {describeSelections(item.selected_variations).map(({ key, label, value }) => (
                             <div key={key} className="flex gap-1">
-                              <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
-                              <span>{formatSelectedValue(value)}</span>
+                              <span className="font-medium">{label}:</span>
+                              <span>{value}</span>
                             </div>
                           ))}
                         </div>
+                      )}
+                      {item.line.error && LINE_ERROR_MESSAGES[item.line.error] && (
+                        <p className="mt-1 text-xs text-destructive" role="alert">
+                          {LINE_ERROR_MESSAGES[item.line.error]}
+                        </p>
                       )}
                     </div>
 
@@ -123,10 +129,7 @@ export default function CartPage() {
 
                       {/* Price */}
                       <p className="price-tag text-lg font-semibold text-primary sm:text-right">
-                        {formatPrice(
-                          (item.product.calculated_price.total + (item.variation_price_adjustment || 0)) *
-                            item.quantity
-                        )}
+                        {formatPrice(item.line.lineTotal)}
                       </p>
                     </div>
                   </div>

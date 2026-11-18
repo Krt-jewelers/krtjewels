@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Product, ProductCategory, MetalType, CalculatedPrice, ProductWithPrice } from '@/lib/types';
+import type { Product, ProductCategory, MetalType, ProductWithPrice } from '@/lib/types';
+import { calculateProductPrice } from '@/lib/pricing';
 import { useGoldRate } from './useGoldRate';
 import { useGstSettings } from './useSiteSettings';
-import { useMetalTypes, type MetalType as MetalTypeRecord } from './useMetalTypes';
+import { useMetalTypes } from './useMetalTypes';
+
+// Pricing lives in a module shared with the place-order edge function.
+export { calculateProductPrice };
 
 interface ProductFilters {
   category?: ProductCategory;
@@ -18,152 +22,6 @@ interface ProductFilters {
   isBridal?: boolean;
   tag?: string;
   search?: string;
-}
-
-// Calculate price for a product based on current gold rate
-export function calculateProductPrice(
-  product: Product,
-  goldRate: { rate_22k: number; rate_24k: number; rate_18k: number | null } | null,
-  categoryMakingCharge?: number,
-  gstRatePercent?: number,
-  metalTypes?: MetalTypeRecord[],
-  options?: {
-    selection?: {
-      metalSlug?: string;
-      diamondCost?: number;
-      attributeExtra?: number;
-      metalWeightGrams?: number;
-    };
-    usePricingOptionsDefaults?: boolean;
-  }
-): CalculatedPrice {
-  if (!goldRate) {
-    return {
-      gold_value: 0,
-      making_charges: 0,
-      subtotal: 0,
-      gst: 0,
-      total: 0,
-      gold_rate_applied: 0,
-    };
-  }
-
-  const useDefaults = options?.usePricingOptionsDefaults !== false;
-  const pricingOptions = (product.specifications as Record<string, any> | null)?.pricing_options || {};
-  const defaultMetalSlug =
-    useDefaults && Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
-      ? (typeof pricingOptions.metals[0] === 'string'
-          ? pricingOptions.metals[0]
-          : pricingOptions.metals[0]?.slug || pricingOptions.metals[0]?.metal_type)
-      : null;
-  const selectedMetalSlug = options?.selection?.metalSlug || defaultMetalSlug || product.metal_type;
-
-  const defaultDiamondQuality = useDefaults && Array.isArray(pricingOptions.diamond_qualities)
-    ? pricingOptions.diamond_qualities.find((q: any) => q?.is_default) || pricingOptions.diamond_qualities[0]
-    : null;
-  const defaultCaratWeight = useDefaults && Array.isArray(pricingOptions.carat_weights)
-    ? pricingOptions.carat_weights.find((w: any) => w?.is_default)?.value ?? pricingOptions.carat_weights[0]?.value ?? pricingOptions.carat_weights[0]
-    : null;
-  const defaultDiamondCost = defaultDiamondQuality && defaultCaratWeight
-    ? (Number(defaultDiamondQuality.rate_per_carat) || 0) * (Number(defaultCaratWeight) || 0)
-    : 0;
-
-  const defaultAttributeExtra = useDefaults && Array.isArray(pricingOptions.attributes)
-    ? pricingOptions.attributes
-        .filter((a: any) => a?.is_default)
-        .reduce((sum: number, a: any) => sum + (Number(a.price) || 0), 0)
-    : 0;
-
-  // Try to get rate from metal_types first (dynamic), fall back to gold_rates
-  let goldRatePerGram: number = 0;
-  const metalTypeRecord =
-    metalTypes?.find(mt => mt.slug === selectedMetalSlug) ||
-    (product.metal_type_id ? metalTypes?.find(mt => mt.id === product.metal_type_id) : undefined);
-  if (metalTypeRecord && metalTypeRecord.rate_per_gram > 0) {
-    goldRatePerGram = metalTypeRecord.rate_per_gram;
-  } else if (goldRate) {
-    switch (selectedMetalSlug) {
-      case 'gold_24k':
-        goldRatePerGram = goldRate.rate_24k;
-        break;
-      case 'gold_18k':
-        goldRatePerGram = goldRate.rate_18k || goldRate.rate_22k * 0.75;
-        break;
-      case 'gold_22k':
-      default:
-        goldRatePerGram = goldRate.rate_22k;
-        break;
-    }
-  }
-
-  // Resolve metal-specific weight (pricing_options.metals can store per-metal weights)
-  let metalWeightGrams = product.weight_grams;
-  let defaultMetalWeight = product.weight_grams;
-  if (Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0) {
-    const first = pricingOptions.metals[0];
-    if (first && typeof first === 'object') {
-      const firstWeight = Number((first as any).weight_grams);
-      if (Number.isFinite(firstWeight) && firstWeight > 0) {
-        defaultMetalWeight = firstWeight;
-      }
-    }
-  }
-
-  if (typeof options?.selection?.metalWeightGrams === 'number' && Number.isFinite(options.selection.metalWeightGrams)) {
-    metalWeightGrams = options.selection.metalWeightGrams;
-  } else if (Array.isArray(pricingOptions.metals)) {
-    let foundWeight = false;
-    for (const m of pricingOptions.metals) {
-      if (m && typeof m === 'object') {
-        const slug = (m as any).slug || (m as any).metal_type;
-        const weight = Number((m as any).weight_grams);
-        if (slug === selectedMetalSlug && Number.isFinite(weight) && weight > 0) {
-          metalWeightGrams = weight;
-          foundWeight = true;
-          break;
-        }
-      }
-    }
-    if (!foundWeight) {
-      metalWeightGrams = defaultMetalWeight;
-    }
-  }
-
-  // Calculate gold value
-  const goldValue = metalWeightGrams * goldRatePerGram;
-
-  // Calculate making charges (use product-specific or category default)
-  const makingChargePercent = product.making_charge_percent || categoryMakingCharge || 12;
-  const makingCharges = goldValue * (makingChargePercent / 100);
-
-  const resolvedDiamondCost =
-    typeof options?.selection?.diamondCost === 'number'
-      ? options.selection.diamondCost
-      : defaultDiamondCost > 0
-      ? defaultDiamondCost
-      : product.diamond_cost;
-  const resolvedAttributeExtra =
-    typeof options?.selection?.attributeExtra === 'number'
-      ? options.selection.attributeExtra
-      : defaultAttributeExtra;
-
-  // Calculate subtotal (gold + making + diamond + stone + attributes)
-  const subtotal = goldValue + makingCharges + resolvedDiamondCost + product.stone_cost + resolvedAttributeExtra;
-
-  const gstRate = typeof gstRatePercent === 'number' ? gstRatePercent : 3;
-  const gst = subtotal * (gstRate / 100);
-
-  // Total price
-  const total = subtotal + gst;
-
-  return {
-    gold_value: Math.round(goldValue),
-    making_charges: Math.round(makingCharges),
-    subtotal: Math.round(subtotal),
-    gst: Math.round(gst),
-    total: Math.round(total),
-    gold_rate_applied: goldRatePerGram,
-  };
 }
 
 export function useProducts(filters?: ProductFilters) {

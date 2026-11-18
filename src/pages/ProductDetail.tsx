@@ -2,7 +2,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { SEO } from '@/components/layout/SEO';
-import { useProduct, useBestsellerProducts, calculateProductPrice } from '@/hooks/useProducts';
+import { useProduct, useBestsellerProducts } from '@/hooks/useProducts';
+import { getBaseWeightGrams, priceWithVariation, type VariationState } from '@/lib/pricing';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { CATEGORY_NAMES } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,33 +39,7 @@ export default function ProductDetail() {
 
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [variationState, setVariationState] = useState<{
-    metalType: string;
-    metalTypeSlug: string;
-    size: string | null;
-    priceAdjustment: number;
-    weightAdjustment: number;
-    imageUrl: string | null;
-    isComplete?: boolean;
-    pricing?: {
-      metalRatePerGram: number;
-      metalWeightGrams: number;
-      diamondRatePerCarat: number;
-      diamondCaratWeight: number;
-      diamondCost: number;
-      extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
-      extraTotal?: number;
-    };
-    selectedOptions?: {
-      gemstoneQuality?: string | string[] | null;
-      caratWeight?: string | string[] | null;
-      attributes?: string[];
-      addOns?: string[];
-      metalType: string;
-      metalTypeSlug?: string;
-      size?: string | null;
-    };
-  } | null>(null);
+  const [variationState, setVariationState] = useState<VariationState | null>(null);
 
   // Track product view on load
   useEffect(() => {
@@ -114,55 +89,16 @@ export default function ProductDetail() {
     );
   }
 
-  const pricingOptions = (product.specifications as Record<string, any> | null)?.pricing_options || {};
-  const firstPricingMetal = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
-    ? pricingOptions.metals[0]
-    : null;
-  const defaultMetalWeight = firstPricingMetal && typeof firstPricingMetal === 'object'
-    ? Number((firstPricingMetal as any).weight_grams) || 0
-    : 0;
-  const baseWeightGrams = defaultMetalWeight > 0 ? defaultMetalWeight : product.weight_grams;
-
-  const selectedMetalSlug = variationState?.metalTypeSlug || product.metal_type;
-  const selectedWeightGrams = baseWeightGrams + (variationState?.weightAdjustment || 0);
-  const selectedDiamondCost = typeof variationState?.pricing?.diamondCost === 'number'
-    ? variationState?.pricing?.diamondCost || 0
-    : product.diamond_cost || 0;
-
-  const effectiveCalculatedPrice = calculateProductPrice(
-    {
-      ...(product as Product),
-      metal_type: selectedMetalSlug as MetalType,
-      weight_grams: selectedWeightGrams,
-      diamond_cost: selectedDiamondCost,
-    },
-    goldRate || null,
-    undefined,
+  // Same function the cart and the place-order edge function use, so the price
+  // shown here is the price charged.
+  const baseWeightGrams = getBaseWeightGrams(product);
+  const adjustedCalculatedPrice = priceWithVariation({
+    product,
+    variationState,
+    goldRate: goldRate || null,
     gstRate,
-    metalTypes || [],
-    variationState
-      ? {
-          selection: {
-            metalSlug: selectedMetalSlug,
-            diamondCost: selectedDiamondCost,
-            attributeExtra: 0,
-            metalWeightGrams: selectedWeightGrams,
-          },
-          usePricingOptionsDefaults: false,
-        }
-      : undefined
-  );
-
-  const extraTotal = variationState?.pricing?.extraTotal || 0;
-  const adjustedSubtotal = effectiveCalculatedPrice.subtotal + extraTotal;
-  const adjustedGst = Math.round(adjustedSubtotal * (gstRate / 100));
-  const adjustedTotal = Math.round(adjustedSubtotal + adjustedGst);
-  const adjustedCalculatedPrice = {
-    ...effectiveCalculatedPrice,
-    subtotal: Math.round(adjustedSubtotal),
-    gst: adjustedGst,
-    total: adjustedTotal,
-  };
+    metalTypes: metalTypes || [],
+  });
 
   const variationStateForCart = variationState
     ? {
@@ -357,10 +293,10 @@ export default function ProductDetail() {
               pricingMeta={{
                 metalLabel: variationState?.metalType || '',
                 metalRatePerGram: variationState?.pricing?.metalRatePerGram ?? product.calculated_price.gold_rate_applied,
-                metalWeightGrams: selectedWeightGrams,
+                metalWeightGrams: adjustedCalculatedPrice.metal_weight_grams,
                 diamondRatePerCarat: variationState?.pricing?.diamondRatePerCarat ?? 0,
                 diamondCaratWeight: variationState?.pricing?.diamondCaratWeight ?? 0,
-                diamondCost: selectedDiamondCost,
+                diamondCost: adjustedCalculatedPrice.diamond_cost,
                 diamondQualityLabel: typeof variationState?.selectedOptions?.gemstoneQuality === 'string'
                   ? variationState?.selectedOptions?.gemstoneQuality
                   : Array.isArray(variationState?.selectedOptions?.gemstoneQuality)

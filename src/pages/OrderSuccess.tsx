@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, MessageCircle } from 'lucide-react';
 import { formatPrice } from '@/lib/types';
+import type { PlacedOrder } from '@/lib/orders';
 
 interface OrderItem {
   id: string;
@@ -39,6 +40,11 @@ interface Order {
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
   const orderNumber = searchParams.get('order');
+  const isUpi = searchParams.get('upi') === '1';
+  // Checkout passes the placed order along, so guests (who cannot read orders
+  // from the database) still see their summary.
+  const location = useLocation();
+  const placed = (location.state as { order?: PlacedOrder } | null)?.order;
   const { user, loading: authLoading } = useAuth();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
@@ -48,6 +54,26 @@ export default function OrderSuccess() {
   useEffect(() => {
     const fetchOrder = async () => {
       if (!orderNumber) {
+        setLoading(false);
+        return;
+      }
+
+      if (placed && placed.order_number === orderNumber) {
+        setOrder({
+          id: placed.order_id,
+          order_number: placed.order_number,
+          total_amount: placed.total_amount,
+          subtotal: placed.subtotal,
+          gst_amount: placed.gst_amount,
+          created_at: placed.created_at,
+          shipping_address: placed.shipping_address as unknown as Order['shipping_address'],
+          order_items: placed.items.map((item, index) => ({
+            id: String(index),
+            product_name: item.product_name,
+            quantity: item.quantity,
+            total_price: item.total_price,
+          })),
+        });
         setLoading(false);
         return;
       }
@@ -96,7 +122,7 @@ export default function OrderSuccess() {
     if (!authLoading) {
       fetchOrder();
     }
-  }, [orderNumber, user, authLoading]);
+  }, [orderNumber, user, authLoading, placed]);
 
   const whatsappMessage = useMemo(() => {
     if (!order) return '';
@@ -135,7 +161,9 @@ export default function OrderSuccess() {
               <h1 className="text-2xl md:text-3xl font-medium">Thank you for your order!</h1>
             </div>
             <p className="text-muted-foreground">
-              Your order has been placed successfully. We’ll start processing it right away.
+              {isUpi
+                ? 'We have received your order. We will confirm it once your UPI payment is verified.'
+                : 'We have received your order and will call you to confirm it.'}
             </p>
           </div>
 
@@ -149,10 +177,26 @@ export default function OrderSuccess() {
             <div className="max-w-3xl mx-auto mt-8">
               <Card>
                 <CardContent className="py-10 text-center">
-                  <p className="text-muted-foreground">Order not found.</p>
-                  <Link to="/account/orders">
-                    <Button className="mt-4">Go to Orders</Button>
-                  </Link>
+                  {orderNumber ? (
+                    <>
+                      <p className="text-muted-foreground">
+                        Your order number is <span className="font-medium text-foreground">{orderNumber}</span>.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Track it any time with this number and your phone number.
+                      </p>
+                      <Link to={`/track-order?order=${encodeURIComponent(orderNumber)}`}>
+                        <Button className="mt-4">Track order</Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground">Order not found.</p>
+                      <Link to={user ? '/account/orders' : '/track-order'}>
+                        <Button className="mt-4">{user ? 'Go to Orders' : 'Track an order'}</Button>
+                      </Link>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
