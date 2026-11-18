@@ -12,16 +12,22 @@ export default function TaxSettings() {
   const updateSettings = useUpdateGstSettings();
 
   const [rate, setRate] = useState<number>(3);
+  const [gstin, setGstin] = useState('');
 
   useEffect(() => {
     if (settings) {
       setRate(settings.rate);
+      setGstin(settings.gstin || '');
     }
   }, [settings]);
 
+  // 15 characters: state code, PAN, entity number, Z, check character.
+  const gstinValid = gstin === '' || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin.trim().toUpperCase());
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings.mutate({ rate });
+    if (!gstinValid) return;
+    updateSettings.mutate({ rate, gstin, seller_state: settings?.seller_state || 'Tamil Nadu' });
   };
 
   if (isLoading) {
@@ -70,10 +76,27 @@ export default function TaxSettings() {
                 </p>
               </div>
 
+              <div className="space-y-2 max-w-xs">
+                <Label htmlFor="gstin">GSTIN (printed on invoices)</Label>
+                <Input
+                  id="gstin"
+                  value={gstin}
+                  maxLength={15}
+                  onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                  placeholder="33ABCDE1234F1Z5"
+                  aria-invalid={!gstinValid}
+                />
+                <p className={gstinValid ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'}>
+                  {gstinValid
+                    ? 'Invoices show no GSTIN until this is filled in.'
+                    : 'A GSTIN has 15 characters, for example 33ABCDE1234F1Z5.'}
+                </p>
+              </div>
+
               <Button
                 type="submit"
                 className="btn-premium"
-                disabled={updateSettings.isPending}
+                disabled={updateSettings.isPending || !gstinValid}
               >
                 {updateSettings.isPending ? (
                   <>
