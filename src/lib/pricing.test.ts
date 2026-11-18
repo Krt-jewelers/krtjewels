@@ -4,6 +4,7 @@ import {
   calculateProductPrice,
   computeVariationState,
   getBaseWeightGrams,
+  matchIndianState,
   priceCartLine,
   priceWithVariation,
   splitGst,
@@ -168,5 +169,95 @@ describe('totals and GST', () => {
   it('splits GST into CGST + SGST inside Tamil Nadu and IGST elsewhere', () => {
     expect(splitGst(3001, 'tamil nadu', 'Tamil Nadu')).toEqual({ intraState: true, cgst: 1500.5, sgst: 1500.5, igst: 0 });
     expect(splitGst(3000, 'Kerala', 'Tamil Nadu')).toEqual({ intraState: false, cgst: 0, sgst: 0, igst: 3000 });
+  });
+});
+
+// A product whose options come from product_variations rows (ids as values),
+// not from pricing options: metal, gemstone, carat, certificate and add-ons.
+describe('products with variation-based options', () => {
+  const necklace: PricingProduct = {
+    id: 'necklace', category: 'necklaces', metal_type: 'gold_22k', weight_grams: 12.5,
+    making_charge_percent: 10, diamond_cost: 0, stone_cost: 1500, specifications: {},
+  };
+  const v = (over: Partial<PricingVariation> & { id: string; variation_type: string }): PricingVariation => ({
+    product_id: 'necklace', size_value: null, size_label: null, metal_type: null, metal_label: null,
+    price_adjustment: 0, weight_adjustment: 0, is_available: true, is_default: false, image_url: null, ...over,
+  });
+  const variations: PricingVariation[] = [
+    v({ id: 'm22', variation_type: 'metal_type', metal_type: 'gold_22k', metal_label: '22K Yellow', is_default: true }),
+    v({ id: 'm18', variation_type: 'metal_type', metal_type: 'gold_18k', metal_label: '18K White', weight_adjustment: -1.1, price_adjustment: 2500 }),
+    v({ id: 'g1', variation_type: 'gemstone_quality', size_value: 'Ruby AA', size_label: 'Ruby AA', price_adjustment: 4000, is_default: true }),
+    v({ id: 'g2', variation_type: 'gemstone_quality', size_value: 'Ruby AAA', size_label: 'Ruby AAA', price_adjustment: 6500 }),
+    v({ id: 'c2', variation_type: 'carat_weight', size_value: '2', size_label: '2 ct', is_default: true }),
+    v({ id: 'cert', variation_type: 'certificate', size_label: 'IGI Certificate', price_adjustment: 1200 }),
+    v({ id: 'box', variation_type: 'custom', size_label: 'Gift Box', price_adjustment: 350 }),
+    v({ id: 'eng', variation_type: 'custom', size_label: 'Engraving', price_adjustment: 999 }),
+    // stored with a stray space, as admin-entered values sometimes are
+    v({ id: 's18', variation_type: 'size', size_value: '18" ', size_label: 'Chain Length', price_adjustment: 800, weight_adjustment: 0.6 }),
+  ];
+  const chart = [{ Length: '16"' }, { Length: '18"' }, { Length: '20"' }];
+
+  function page(picks: Record<string, unknown>) {
+    const baseWeightGrams = getBaseWeightGrams(necklace);
+    const options = buildVariantOptions({
+      category: necklace.category, baseMetalType: necklace.metal_type, baseWeightGrams,
+      specifications: necklace.specifications, variations, metalTypes, sizeChartRows: chart,
+    });
+    const state = computeVariationState({
+      options,
+      selected: { metal: 'm22', size: '', gemstone: 'Ruby AA', gemstones: [], carat: '2', carats: [], attributes: [], addOns: [], ...picks } as never,
+      metalTypes, baseMetalType: necklace.metal_type, baseWeightGrams, baseRatePerGram: 9100,
+    });
+    return { state, shown: priceWithVariation({ product: necklace, variationState: state, goldRate, gstRate: 3, metalTypes }) };
+  }
+
+  it('cart and server price the same options the product page priced', () => {
+    const { state, shown } = page({
+      metal: 'm18', gemstone: 'Ruby AAA', attributes: ['cert'], addOns: ['box', 'eng'], size: '18"',
+      engravingText: 'Anu', engravingFont: 'block',
+    });
+    // 18K at 12.5 - 1.1 + 0.6 g; gemstone 6500 x 2 ct; certificate, box, engraving, size and metal extras
+    expect(shown.metal_weight_grams).toBeCloseTo(12.0, 5);
+    expect(shown.diamond_cost).toBe(13000);
+    // The cart and server have no size chart; they find the same size option.
+    const line = priceCartLine({ product: necklace, variations, metalTypes, goldRate, gstRate: 3, selection: state.selectedOptions, quantity: 1 });
+    expect(line.error).toBeNull();
+    expect(line.unitTotal).toBe(shown.total);
+    expect(line.selectedVariations).toMatchObject({ metalType: '18K White', size: '18"', engraving: { text: 'Anu', font: 'block' } });
+    expect(line.selectedVariations).not.toHaveProperty('_optionValues');
+  });
+
+  it('carts saved before option ids were stored are matched by label', () => {
+    const { state, shown } = page({ metal: 'm18', gemstone: 'Ruby AAA', attributes: ['cert'], addOns: ['box'], size: '18"' });
+    const legacy = { ...(state.selectedOptions as SelectedOptions) };
+    delete legacy._optionValues;
+    const line = priceCartLine({ product: necklace, variations, metalTypes, goldRate, gstRate: 3, selection: legacy, quantity: 1 });
+    expect(line.error).toBeNull();
+    expect(line.unitTotal).toBe(shown.total);
+  });
+
+  it('a required choice cannot be left out to get a lower price', () => {
+    const { state } = page({});
+    const selection = { ...state.selectedOptions, _optionValues: { ...state.selectedOptions!._optionValues!, gemstones: [], carats: [] } };
+    const line = priceCartLine({ product: necklace, variations, metalTypes, goldRate, gstRate: 3, selection, quantity: 1 });
+    expect(line.error).toBe('INCOMPLETE_SELECTION');
+  });
+
+  it('engraving text is capped at the length the product page allows', () => {
+    const { state } = page({ addOns: ['eng'], engravingText: 'x' });
+    const selection = { ...state.selectedOptions, engraving: { text: 'A'.repeat(500), font: 'wingdings' } };
+    const line = priceCartLine({ product: necklace, variations, metalTypes, goldRate, gstRate: 3, selection, quantity: 1 });
+    expect((line.selectedVariations.engraving as { text: string; font: string })).toEqual({ text: 'A'.repeat(15), font: 'script' });
+  });
+});
+
+describe('matchIndianState', () => {
+  it('accepts common spellings and rejects unknown ones', () => {
+    expect(matchIndianState('tamilnadu')).toBe('Tamil Nadu');
+    expect(matchIndianState(' T.N. ')).toBe('Tamil Nadu');
+    expect(matchIndianState('Andaman & Nicobar Islands')).toBe('Andaman and Nicobar Islands');
+    expect(matchIndianState('jammu & kashmir')).toBe('Jammu and Kashmir');
+    expect(matchIndianState('Narnia')).toBe('');
+    expect(matchIndianState(null)).toBe('');
   });
 });

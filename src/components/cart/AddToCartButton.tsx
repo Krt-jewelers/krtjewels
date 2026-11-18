@@ -24,7 +24,7 @@ export function AddToCartButton({
   onSuccess
 }: AddToCartButtonProps) {
   const { addToCart, isAdding } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [isAdded, setIsAdded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -75,7 +75,7 @@ export function AddToCartButton({
               <Check className="w-4 h-4" />
               {showText && <span>Added!</span>}
             </>
-          ) : !isAuthenticated ? (
+          ) : !isAuthenticated && !authLoading ? (
             <>
               <Lock className={cn('w-4 h-4')} />
               {showText && (

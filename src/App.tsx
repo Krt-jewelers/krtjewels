@@ -111,6 +111,24 @@ const App = () => {
     }
   }, []);
   
+  // Pages load on demand; fetch the ones most visitors open next while the
+  // browser is idle, so moving to them does not wait on the network.
+  useEffect(() => {
+    const prefetch = () => {
+      void import("./pages/Shop");
+      void import("./pages/Collection");
+      void import("./pages/ProductDetail");
+      void import("./pages/Cart");
+      void import("./pages/Checkout");
+    };
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const timer = idle ? idle(prefetch, { timeout: 4000 }) : window.setTimeout(prefetch, 2500);
+    return () => {
+      if (idle && 'cancelIdleCallback' in window) window.cancelIdleCallback(timer);
+      else window.clearTimeout(timer);
+    };
+  }, []);
+
   const handleSplashComplete = () => {
     sessionStorage.setItem('krt_session_loaded', 'true');
     setShowSplash(false);

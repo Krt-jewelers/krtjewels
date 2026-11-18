@@ -19,6 +19,8 @@ interface PendingOrder {
   upi_phone: string | null;
   upi_provider: string | null;
   payment_verified: boolean | null;
+  // Set by the order function when staff must check something first.
+  staff_alert?: string | null;
   created_at: string;
   shipping_address: { full_name?: string } | null;
 }
@@ -38,7 +40,8 @@ export default function AdminPaymentVerification() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, order_number, total_amount, payment_utr, payment_proof_url, upi_phone, upi_provider, payment_verified, created_at, shipping_address')
+        // All columns, so the page also works before the staff_alert column exists.
+        .select('*')
         .eq('payment_method', 'upi')
         .order('created_at', { ascending: false });
 
@@ -152,6 +155,11 @@ export default function AdminPaymentVerification() {
                           <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300">
                             Pending Verification
                           </Badge>
+                          {order.staff_alert && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                              Needs a check
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                           <span className="font-medium text-foreground">{formatPrice(order.total_amount)}</span>
@@ -210,6 +218,12 @@ export default function AdminPaymentVerification() {
             </DialogHeader>
             {selectedOrder && (
               <div className="space-y-4">
+                {selectedOrder.staff_alert && (
+                  <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-900" role="alert">
+                    <p className="font-medium text-red-800 mb-1">Check before verifying</p>
+                    {selectedOrder.staff_alert}
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-muted-foreground">Amount</p>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useGoldRate } from './useGoldRate';
 import { useGstSettings } from './useSiteSettings';
+import { useMetalTypes } from './useMetalTypes';
 import { calculateProductPrice } from './useProducts';
 import type { WishlistItem, ProductWithPrice } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -16,11 +17,13 @@ export function useWishlist() {
   const { data: goldRate } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
+  // Same rates as product cards, so a wishlist price matches the card price.
+  const { data: metalTypes } = useMetalTypes();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const wishlistQuery = useQuery({
-    queryKey: ['wishlist', user?.id, gstRate],
+    queryKey: ['wishlist', user?.id, gstRate, goldRate?.id, metalTypes?.map((m) => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<WishlistItemWithProduct[]> => {
       if (!user) return [];
 
@@ -42,7 +45,7 @@ export function useWishlist() {
         ...item,
         product: {
           ...item.product,
-          calculated_price: calculateProductPrice(item.product, goldRate || null, undefined, gstRate),
+          calculated_price: calculateProductPrice(item.product, goldRate || null, undefined, gstRate, metalTypes || []),
         },
       }));
     },

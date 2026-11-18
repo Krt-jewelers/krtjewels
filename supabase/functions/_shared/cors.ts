@@ -6,17 +6,21 @@
 const DEFAULT_ORIGINS = [
   "https://www.krtjewellers.com",
   "https://krtjewellers.com",
-  "https://www.krtjewels.com",
-  "https://krtjewels.com",
   "https://krtgold.lovable.app",
   "http://localhost:8080",
   "http://localhost:5173",
 ];
 
-// Lovable preview and editor hosts.
+// Preview builds of this project: the Lovable preview and editor, and Vercel
+// previews of pull requests (only this project's Vercel team can publish
+// under that name). Browsers do not send cookies to these functions, so this
+// list is tidiness, not the security boundary: the functions check who is
+// calling themselves.
 const ALLOWED_PATTERNS = [
-  /^https:\/\/[a-z0-9-]+\.lovable\.app$/,
-  /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/,
+  /^https:\/\/preview--krtgold\.lovable\.app$/,
+  /^https:\/\/id-preview--[0-9a-f-]{36}\.lovable\.app$/,
+  /^https:\/\/[0-9a-f-]{36}\.lovableproject\.com$/,
+  /^https:\/\/krtjewelleryap[a-z0-9-]*-foundifinnovations-gmailcoms-projects\.vercel\.app$/,
 ];
 
 function allowedOrigins(): string[] {

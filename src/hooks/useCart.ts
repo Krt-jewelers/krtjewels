@@ -62,7 +62,7 @@ const writeGuestCart = (items: GuestCartItem[]) => {
 
 export function useCart() {
   const { user, authReady } = useAuth();
-  const { data: goldRate } = useGoldRate();
+  const { data: goldRate, isFetched: rateFetched } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const queryClient = useQueryClient();
@@ -396,9 +396,13 @@ export function useCart() {
     subtotal,
     gstTotal,
     total,
-    isLoading: cartQuery.isLoading,
+    // Until we know who is signed in we do not know which cart to show, so
+    // that counts as loading too (otherwise the cart looks empty for a moment).
+    isLoading: !authReady || cartQuery.isLoading,
     // Prices need the current gold rate; until it loads every price is 0.
     isPricing: !goldRate,
+    // The rate was looked up and there is none (not just still loading).
+    rateUnavailable: rateFetched && !goldRate,
     hasPricingIssue,
     refetch: cartQuery.refetch,
     addToCart: addToCartMutation.mutate,

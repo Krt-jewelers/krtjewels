@@ -10,7 +10,42 @@
 -- 20261118172000_block_direct_order_inserts.sql then stops browsers inserting
 -- orders directly; apply it once the new storefront is live.
 
--- 1. Atomic order creation (service role only) -------------------------------
+-- 1. Columns the order function uses -----------------------------------------
+--   checkout_ref: one id per checkout attempt, so a retry after a lost reply
+--                 returns the first order instead of creating a second one.
+--   staff_alert:  something staff must check before confirming the order (the
+--                 price moved while the customer was paying, or stock ran out).
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS checkout_ref text,
+  ADD COLUMN IF NOT EXISTS staff_alert text;
+
+CREATE UNIQUE INDEX IF NOT EXISTS orders_checkout_ref_key
+  ON public.orders (checkout_ref)
+  WHERE checkout_ref IS NOT NULL;
+
+-- 2. Stock trigger: an empty (NULL) stock means "not tracked" ----------------
+-- The storefront already treats NULL as available, but the trigger turned it
+-- into 0 on the first sale, which then blocked every later order.
+CREATE OR REPLACE FUNCTION public.decrease_stock_on_order()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.products
+  SET stock_quantity = GREATEST(0, stock_quantity - NEW.quantity)
+  WHERE id = NEW.product_id
+    AND stock_quantity IS NOT NULL;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 3. Atomic order creation (service role only) -------------------------------
+-- p_order keys besides the order columns:
+--   checkout_ref            see above
+--   allow_backorder         true for UPI orders: the customer has already paid,
+--                           so the order is always recorded and staff are told
+--                           when stock ran out or the product was withdrawn
+--   requested_order_number  old storefront code shows its own order number to
+--                           the customer; it is kept when it is free
 CREATE OR REPLACE FUNCTION public.create_order_with_items(p_order jsonb, p_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -21,45 +56,91 @@ DECLARE
   v_order_number text;
   v_created_at timestamptz;
   v_attempt int := 0;
+  v_ref text := NULLIF(p_order->>'checkout_ref', '');
+  v_requested text := NULLIF(p_order->>'requested_order_number', '');
+  v_allow_short boolean := COALESCE((p_order->>'allow_backorder')::boolean, false);
+  v_alert text := NULLIF(p_order->>'staff_alert', '');
+  v_short text[] := ARRAY[]::text[];
+  v_name text;
+  v_stock int;
+  v_active boolean;
   r record;
 BEGIN
   IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
     RAISE EXCEPTION 'EMPTY_ORDER';
   END IF;
 
-  -- Lock each product being bought, then check there is enough stock.
-  -- A NULL stock_quantity means stock is not tracked for that product.
+  -- The same checkout sent twice returns the order already saved.
+  IF v_ref IS NOT NULL THEN
+    SELECT o.id, o.order_number, o.created_at INTO v_order_id, v_order_number, v_created_at
+    FROM public.orders o WHERE o.checkout_ref = v_ref;
+    IF FOUND THEN
+      RETURN jsonb_build_object('id', v_order_id, 'order_number', v_order_number,
+                                'created_at', v_created_at, 'existing', true, 'short', '[]'::jsonb);
+    END IF;
+  END IF;
+
+  -- Lock each product being bought (in id order, so two orders cannot
+  -- deadlock), then check it is on sale and there is enough stock.
   FOR r IN
     SELECT (i->>'product_id')::uuid AS product_id, SUM((i->>'quantity')::int) AS qty
     FROM jsonb_array_elements(p_items) AS i
     GROUP BY 1
     ORDER BY 1
   LOOP
-    PERFORM 1 FROM public.products p
-      WHERE p.id = r.product_id AND COALESCE(p.is_active, false)
-      FOR UPDATE;
+    SELECT p.name, p.stock_quantity, COALESCE(p.is_active, false)
+      INTO v_name, v_stock, v_active
+    FROM public.products p
+    WHERE p.id = r.product_id
+    FOR UPDATE;
+
     IF NOT FOUND THEN
       RAISE EXCEPTION 'PRODUCT_UNAVAILABLE:%', r.product_id;
     END IF;
-    IF EXISTS (
-      SELECT 1 FROM public.products p
-      WHERE p.id = r.product_id AND p.stock_quantity IS NOT NULL AND p.stock_quantity < r.qty
-    ) THEN
-      RAISE EXCEPTION 'OUT_OF_STOCK:%', r.product_id;
+
+    IF NOT v_active OR (v_stock IS NOT NULL AND v_stock < r.qty) THEN
+      IF v_allow_short THEN
+        v_short := v_short || v_name;
+      ELSIF NOT v_active THEN
+        RAISE EXCEPTION 'PRODUCT_UNAVAILABLE:%', r.product_id;
+      ELSE
+        RAISE EXCEPTION 'OUT_OF_STOCK:%', r.product_id;
+      END IF;
     END IF;
   END LOOP;
 
-  -- Order numbers: KRT + YYMM (India time) + 6 random digits, retried on clash.
+  -- A twin request may have saved the order while this one waited for locks.
+  IF v_ref IS NOT NULL THEN
+    SELECT o.id, o.order_number, o.created_at INTO v_order_id, v_order_number, v_created_at
+    FROM public.orders o WHERE o.checkout_ref = v_ref;
+    IF FOUND THEN
+      RETURN jsonb_build_object('id', v_order_id, 'order_number', v_order_number,
+                                'created_at', v_created_at, 'existing', true, 'short', '[]'::jsonb);
+    END IF;
+  END IF;
+
+  IF cardinality(v_short) > 0 THEN
+    v_alert := concat_ws(' ', v_alert,
+      'Not available when the customer paid: ' || array_to_string(v_short, ', ')
+      || '. Contact the customer before confirming.');
+  END IF;
+
+  -- Order numbers: KRT + YYMM (India time) + 8 digits from the database's
+  -- secure random source, so they cannot be guessed or predicted.
   LOOP
     v_attempt := v_attempt + 1;
-    v_order_number := 'KRT'
-      || to_char(now() AT TIME ZONE 'Asia/Kolkata', 'YYMM')
-      || lpad(floor(random() * 1000000)::int::text, 6, '0');
+    IF v_attempt = 1 AND v_requested ~ '^KRT[0-9]{8}$' THEN
+      v_order_number := v_requested;
+    ELSE
+      v_order_number := 'KRT'
+        || to_char(now() AT TIME ZONE 'Asia/Kolkata', 'YYMM')
+        || lpad(((('x' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 8))::bit(32)::bigint) % 100000000)::text, 8, '0');
+    END IF;
     BEGIN
       INSERT INTO public.orders (
         user_id, order_number, status, subtotal, gst_amount, total_amount,
         gold_rate_at_order, shipping_address, payment_method, payment_utr,
-        upi_phone, upi_provider, notes, payment_verified
+        upi_phone, upi_provider, notes, payment_verified, checkout_ref, staff_alert
       ) VALUES (
         NULLIF(p_order->>'user_id', '')::uuid,
         v_order_number,
@@ -74,7 +155,9 @@ BEGIN
         NULLIF(p_order->>'upi_phone', ''),
         NULLIF(p_order->>'upi_provider', ''),
         NULLIF(p_order->>'notes', ''),
-        false
+        false,
+        v_ref,
+        v_alert
       )
       RETURNING id, created_at INTO v_order_id, v_created_at;
       EXIT;
@@ -113,7 +196,9 @@ BEGIN
   RETURN jsonb_build_object(
     'id', v_order_id,
     'order_number', v_order_number,
-    'created_at', v_created_at
+    'created_at', v_created_at,
+    'existing', false,
+    'short', to_jsonb(v_short)
   );
 END;
 $$;
@@ -122,7 +207,9 @@ REVOKE ALL ON FUNCTION public.create_order_with_items(jsonb, jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_order_with_items(jsonb, jsonb) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_order_with_items(jsonb, jsonb) TO service_role;
 
--- 2. Order lookup by order number + phone (guests and the success page) -----
+-- 4. Order tracking by order number + phone ----------------------------------
+-- Returns only what the tracking page shows: no address, name, phone or
+-- payment details.
 CREATE OR REPLACE FUNCTION public.lookup_order(p_order_number text, p_phone text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -149,27 +236,17 @@ BEGIN
   END IF;
 
   RETURN jsonb_build_object(
-    'id', v_order.id,
     'order_number', v_order.order_number,
     'status', v_order.status,
     'created_at', v_order.created_at,
     'updated_at', v_order.updated_at,
-    'subtotal', v_order.subtotal,
-    'gst_amount', v_order.gst_amount,
     'total_amount', v_order.total_amount,
-    'payment_method', v_order.payment_method,
-    'payment_verified', v_order.payment_verified,
-    'shipping_address', v_order.shipping_address,
-    'order_items', COALESCE((
+    'items', COALESCE((
       SELECT jsonb_agg(jsonb_build_object(
-        'id', oi.id,
         'product_name', oi.product_name,
         'product_image', oi.product_image,
         'quantity', oi.quantity,
-        'weight_grams', oi.weight_grams,
-        'unit_price', oi.unit_price,
-        'total_price', oi.total_price,
-        'selected_variations', oi.selected_variations
+        'total_price', oi.total_price
       ) ORDER BY oi.product_name)
       FROM public.order_items oi
       WHERE oi.order_id = v_order.id
@@ -181,7 +258,7 @@ $$;
 REVOKE ALL ON FUNCTION public.lookup_order(text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.lookup_order(text, text) TO anon, authenticated;
 
--- 3. Reviews: customers cannot approve or publish their own -----------------
+-- 5. Reviews: customers cannot approve or publish their own ------------------
 DROP POLICY IF EXISTS "Authenticated users can create reviews" ON public.reviews;
 CREATE POLICY "Authenticated users can create reviews"
 ON public.reviews FOR INSERT
@@ -193,6 +270,7 @@ WITH CHECK (
 );
 
 DROP POLICY IF EXISTS "Users can update own reviews" ON public.reviews;
+DROP POLICY IF EXISTS "Users can update own unapproved reviews" ON public.reviews;
 CREATE POLICY "Users can update own unapproved reviews"
 ON public.reviews FOR UPDATE
 TO authenticated
@@ -203,6 +281,7 @@ WITH CHECK (
   AND COALESCE(is_published, false) = false
 );
 
+DROP POLICY IF EXISTS "Admins can update reviews" ON public.reviews;
 CREATE POLICY "Admins can update reviews"
 ON public.reviews FOR UPDATE
 USING (public.has_role(auth.uid(), 'admin'))

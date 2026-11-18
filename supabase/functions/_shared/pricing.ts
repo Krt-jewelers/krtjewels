@@ -42,6 +42,9 @@ export const METAL_OPTIONS: { type: string; label: string }[] = [
   { type: 'platinum', label: 'Platinum' },
 ];
 
+// Longest engraving the product page accepts.
+export const MAX_ENGRAVING_LENGTH = 15;
+
 export interface PricingProduct {
   id?: string;
   name?: string;
@@ -666,7 +669,10 @@ export function computeVariationState(params: {
   const { availableMetals, sizeOptions, gemstoneOptions, caratOptions, attributeOptions, customOptions, sizeLabel } = options;
 
   const selectedMetalOption = availableMetals.find((m) => m.value === selected.metal);
-  const selectedSizeOption = sizeOptions.find((s) => s.value === selected.size);
+  // Compared trimmed: size chart values are trimmed, stored size values may not be.
+  const selectedSizeOption = selected.size
+    ? sizeOptions.find((s) => String(s.value).trim() === String(selected.size).trim())
+    : undefined;
   const gemstoneIsMulti = gemstoneOptions[0]?.selectionMode === 'multi';
   const caratIsMulti = caratOptions[0]?.selectionMode === 'multi';
   const selectedGemOption = gemstoneOptions.find((g) => g.value === selected.gemstone);
@@ -904,8 +910,13 @@ export function resolveSelection(options: VariantOptions, selection: SelectedOpt
   const stored = selection._optionValues;
   const gemIsMulti = options.gemstoneOptions[0]?.selectionMode === 'multi';
   const caratIsMulti = options.caratOptions[0]?.selectionMode === 'multi';
-  const engravingText = selection.engraving?.text;
-  const engravingFont = selection.engraving?.font;
+  // Engraving is the only free text a customer sends with an item: keep it to
+  // the length the product page allows and to the two fonts on offer.
+  const rawEngraving = (selection as { engraving?: { text?: unknown; font?: unknown } }).engraving;
+  const engravingText = rawEngraving && typeof rawEngraving.text === 'string'
+    ? rawEngraving.text.trim().slice(0, MAX_ENGRAVING_LENGTH)
+    : undefined;
+  const engravingFont: 'script' | 'block' = rawEngraving?.font === 'block' ? 'block' : 'script';
 
   const pickValues = (list: VariantOption[], values: string[]): string[] | null => {
     const found = values.filter((v) => list.some((o) => o.value === v));
@@ -957,7 +968,7 @@ export function resolveSelection(options: VariantOptions, selection: SelectedOpt
 
   return {
     metal,
-    size: size ? String(size) : '',
+    size: size ? String(size).trim().slice(0, 20) : '',
     gemstone: gemIsMulti ? '' : gemstones[0] || '',
     gemstones: gemIsMulti ? gemstones : [],
     carat: caratIsMulti ? '' : carats[0] || '',
@@ -1117,3 +1128,26 @@ export const INDIAN_STATES: string[] = [
   'Uttarakhand',
   'West Bengal',
 ];
+
+// Common short forms customers and old saved addresses use.
+const STATE_ALIASES: Record<string, string> = {
+  tn: 'Tamil Nadu',
+  ka: 'Karnataka',
+  kl: 'Kerala',
+  ap: 'Andhra Pradesh',
+  ts: 'Telangana',
+  tg: 'Telangana',
+  py: 'Puducherry',
+  pondicherry: 'Puducherry',
+  mh: 'Maharashtra',
+  dl: 'Delhi',
+  newdelhi: 'Delhi',
+  orissa: 'Odisha',
+};
+
+// Maps what was typed ("tamilnadu", "TN") to the official state name, or ''.
+export function matchIndianState(value: unknown): string {
+  const key = String(value ?? '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z]/g, '');
+  if (!key) return '';
+  return STATE_ALIASES[key] || INDIAN_STATES.find((st) => st.toLowerCase().replace(/[^a-z]/g, '') === key) || '';
+}

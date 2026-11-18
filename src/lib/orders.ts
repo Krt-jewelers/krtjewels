@@ -15,8 +15,18 @@ export interface OrderQuote {
   item_count: number;
 }
 
+export interface QuoteResponse {
+  quote: OrderQuote;
+  // Signed by the server; sending it back with a UPI order keeps this price.
+  quote_token: string;
+  expires_at: string;
+}
+
 export interface PlacedOrder extends OrderQuote {
   success: true;
+  // Something the customer should know (price changed or an item sold out
+  // while they were paying).
+  notice?: string | null;
   order_id: string;
   order_number: string;
   created_at: string;
@@ -41,6 +51,14 @@ export interface OrderPayload {
   payment?: { utr?: string; upi_phone?: string; upi_provider?: string };
   notes?: string | null;
   expected_total?: number;
+  quote_token?: string | null;
+  // One id per checkout attempt, so a retry cannot create a second order.
+  checkout_ref?: string;
+}
+
+export function newCheckoutRef(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 // Calls the place-order edge function, which prices the cart on the server.

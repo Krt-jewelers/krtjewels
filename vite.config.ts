@@ -7,14 +7,20 @@ import { copyFileSync, existsSync } from "fs";
 
 // Vercel serves dist/404.html with a real 404 status for addresses that match
 // no route (see vercel.json); it is the app itself, so it shows the 404 page.
-const spaNotFoundPage = () => ({
-  name: "spa-404-page",
-  apply: "build" as const,
-  closeBundle() {
-    const index = path.resolve(__dirname, "dist/index.html");
-    if (existsSync(index)) copyFileSync(index, path.resolve(__dirname, "dist/404.html"));
-  },
-});
+const spaNotFoundPage = () => {
+  let outDir = path.resolve(__dirname, "dist");
+  return {
+    name: "spa-404-page",
+    apply: "build" as const,
+    configResolved(config: { root: string; build: { outDir: string } }) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const index = path.join(outDir, "index.html");
+      if (existsSync(index)) copyFileSync(index, path.join(outDir, "404.html"));
+    },
+  };
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({

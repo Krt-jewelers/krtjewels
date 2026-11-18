@@ -184,6 +184,12 @@ export default function OrderSuccess() {
             </p>
           </div>
 
+          {placed?.notice && placed.order_number === orderNumber && (
+            <div className="max-w-3xl mx-auto mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
+              {placed.notice}
+            </div>
+          )}
+
           {loading ? (
             <div className="max-w-3xl mx-auto mt-8 space-y-4">
               <Skeleton className="h-10" />

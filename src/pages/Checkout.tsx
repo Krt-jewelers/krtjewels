@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
@@ -6,15 +6,16 @@ import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/types';
-import { INDIAN_STATES } from '@/lib/pricing';
+import { INDIAN_STATES, matchIndianState } from '@/lib/pricing';
 import {
   callOrderFunction,
   isValidPincode,
+  newCheckoutRef,
   normalizeIndianPhone,
   type OrderFunctionError,
   type OrderPayload,
-  type OrderQuote,
   type PlacedOrder,
+  type QuoteResponse,
 } from '@/lib/orders';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGstSettings } from '@/hooks/useSiteSettings';
@@ -45,17 +46,9 @@ interface UpiSettings {
   is_active: boolean;
 }
 
-// Saved addresses may spell the state differently ("tamilnadu", "TN").
-const STATE_ALIASES: Record<string, string> = { tn: 'Tamil Nadu', ka: 'Karnataka', kl: 'Kerala', ap: 'Andhra Pradesh', ts: 'Telangana', py: 'Puducherry' };
-function matchState(value: string | null | undefined): string {
-  const key = (value || '').toLowerCase().replace(/[^a-z]/g, '');
-  if (!key) return '';
-  return STATE_ALIASES[key] || INDIAN_STATES.find((s) => s.toLowerCase().replace(/[^a-z]/g, '') === key) || '';
-}
-
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { items, subtotal, gstTotal, total, isLoading: cartLoading, isPricing, hasPricingIssue } = useCart();
+  const { items, subtotal, gstTotal, total, isLoading: cartLoading, isPricing, rateUnavailable, hasPricingIssue } = useCart();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const { user, loading: authLoading } = useAuth();
@@ -69,6 +62,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiAmount, setUpiAmount] = useState(0);
+  // The server's signed quote for the amount shown with the QR code.
+  const [quoteToken, setQuoteToken] = useState<string | null>(null);
+  // One id for this checkout: if a reply is lost and the customer tries again,
+  // the server returns the order it already saved.
+  const checkoutRef = useRef(newCheckoutRef());
   const [upiSettings, setUpiSettings] = useState<UpiSettings | null>(null);
   const [address, setAddress] = useState<AddressForm>({
     full_name: '',
@@ -113,7 +111,7 @@ export default function CheckoutPage() {
           address_line1: data.address_line1,
           address_line2: data.address_line2 || '',
           city: data.city,
-          state: matchState(data.state),
+          state: matchIndianState(data.state),
           pincode: data.pincode,
         });
       }
@@ -190,6 +188,8 @@ export default function CheckoutPage() {
       payment,
       notes: notes || null,
       expected_total: method === 'upi' ? upiAmount : total,
+      quote_token: method === 'upi' ? quoteToken : null,
+      checkout_ref: checkoutRef.current,
     });
     if (error || !data) {
       handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
@@ -216,6 +216,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rateUnavailable) {
+      toast({ title: "Today's gold rate is not available", description: 'Please try again shortly or call us on +91 98430 10986.', variant: 'destructive' });
+      return;
+    }
     if (isPricing) {
       toast({ title: "Loading today's gold rate", description: 'Please wait a moment and try again.' });
       return;
@@ -234,9 +238,13 @@ export default function CheckoutPage() {
       // Confirm the amount with the server before showing the QR code.
       setIsSubmitting(true);
       try {
-        const { data, error } = await callOrderFunction<{ quote: OrderQuote }>({
+        // The server checks the address, stock and total now, before any money
+        // moves, and holds this price while the customer pays.
+        const { data, error } = await callOrderFunction<QuoteResponse>({
           mode: 'quote',
           items: orderItems(),
+          shipping_address: shippingAddress(),
+          payment_method: 'upi',
           expected_total: total,
         });
         if (error || !data) {
@@ -244,6 +252,7 @@ export default function CheckoutPage() {
           return;
         }
         setUpiAmount(data.quote.total_amount);
+        setQuoteToken(data.quote_token);
         setShowUpiModal(true);
       } finally {
         setIsSubmitting(false);
@@ -416,11 +425,16 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {isPricing && (
+                  {rateUnavailable ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      Today's gold rate is not available yet, so we cannot confirm your total. Please try again
+                      shortly or call us on <a href="tel:+919843010986" className="underline">+91 98430 10986</a>.
+                    </p>
+                  ) : isPricing ? (
                     <p className="text-sm text-muted-foreground" role="status">
                       Loading today's gold rate before we can confirm your total…
                     </p>
-                  )}
+                  ) : null}
                   {hasPricingIssue && (
                     <p className="text-sm text-destructive" role="alert">
                       Some items in your cart need to be added again. <Link to="/cart" className="underline">Review cart</Link>

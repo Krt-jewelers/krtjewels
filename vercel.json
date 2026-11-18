@@ -175,7 +175,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/:category/:subcategory",
+      "source": "/:category((?!(?:assets|images|collection-banners|hero-slides|guides)(?:/|$))[^/.]+)/:subcategory([^/.]+)",
       "destination": "/index.html"
     }
   ],

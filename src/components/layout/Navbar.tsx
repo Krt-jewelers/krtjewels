@@ -193,7 +193,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               >
                 <ShoppingBag className="w-5 h-5" />
                 {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs badge-luxury">
+                  <Badge className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1 py-0 text-xs leading-none badge-luxury">
                     {itemCount}
                   </Badge>
                 )}
@@ -310,7 +310,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
             >
               <ShoppingBag className="w-5 h-5" />
               {itemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs badge-luxury">
+                <Badge className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1 py-0 text-xs leading-none badge-luxury">
                   {itemCount}
                 </Badge>
               )}

@@ -71,30 +71,32 @@ export default function TrackOrder() {
     try {
       // Matches the order number and the phone number on the order, so only
       // the customer can see it (works for guest orders too).
-      const { data, error } = await supabase.rpc('lookup_order', {
+      // Cast: lookup_order is added by a migration, so it is not in the
+      // generated database types until they are regenerated.
+      const { data, error } = await (supabase as any).rpc('lookup_order', {
         p_order_number: withPrefix,
         p_phone: phone,
       });
       if (error) throw error;
 
-      const found = data as unknown as (Omit<OrderWithItems, 'items'> & { order_items: OrderWithItems['items'] }) | null;
+      const found = data as Omit<OrderWithItems, 'id'> | null;
       if (!found) {
         setOrder(null);
         toast({
           title: 'Order not found',
-          description: 'Check the order number (for example KRT2611123456) and the phone number used at checkout.',
+          description: 'Check the order number (for example KRT261112345678) and the phone number used at checkout.',
           variant: 'destructive',
         });
         return;
       }
 
       setOrder({
-        id: found.id,
+        id: found.order_number,
         order_number: found.order_number,
         status: found.status as OrderStatus,
         total_amount: found.total_amount,
         created_at: found.created_at,
-        items: found.order_items || [],
+        items: found.items || [],
       });
     } catch (error: any) {
       toast({
@@ -133,7 +135,7 @@ export default function TrackOrder() {
                 <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
                 <Input
                   aria-label="Order number"
-                  placeholder="Order number, e.g. KRT2611123456"
+                  placeholder="Order number, e.g. KRT261112345678"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   className="pl-10 h-12"

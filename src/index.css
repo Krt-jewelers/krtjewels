@@ -543,26 +543,53 @@
 /* Gold text on light backgrounds. The brand gold (43 72% 54%) has 2.1:1
    contrast on white; body text needs 4.5:1. Text set with text-primary uses a
    deeper gold on light surfaces (5.4:1 on white) and keeps the brand gold on
-   dark ones. Backgrounds, borders and icons on dark bands are unchanged. */
+   dark ones. Backgrounds, borders and fills are unchanged.
+
+   A surface counts as dark when the text sits inside an element with a dark
+   background class (rule 1), or inside a photo banner whose dark overlay is
+   laid over the image next to the text (rule 3). When in doubt a surface is
+   treated as dark, which simply keeps the brand gold as it always was. For a
+   dark section these rules do not recognise, add data-surface="dark" to it. */
 :root {
   --primary-text: 38 72% 32%;
 }
+
+/* 1. Inside a dark background. */
 .dark,
-.bg-rich-black,
-.bg-black,
-.bg-foreground,
+[class*="bg-rich-black"],
+[class*="bg-black"],
+[class*="bg-foreground"],
+[class*="bg-maroon"],
+[class*="bg-charcoal"],
+[class*="bg-gradient-maroon"],
 .bg-accent,
-.bg-maroon,
-.bg-maroon-dark,
-.bg-charcoal,
-.from-rich-black,
-.from-black,
-.from-maroon,
+[class*="bg-accent/7"],
+[class*="bg-accent/8"],
+[class*="bg-accent/9"],
+[class*="from-rich-black"],
+[class*="from-black"],
+[class*="from-maroon"],
 [class*="bg-[#14100e]"],
 [class*="bg-[#1a1512]"],
 [data-surface="dark"] {
   --primary-text: var(--primary);
 }
+
+/* 2. A light panel inside a dark surface (a white card on a dark page) is
+   light again. Not in the dark theme, where these backgrounds are dark. */
+:root:not(.dark) :is(.bg-white, .bg-card, .bg-background, .bg-popover, .bg-ivory, .bg-cream, .bg-secondary, .bg-muted) {
+  --primary-text: 38 72% 32%;
+}
+
+/* 3. Photo banners: the dark overlay is laid over the image beside the text
+   (or inside the image's wrapper), so the banner that holds them both is the
+   dark surface. Kept as its own rule so browsers without :has() still apply
+   the rules above. */
+:has(> .absolute.inset-0:is([class*="rich-black"], [class*="bg-black"], [class*="from-black"], [class*="maroon"], [class*="bg-foreground"], [class*="charcoal"])),
+:has(> .absolute.inset-0 > .absolute.inset-0:is([class*="rich-black"], [class*="bg-black"], [class*="from-black"], [class*="maroon"], [class*="bg-foreground"], [class*="charcoal"])) {
+  --primary-text: var(--primary);
+}
+
 .text-primary,
 .hover\:text-primary:hover,
 .group:hover .group-hover\:text-primary,
