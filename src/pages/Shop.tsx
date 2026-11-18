@@ -128,7 +128,8 @@ export default function ShopPage() {
 
   const [sortBy, setSortBy] = useState<string>('bestseller');
   const [categorySearch, setCategorySearch] = useState('');
-  const [productSearchTerm, setProductSearchTerm] = useState('');
+  // ?q= lets other pages (such as the 404 page) open the shop with a search.
+  const [productSearchTerm, setProductSearchTerm] = useState(searchParams.get('q') || '');
   const [selectedProductCategoryId, setSelectedProductCategoryId] = useState('');
   const [selectedProductSubcategoryId, setSelectedProductSubcategoryId] = useState('');
   const resolvedMenuCategoryId =

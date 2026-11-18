@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { Navigate, useParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { SEO } from '@/components/layout/SEO';
@@ -25,6 +25,7 @@ import type { MetalType, Product } from '@/lib/types';
 import { useGoldRate } from '@/hooks/useGoldRate';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { useMetalTypes } from '@/hooks/useMetalTypes';
+import { collectionPath } from '@/lib/categories';
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -89,6 +90,11 @@ export default function ProductDetail() {
     );
   }
 
+  // Reached by id (older links): move to the slug URL so there is one URL per product.
+  if (slug && slug !== product.slug) {
+    return <Navigate to={`/product/${product.slug}`} replace />;
+  }
+
   // Same function the cart and the place-order edge function use, so the price
   // shown here is the price charged.
   const baseWeightGrams = getBaseWeightGrams(product);
@@ -111,7 +117,7 @@ export default function ProductDetail() {
   const productImageUrl = product.images?.[0] || 'https://www.krtjewellers.com/og-image.png';
   const categoryLabel = CATEGORY_NAMES[product.category] || 'Jewellery';
   const productUrl = `https://www.krtjewellers.com/product/${product.slug}`;
-  const categoryUrl = `https://www.krtjewellers.com/collections/${product.category.replace('_', '-')}`;
+  const categoryUrl = `https://www.krtjewellers.com${collectionPath(product.category)}`;
 
   const productSchema = {
     '@context': 'https://schema.org',
@@ -198,7 +204,7 @@ export default function ProductDetail() {
             <ChevronRight className="w-3 h-3" />
             <Link to="/shop" className="hover:text-foreground">Jewellery</Link>
             <ChevronRight className="w-3 h-3" />
-            <Link to={`/collections/${product.category.replace('_', '-')}`} className="hover:text-foreground">
+            <Link to={collectionPath(product.category)} className="hover:text-foreground">
               {categoryLabel}
             </Link>
             <ChevronRight className="w-3 h-3" />

@@ -2,7 +2,8 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") || "https://krtjewellers.com").replace(/\/+$/, "");
+// The site lives on www; URLs on the bare domain only redirect.
+const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") || "https://www.krtjewellers.com").replace(/\/+$/, "");
 
 const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = [
   { path: "/", changefreq: "daily", priority: "1.0" },
@@ -13,6 +14,15 @@ const STATIC_ROUTES: { path: string; changefreq: string; priority: string }[] = 
   { path: "/stores", changefreq: "monthly", priority: "0.5" },
   { path: "/track-order", changefreq: "monthly", priority: "0.4" },
   { path: "/gold-rate", changefreq: "daily", priority: "0.6" },
+  { path: "/chit-fund", changefreq: "monthly", priority: "0.5" },
+  { path: "/faq", changefreq: "monthly", priority: "0.5" },
+  { path: "/privacy-policy", changefreq: "yearly", priority: "0.3" },
+  { path: "/terms-and-conditions", changefreq: "yearly", priority: "0.3" },
+  { path: "/shipping-policy", changefreq: "yearly", priority: "0.3" },
+  { path: "/return-policy", changefreq: "yearly", priority: "0.3" },
+  // Collections (slugs match src/lib/categories.ts)
+  ...["necklaces", "earrings", "rings", "bangles", "bracelets", "chains", "pendants", "wedding-bridal", "diamond-jewellery", "mens-jewellery"]
+    .map((slug) => ({ path: `/collections/${slug}`, changefreq: "daily", priority: "0.8" })),
 ];
 
 function xmlEscape(s: string) {

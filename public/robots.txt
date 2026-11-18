@@ -1,17 +1,11 @@
 User-agent: *
 Allow: /
-
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-success
 
 Sitemap: https://www.krtjewellers.com/sitemap.xml
-
+# Full list including every product and blog post, generated live:
+Sitemap: https://jmlldslairxizflgvpqq.supabase.co/functions/v1/blog-sitemap

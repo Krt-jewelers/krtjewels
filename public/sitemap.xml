@@ -109,7 +109,7 @@
   </url>
 
   <url>
-    <loc>https://www.krtjewellers.com/collections/wedding-sets</loc>
+    <loc>https://www.krtjewellers.com/collections/wedding-bridal</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -120,4 +120,28 @@
     <priority>0.8</priority>
   </url>
 
+
+  <url>
+    <loc>https://www.krtjewellers.com/collections/bracelets</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.krtjewellers.com/collections/chains</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.krtjewellers.com/collections/pendants</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.krtjewellers.com/collections/mens-jewellery</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>

@@ -26,7 +26,7 @@ export function MegamenuPanel({ category, preview = false }: MegamenuPanelProps)
           id: product.id,
           title: product.product_title,
           image: product.product_image_url,
-          href: `/product/${product.id}`,
+          href: `/product/${product.product_id || product.id}`,
         }))
       : fallbackItemProducts.map((product) => ({
           id: product.id,

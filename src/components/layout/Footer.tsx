@@ -20,7 +20,7 @@ const collections = [
   { name: 'Earrings', href: '/collections/earrings' },
   { name: 'Rings', href: '/collections/rings' },
   { name: 'Bangles', href: '/collections/bangles' },
-  { name: 'Wedding Sets', href: '/collections/wedding-sets' },
+  { name: 'Wedding Sets', href: '/collections/wedding-bridal' },
   { name: 'Diamond', href: '/collections/diamond-jewellery' },
 ];
 

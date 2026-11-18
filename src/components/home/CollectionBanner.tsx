@@ -70,7 +70,7 @@ export function CollectionBanner() {
 
             {/* Wedding Banner */}
             <Link 
-              to="/collections/wedding-sets"
+              to="/collections/wedding-bridal"
               className="group relative overflow-hidden rounded-3xl h-[190px] md:h-[237px]"
             >
               <img

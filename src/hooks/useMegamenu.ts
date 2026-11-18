@@ -47,6 +47,7 @@ export interface MegamenuCategory {
   megamenu_sections: MegamenuSection[];
   featured_products: Array<{
     id: string;
+    product_id?: string;
     product_title: string;
     product_image_url: string;
     product_order: number;
@@ -180,6 +181,7 @@ export const useMegamenu = () => {
         if (category) {
           category.featured_products.push({
             id: product.id,
+            product_id: product.product_id,
             product_title: product.product_title || '',
             product_image_url: product.product_image_url || '',
             product_order: product.product_order,

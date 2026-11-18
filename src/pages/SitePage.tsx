@@ -1,11 +1,21 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/layout/Layout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEO } from '@/components/layout/SEO';
+
+// Pages that have their own route; /page/<slug> for these points search
+// engines at the main URL instead of creating a duplicate.
+const PRIMARY_ROUTES: Record<string, string> = {
+  'privacy-policy': '/privacy-policy',
+  'terms-and-conditions': '/terms-and-conditions',
+  'shipping-policy': '/shipping-policy',
+  'return-policy': '/return-policy',
+  faq: '/faq',
+};
 
 export default function SitePage({ slug: slugProp }: { slug?: string }) {
   const params = useParams();
@@ -25,21 +35,16 @@ export default function SitePage({ slug: slugProp }: { slug?: string }) {
     },
   });
 
-  useEffect(() => {
-    if (data?.title) document.title = `${data.title} | KRT Jewellers`;
-    if (data?.meta_description) {
-      let m = document.querySelector('meta[name="description"]');
-      if (!m) {
-        m = document.createElement('meta');
-        m.setAttribute('name', 'description');
-        document.head.appendChild(m);
-      }
-      m.setAttribute('content', data.meta_description);
-    }
-  }, [data]);
+  const canonicalPath = PRIMARY_ROUTES[slug] || `/page/${slug}`;
 
   return (
     <Layout>
+      <SEO
+        title={data?.title || undefined}
+        description={data?.meta_description || undefined}
+        path={canonicalPath}
+        noindex={!isLoading && !data}
+      />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         {isLoading ? (
           <div className="space-y-3">

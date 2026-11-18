@@ -132,10 +132,12 @@ export function useProduct(slug: string) {
   return useQuery({
     queryKey: ['product', slug, goldRate?.id, gstRate, metalTypes?.map(m => `${m.slug}:${m.rate_per_gram}`).join(',')],
     queryFn: async (): Promise<ProductWithPrice | null> => {
+      // Older links (the megamenu) use the product id instead of the slug.
+      const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('slug', slug)
+        .eq(isId ? 'id' : 'slug', slug)
         .eq('is_active', true)
         .maybeSingle();
 

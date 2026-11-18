@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { CATEGORY_NAMES } from '@/lib/types';
+import { collectionPath } from '@/lib/categories';
 
 const categories = [
   {
@@ -61,7 +62,7 @@ export function CategoryShowcase() {
           {categories.map((category) => (
             <Link
               key={category.id}
-              to={`/collections/${category.id.replace('_', '-')}`}
+              to={collectionPath(category.id)}
               className="group relative aspect-[3/4] rounded-xl overflow-hidden card-luxury"
             >
               {/* Image */}
