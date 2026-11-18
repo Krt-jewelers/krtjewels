@@ -61,6 +61,9 @@ export function newCheckoutRef(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+const ORDERING_UNAVAILABLE =
+  'Online ordering is not available right now. Please try again in a few minutes or call us on +91 98430 10986.';
+
 // Calls the place-order edge function, which prices the cart on the server.
 export async function callOrderFunction<T>(payload: OrderPayload): Promise<{ data: T | null; error: OrderFunctionError | null }> {
   const { data, error } = await supabase.functions.invoke('place-order', { body: payload });
@@ -69,9 +72,14 @@ export async function callOrderFunction<T>(payload: OrderPayload): Promise<{ dat
   if (error instanceof FunctionsHttpError) {
     try {
       const body = await error.context.json();
+      // Our own errors carry a message in `error`. Anything else (for example
+      // the function not being deployed yet) gets a plain explanation.
+      if (typeof body.error !== 'string') {
+        return { data: null, error: { code: 'UNAVAILABLE', message: ORDERING_UNAVAILABLE } };
+      }
       return {
         data: null,
-        error: { code: body.code || 'ERROR', message: body.error || 'Something went wrong', totals: body.totals },
+        error: { code: body.code || 'ERROR', message: body.error, totals: body.totals },
       };
     } catch {
       // fall through to the generic message
