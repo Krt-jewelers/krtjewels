@@ -1,20 +1,16 @@
--- Orders are priced and saved by the place-order edge function only.
+-- Server-side order placement (additive; safe to apply before the new
+-- storefront is live).
 --
--- Before this, any signed-in customer could insert an order row with any
--- total and status straight from the browser, and the guest-order function
--- saved whatever totals it was sent. Now:
---   * customers cannot insert orders or order items directly;
 --   * place-order (service role) prices the cart from the database and calls
 --     create_order_with_items, which checks stock under a lock and saves the
 --     order and its items in one transaction;
---   * guests can look up their own order with its number and phone number.
--- Also stops customers approving or publishing their own reviews.
+--   * guests can look up their own order with its number and phone number;
+--   * customers can no longer approve or publish their own reviews.
+--
+-- 20261118172000_block_direct_order_inserts.sql then stops browsers inserting
+-- orders directly; apply it once the new storefront is live.
 
--- 1. No direct order inserts from the browser -------------------------------
-DROP POLICY IF EXISTS "Users can create orders" ON public.orders;
-DROP POLICY IF EXISTS "Users can create order items" ON public.order_items;
-
--- 2. Atomic order creation (service role only) -------------------------------
+-- 1. Atomic order creation (service role only) -------------------------------
 CREATE OR REPLACE FUNCTION public.create_order_with_items(p_order jsonb, p_items jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -126,7 +122,7 @@ REVOKE ALL ON FUNCTION public.create_order_with_items(jsonb, jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.create_order_with_items(jsonb, jsonb) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_order_with_items(jsonb, jsonb) TO service_role;
 
--- 3. Order lookup by order number + phone (guests and the success page) -----
+-- 2. Order lookup by order number + phone (guests and the success page) -----
 CREATE OR REPLACE FUNCTION public.lookup_order(p_order_number text, p_phone text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -185,7 +181,7 @@ $$;
 REVOKE ALL ON FUNCTION public.lookup_order(text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.lookup_order(text, text) TO anon, authenticated;
 
--- 4. Reviews: customers cannot approve or publish their own -----------------
+-- 3. Reviews: customers cannot approve or publish their own -----------------
 DROP POLICY IF EXISTS "Authenticated users can create reviews" ON public.reviews;
 CREATE POLICY "Authenticated users can create reviews"
 ON public.reviews FOR INSERT
