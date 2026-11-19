@@ -1,4 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { HeroCarousel } from '@/components/home/HeroCarousel';
 import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { CategoryShowcase } from '@/components/home/CategoryShowcase';
@@ -20,6 +21,9 @@ const Index = () => {
   
   return (
     <Layout>
+      {/* Sets the homepage's own canonical URL, title and share tags (also when
+          a visitor comes back here from another page). */}
+      <SEO path="/" />
       {/* The hero is image-only; this gives the page its one h1 for search
           engines and screen readers. */}
       <h1 className="sr-only">KRT Jewellers – BIS hallmarked gold and diamond jewellery in Coimbatore</h1>

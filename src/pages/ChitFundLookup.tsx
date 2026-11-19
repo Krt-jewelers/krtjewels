@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,11 @@ export default function ChitFundLookup() {
 
   return (
     <Layout>
+      <SEO
+        title="Track Your Gold Savings"
+        description="View your KRT Jewellers gold savings scheme with your scheme ID or registered phone number."
+        path="/chit-fund"
+      />
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="max-w-2xl mx-auto text-center mb-12">

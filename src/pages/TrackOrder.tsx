@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -116,6 +117,11 @@ export default function TrackOrder() {
 
   return (
     <Layout>
+      <SEO
+        title="Track Your Order"
+        description="Check the status of your KRT Jewellers order with your order number and the phone number used at checkout."
+        path="/track-order"
+      />
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="max-w-2xl mx-auto text-center mb-12">

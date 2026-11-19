@@ -1,4 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { useStoresByCity } from '@/hooks/useStores';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
@@ -9,6 +10,11 @@ export default function StoresPage() {
 
   return (
     <Layout>
+      <SEO
+        title="Our Stores"
+        description="Visit KRT Jewellers in person: store addresses, phone numbers and opening hours."
+        path="/stores"
+      />
       {/* Hero */}
       <section className="relative py-16 bg-gradient-to-r from-rich-black via-charcoal to-rich-black">
         <div className="container mx-auto px-4 text-center">
