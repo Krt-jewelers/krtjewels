@@ -40,7 +40,11 @@ export function corsHeadersFor(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin");
   return {
     "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? (origin as string) : DEFAULT_ORIGINS[0],
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    // The x-supabase-client-* names are sent by some Supabase client versions;
+    // a header missing from this list makes the browser block the call.
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, " +
+      "x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     Vary: "Origin",
   };

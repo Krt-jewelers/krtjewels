@@ -6,6 +6,6 @@ Disallow: /cart
 Disallow: /checkout
 Disallow: /order-success
 
+# Generated live (every page, product and blog post) by the blog-sitemap
+# function; vercel.json serves it at this address.
 Sitemap: https://www.krtjewellers.com/sitemap.xml
-# Full list including every product and blog post, generated live:
-Sitemap: https://jmlldslairxizflgvpqq.supabase.co/functions/v1/blog-sitemap

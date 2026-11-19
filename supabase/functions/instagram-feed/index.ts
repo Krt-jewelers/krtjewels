@@ -32,8 +32,11 @@ Deno.serve(async (req) => {
       .eq('id', 1)
       .maybeSingle();
 
+    // ?refresh=1 asks for a fresh copy, but at most once a minute: this
+    // address is public and every refresh is a call on the Instagram token.
     const force = new URL(req.url).searchParams.get('refresh') === '1';
-    if (!force && cached && (Date.now() - new Date(cached.fetched_at).getTime() < 30 * 60 * 1000)) {
+    const maxAgeMs = (force ? 1 : 30) * 60 * 1000;
+    if (cached && (Date.now() - new Date(cached.fetched_at).getTime() < maxAgeMs)) {
       return new Response(JSON.stringify({ posts: cached.posts, cached: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -55,10 +58,15 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error';
+    // When the request to Instagram fails, the error text contains the request
+    // address, which carries the access token. Keep the detail in the log with
+    // the token removed, and send browsers a fixed message.
+    const detail = (err instanceof Error ? err.message : 'Unknown error')
+      .replace(/access_token=[^&\s)"']+/g, 'access_token=[hidden]');
+    console.error('instagram-feed failed:', detail);
     // Fallback to cache if available
     const { data: cached } = await supabase.from('instagram_cache').select('posts').eq('id', 1).maybeSingle();
-    return new Response(JSON.stringify({ posts: cached?.posts ?? [], error: msg, fallback: true }), {
+    return new Response(JSON.stringify({ posts: cached?.posts ?? [], error: 'Instagram feed unavailable', fallback: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

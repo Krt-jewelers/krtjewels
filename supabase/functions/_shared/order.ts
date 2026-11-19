@@ -618,11 +618,42 @@ async function handlePlace(
 
   // A repeat of a checkout that was already saved gets that order back,
   // before any price, stock or order-limit check can turn it away.
-  if (clientRef) {
-    const replay = await replaySavedOrder(admin, clientRef, address, payment, body.expected_total, cors);
-    if (replay) return replay;
-  }
+  const savedOrder = () =>
+    clientRef ? replaySavedOrder(admin, clientRef, address, payment, body.expected_total, cors) : Promise.resolve(null);
+  const replay = await savedOrder();
+  if (replay) return replay;
 
+  try {
+    return await saveNewOrder(req, admin, body, cors, { address, payment, isUpi, notes, clientRef, savedOrder }, legacy);
+  } catch (refusal) {
+    // Two copies of one checkout can overlap (a retry sent while the first is
+    // still running). The first may save the order, and take the last piece,
+    // after this copy looked for it above; this copy is then refused as "sold
+    // out" or "too many orders". Whatever the refusal, the customer's order
+    // exists, so answer with it.
+    const saved = await savedOrder().catch(() => null);
+    if (saved) return saved;
+    throw refusal;
+  }
+}
+
+interface PlaceContext {
+  address: ReturnType<typeof validateAddress>;
+  payment: ReturnType<typeof validatePayment>;
+  isUpi: boolean;
+  notes: string | null;
+  clientRef: string | null;
+  savedOrder: () => Promise<Response | null>;
+}
+
+async function saveNewOrder(
+  req: Request,
+  admin: SupabaseClient,
+  body: OrderRequest,
+  cors: Record<string, string>,
+  { address, payment, isUpi, notes, clientRef, savedOrder }: PlaceContext,
+  legacy?: LegacyOptions,
+): Promise<Response> {
   let sums: OrderSums;
   let rows: ItemRow[];
   let staffAlert: string | null = null;
@@ -681,8 +712,8 @@ async function handlePlace(
   const created = data as { id: string; order_number: string; created_at: string; existing?: boolean; short?: string[] };
   // A twin request saved the order while this one was being priced: answer
   // from what was saved, like any other repeat.
-  if (created.existing && clientRef) {
-    const replay = await replaySavedOrder(admin, clientRef, address, payment, body.expected_total, cors);
+  if (created.existing) {
+    const replay = await savedOrder();
     if (replay) return replay;
   }
   if (created.short && created.short.length > 0) {

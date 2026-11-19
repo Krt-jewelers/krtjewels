@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import { calls, db, setRpcResult, useOrderFunction } from './testing/fakeSupabase';
+import { beforeNextRead, calls, clearHooks, db, setRpcResult, useOrderFunction, whileOrderFunctionWaits } from './testing/fakeSupabase';
 import { calculateProductPrice } from './pricing';
 
 const env: Record<string, string> = {
@@ -39,6 +39,7 @@ function reset() {
   db.orders = [];
   db.order_items = [];
   calls.rpc = [];
+  clearHooks();
   setRpcResult({ data: { id: "o1", order_number: "KRT261112345678", created_at: "2026-11-18T10:00:00Z", existing: false, short: [] }, error: null });
 }
 const cors = { "Access-Control-Allow-Origin": "https://www.krtjewellers.com" };
@@ -305,6 +306,60 @@ describe("repeated checkouts", () => {
     expect(again.body.notice).toEqual(null);
     expect(db.orders.length).toEqual(1);
     expect(calls.rpc.length, "the repeat never reaches the order function").toEqual(1);
+  });
+
+  // Two copies of one checkout overlap when a retry is sent while the first
+  // request is still running (for example after a dropped connection).
+  it("answers an overlapping copy from the order its twin saved while it waited in the database", async () => {
+    reset();
+    useOrderFunction();
+    db.products[0].stock_quantity = 1;
+    let twin: { status: number; body: any } | null = null;
+    // This copy finds no saved order and still sees one piece in stock; its
+    // twin commits while this copy waits for the product lock, so the database
+    // refuses this copy as out of stock.
+    whileOrderFunctionWaits(async () => {
+      twin = await call(cod({ expected_total: listing().total }));
+    });
+    const second = await call(cod({ expected_total: listing().total }));
+    expect(twin!.status, JSON.stringify(twin!.body)).toEqual(200);
+    expect(second.status, JSON.stringify(second.body)).toEqual(200);
+    expect(second.body.already_placed).toEqual(true);
+    expect(second.body.order_number).toEqual(twin!.body.order_number);
+    expect(db.orders.length).toEqual(1);
+    expect(db.products[0].stock_quantity).toEqual(0);
+  });
+
+  it("answers an overlapping copy from the saved order when its twin took the last piece first", async () => {
+    reset();
+    useOrderFunction();
+    db.products[0].stock_quantity = 1;
+    let twin: { status: number; body: any } | null = null;
+    // The twin saves the order after this copy looked for it, before this copy
+    // reads the stock.
+    beforeNextRead("products", async () => {
+      twin = await call(cod({ expected_total: listing().total }));
+    });
+    const second = await call(cod({ expected_total: listing().total }));
+    expect(twin!.status, JSON.stringify(twin!.body)).toEqual(200);
+    expect(second.status, JSON.stringify(second.body)).toEqual(200);
+    expect(second.body.already_placed).toEqual(true);
+    expect(second.body.order_number).toEqual(twin!.body.order_number);
+    expect(db.orders.length).toEqual(1);
+  });
+
+  it("still refuses a sold-out item when this checkout has no saved order", async () => {
+    reset();
+    useOrderFunction();
+    db.products[0].stock_quantity = 1;
+    // Another customer (another checkout id and phone) takes the last piece.
+    whileOrderFunctionWaits(async () => {
+      await call({ ...cod({ expected_total: listing().total }), checkout_ref: "another-checkout-0001", shipping_address: { ...address, phone: "9000000001" } });
+    });
+    const second = await call(cod({ expected_total: listing().total }));
+    expect(second.status).toEqual(409);
+    expect(second.body.code).toEqual("OUT_OF_STOCK");
+    expect(db.orders.length).toEqual(1);
   });
 
   it("is not refused when the price or the order limit has changed since", async () => {

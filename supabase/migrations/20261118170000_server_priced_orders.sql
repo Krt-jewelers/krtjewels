@@ -4,6 +4,7 @@
 --   * place-order (service role) prices the cart from the database and calls
 --     create_order_with_items, which checks stock under a lock and saves the
 --     order and its items in one transaction;
+--   * cancelling an order puts back the stock it took;
 --   * guests can look up their own order with its number and phone number;
 --   * customers can no longer approve or publish their own reviews.
 --
@@ -23,20 +24,110 @@ CREATE UNIQUE INDEX IF NOT EXISTS orders_checkout_ref_key
   ON public.orders (checkout_ref)
   WHERE checkout_ref IS NOT NULL;
 
--- 2. Stock trigger: an empty (NULL) stock means "not tracked" ----------------
--- The storefront already treats NULL as available, but the trigger turned it
--- into 0 on the first sale, which then blocked every later order.
+-- 2. Stock --------------------------------------------------------------------
+-- An empty (NULL) stock means "not tracked". The storefront already treats
+-- NULL as available, but the trigger turned it into 0 on the first sale, which
+-- then blocked every later order.
+--
+-- Each order item also remembers how many pieces it took (stock_taken), so a
+-- cancelled order can put back exactly that many. Items saved before this
+-- change have no stock_taken and are left alone, as before.
+ALTER TABLE public.order_items
+  ADD COLUMN IF NOT EXISTS stock_taken integer;
+
 CREATE OR REPLACE FUNCTION public.decrease_stock_on_order()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_stock integer;
+  v_taken integer;
 BEGIN
-  UPDATE public.products
-  SET stock_quantity = GREATEST(0, stock_quantity - NEW.quantity)
+  SELECT stock_quantity INTO v_stock
+  FROM public.products
   WHERE id = NEW.product_id
-    AND stock_quantity IS NOT NULL;
+  FOR UPDATE;
+
+  -- No such product, or its stock is not tracked.
+  IF v_stock IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  v_taken := GREATEST(0, LEAST(v_stock, NEW.quantity));
+  UPDATE public.products SET stock_quantity = v_stock - v_taken WHERE id = NEW.product_id;
+  UPDATE public.order_items SET stock_taken = v_taken WHERE id = NEW.id;
 
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- The order function below checks stock and leaves lowering it to this
+-- trigger. It should already be there; create it if it is not, so stock cannot
+-- silently stop going down.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger t
+    WHERE t.tgrelid = 'public.order_items'::regclass
+      AND t.tgfoid = 'public.decrease_stock_on_order()'::regprocedure
+      AND NOT t.tgisinternal
+  ) THEN
+    CREATE TRIGGER trigger_decrease_stock_on_order
+      AFTER INSERT ON public.order_items
+      FOR EACH ROW
+      EXECUTE FUNCTION public.decrease_stock_on_order();
+  END IF;
+END $$;
+
+-- Cancelling an order puts back the pieces it took; moving it out of
+-- "cancelled" takes them again (as many as are left).
+CREATE OR REPLACE FUNCTION public.restock_on_order_cancel()
+RETURNS TRIGGER AS $$
+DECLARE
+  r record;
+  v_stock integer;
+  v_taken integer;
+BEGIN
+  IF NEW.status = 'cancelled' THEN
+    FOR r IN
+      SELECT oi.id, oi.product_id, oi.stock_taken
+      FROM public.order_items oi
+      WHERE oi.order_id = NEW.id AND oi.stock_taken > 0
+      ORDER BY oi.product_id
+    LOOP
+      UPDATE public.products
+      SET stock_quantity = stock_quantity + r.stock_taken
+      WHERE id = r.product_id AND stock_quantity IS NOT NULL;
+      UPDATE public.order_items SET stock_taken = 0 WHERE id = r.id;
+    END LOOP;
+  ELSIF OLD.status = 'cancelled' THEN
+    FOR r IN
+      SELECT oi.id, oi.product_id, oi.quantity
+      FROM public.order_items oi
+      WHERE oi.order_id = NEW.id AND oi.stock_taken = 0
+      ORDER BY oi.product_id
+    LOOP
+      SELECT stock_quantity INTO v_stock
+      FROM public.products
+      WHERE id = r.product_id
+      FOR UPDATE;
+      IF v_stock IS NOT NULL THEN
+        v_taken := GREATEST(0, LEAST(v_stock, r.quantity));
+        UPDATE public.products SET stock_quantity = v_stock - v_taken WHERE id = r.product_id;
+        UPDATE public.order_items SET stock_taken = v_taken WHERE id = r.id;
+      END IF;
+    END LOOP;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS trigger_restock_on_order_cancel ON public.orders;
+CREATE TRIGGER trigger_restock_on_order_cancel
+  AFTER UPDATE OF status ON public.orders
+  FOR EACH ROW
+  WHEN (OLD.status IS DISTINCT FROM NEW.status)
+  EXECUTE FUNCTION public.restock_on_order_cancel();
 
 -- 3. Atomic order creation (service role only) -------------------------------
 -- p_order keys besides the order columns:
@@ -168,7 +259,8 @@ BEGIN
     END;
   END LOOP;
 
-  -- trigger_decrease_stock_on_order lowers stock for each inserted item.
+  -- trigger_decrease_stock_on_order lowers stock for each inserted item and
+  -- records how many pieces it took.
   INSERT INTO public.order_items (
     order_id, product_id, product_name, product_image, quantity, weight_grams,
     gold_rate_applied, making_charges, diamond_cost, stone_cost, unit_price,
