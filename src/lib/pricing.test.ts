@@ -170,6 +170,14 @@ describe('totals and GST', () => {
     expect(splitGst(3001, 'tamil nadu', 'Tamil Nadu')).toEqual({ intraState: true, cgst: 1500.5, sgst: 1500.5, igst: 0 });
     expect(splitGst(3000, 'Kerala', 'Tamil Nadu')).toEqual({ intraState: false, cgst: 0, sgst: 0, igst: 3000 });
   });
+
+  it('treats a state typed on an older order ("TN", "Tamilnadu") as the same state', () => {
+    for (const typed of ['TN', 'Tamilnadu', 'T.N.', 'tamil  nadu ']) {
+      expect(splitGst(300, typed, 'Tamil Nadu')).toEqual({ intraState: true, cgst: 150, sgst: 150, igst: 0 });
+    }
+    expect(splitGst(300, '', 'Tamil Nadu').intraState).toBe(false);
+    expect(splitGst(300, 'Somewhere Else', 'Tamil Nadu').intraState).toBe(false);
+  });
 });
 
 // A product whose options come from product_variations rows (ids as values),

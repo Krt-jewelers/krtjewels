@@ -1083,7 +1083,10 @@ export function sumLines(lines: PricedLine[]): OrderTotals {
 // GST on jewellery is split into CGST + SGST for buyers in the seller's state
 // and charged as IGST otherwise.
 export function splitGst(gstAmount: number, buyerState: string | null | undefined, sellerState: string) {
-  const norm = (s: string | null | undefined) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  // Orders placed before the state dropdown hold whatever was typed ("TN",
+  // "Tamilnadu"), so both sides go through the same matching first.
+  const norm = (s: string | null | undefined) =>
+    matchIndianState(s) || (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const intraState = !!buyerState && norm(buyerState) === norm(sellerState);
   if (!intraState) return { intraState, cgst: 0, sgst: 0, igst: gstAmount };
   const cgst = Math.round((gstAmount / 2) * 100) / 100;
