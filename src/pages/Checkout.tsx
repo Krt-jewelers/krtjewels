@@ -157,6 +157,10 @@ export default function CheckoutPage() {
     if (error.code === 'ITEM_OPTIONS_CHANGED' || error.code === 'PRODUCT_UNAVAILABLE' || error.code === 'OUT_OF_STOCK') {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
     }
+    // The server will not reuse this checkout id; the next attempt gets a new one.
+    if (error.code === 'CHECKOUT_REUSED') {
+      checkoutRef.current = newCheckoutRef();
+    }
     toast({
       title: error.code === 'PRICE_CHANGED' ? 'Prices updated' : 'Could not place order',
       description: error.message,

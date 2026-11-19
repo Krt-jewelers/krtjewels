@@ -24,6 +24,9 @@ export interface QuoteResponse {
 
 export interface PlacedOrder extends OrderQuote {
   success: true;
+  // True when this checkout had already been saved (for example the first
+  // reply was lost) and the server returned that order again.
+  already_placed?: boolean;
   // Something the customer should know (price changed or an item sold out
   // while they were paying).
   notice?: string | null;

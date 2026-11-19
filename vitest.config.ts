@@ -8,9 +8,17 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Server tests live next to the edge-function code they cover.
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "supabase/functions/**/*.test.ts"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      // Edge functions import supabase-js by URL (Deno); tests use a stand-in.
+      {
+        find: /^https:\/\/esm\.sh\/@supabase\/supabase-js@2$/,
+        replacement: path.resolve(__dirname, "./supabase/functions/_shared/testing/fakeSupabase.ts"),
+      },
+    ],
   },
 });

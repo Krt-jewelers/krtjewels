@@ -473,6 +473,97 @@ function mapDatabaseError(error: { message?: string }): OrderError | null {
   return null;
 }
 
+const lastTenDigits = (value: unknown) => String(value ?? "").replace(/\D/g, "").slice(-10);
+
+// The order already saved for this checkout id, as the customer should see it.
+// Answering a repeat from the saved order (not from the repeat's own cart)
+// matters when the first reply was lost: by then the first attempt may have
+// taken the last piece, the price may have moved, or the cart may have changed.
+async function replaySavedOrder(
+  admin: SupabaseClient,
+  checkoutRef: string,
+  address: { phone: string },
+  payment: { method: string; utr: string | null },
+  expectedTotal: unknown,
+  cors: Record<string, string>,
+): Promise<Response | null> {
+  const { data: order, error } = await admin
+    .from("orders")
+    .select("id, order_number, created_at, status, payment_method, payment_utr, subtotal, gst_amount, total_amount, gold_rate_at_order, shipping_address, staff_alert")
+    .eq("checkout_ref", checkoutRef)
+    .maybeSingle();
+  if (error) throw error;
+  if (!order) return null;
+
+  // The id is a secret of one browser; the phone check keeps a guessed or
+  // reused id from showing someone else's order.
+  const savedAddress = (order.shipping_address || {}) as Record<string, unknown>;
+  if (lastTenDigits(savedAddress.phone) !== lastTenDigits(address.phone)) {
+    throw new OrderError(
+      "CHECKOUT_REUSED",
+      "This checkout has already been used. Please try placing your order again.",
+      409,
+    );
+  }
+
+  const { data: items, error: itemsError } = await admin
+    .from("order_items")
+    .select("product_name, product_image, quantity, unit_price, total_price, selected_variations")
+    .eq("order_id", order.id);
+  if (itemsError) throw itemsError;
+  const savedItems = (items || []) as { quantity: number }[];
+
+  const subtotal = Number(order.subtotal) || 0;
+  const gstAmount = Number(order.gst_amount) || 0;
+  const total = Number(order.total_amount) || 0;
+  const notices: string[] = [];
+  if (totalDiffers(expectedTotal, total)) {
+    notices.push(
+      `Your order was already placed at ${rupees(total)} when you first submitted it; later changes are not part of it. ` +
+        `To change it, call or WhatsApp us on ${STORE_PHONE}.`,
+    );
+  }
+  // A payment reference is never dropped: the first try may have been cash on
+  // delivery (its reply lost) and the customer then paid by UPI.
+  let staffAlert: string | null = order.staff_alert || null;
+  if (payment.method === "upi" && payment.utr && payment.utr !== order.payment_utr && (staffAlert || "").length < 1000) {
+    const savedAs = order.payment_method === "upi"
+      ? `the order was saved with ${order.payment_utr ? `reference ${order.payment_utr}` : "no reference"}`
+      : "the order was saved as cash on delivery";
+    staffAlert = [
+      staffAlert,
+      `On a repeat of this checkout the customer sent UPI reference ${payment.utr} (${savedAs}). Check the payment before confirming.`,
+    ].filter(Boolean).join(" ");
+    const { error: updateError } = await admin.from("orders").update({ staff_alert: staffAlert }).eq("id", order.id);
+    if (updateError) throw updateError;
+    notices.push(`We have noted your UPI reference ${payment.utr} against this order and will check it.`);
+  }
+  if (staffAlert) notices.push("We will contact you to confirm the details of this order.");
+
+  return jsonResponse(
+    {
+      success: true,
+      already_placed: true,
+      order_id: order.id,
+      order_number: order.order_number,
+      created_at: order.created_at,
+      status: order.status,
+      payment_method: order.payment_method,
+      subtotal,
+      gst_amount: gstAmount,
+      total_amount: total,
+      gold_rate_at_order: Number(order.gold_rate_at_order) || 0,
+      gst_rate: subtotal > 0 ? Math.round((gstAmount / subtotal) * 1000) / 10 : 0,
+      item_count: savedItems.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+      notice: notices.length ? notices.join(" ") : null,
+      shipping_address: savedAddress,
+      items: items || [],
+    },
+    200,
+    cors,
+  );
+}
+
 // A UPI customer has usually paid already when their order reaches us. If it
 // still cannot be saved, tell them exactly what to do with their payment.
 function afterPayment(error: OrderError): OrderError {
@@ -521,6 +612,17 @@ async function handlePlace(
   const isUpi = payment.method === "upi";
   const notes = text(body.notes, 500) || null;
 
+  const clientRef = typeof body.checkout_ref === "string" && CHECKOUT_REF_RE.test(body.checkout_ref)
+    ? body.checkout_ref
+    : null;
+
+  // A repeat of a checkout that was already saved gets that order back,
+  // before any price, stock or order-limit check can turn it away.
+  if (clientRef) {
+    const replay = await replaySavedOrder(admin, clientRef, address, payment, body.expected_total, cors);
+    if (replay) return replay;
+  }
+
   let sums: OrderSums;
   let rows: ItemRow[];
   let staffAlert: string | null = null;
@@ -550,10 +652,6 @@ async function handlePlace(
   await checkRecentOrders(admin, address.phone, orderLimit);
   const userId = await userIdFromRequest(req);
 
-  const clientRef = typeof body.checkout_ref === "string" && CHECKOUT_REF_RE.test(body.checkout_ref)
-    ? body.checkout_ref
-    : null;
-
   const orderRow = {
     user_id: userId,
     subtotal: sums.subtotal,
@@ -581,6 +679,12 @@ async function handlePlace(
   }
 
   const created = data as { id: string; order_number: string; created_at: string; existing?: boolean; short?: string[] };
+  // A twin request saved the order while this one was being priced: answer
+  // from what was saved, like any other repeat.
+  if (created.existing && clientRef) {
+    const replay = await replaySavedOrder(admin, clientRef, address, payment, body.expected_total, cors);
+    if (replay) return replay;
+  }
   if (created.short && created.short.length > 0) {
     notice = [
       notice,
