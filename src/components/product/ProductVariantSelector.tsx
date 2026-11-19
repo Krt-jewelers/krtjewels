@@ -433,7 +433,7 @@ export function ProductVariantSelector({
                   </div>
                 )}
                 {size.priceAdjustment !== 0 && (
-                  <span className="text-[8px] opacity-80 block text-center pb-0.5">
+                  <span className="text-xs opacity-80 block text-center pb-0.5">
                     {size.priceAdjustment > 0 ? '+' : ''}₹{Math.abs(size.priceAdjustment)}
                   </span>
                 )}

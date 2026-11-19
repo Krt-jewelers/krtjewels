@@ -57,12 +57,7 @@ export function Layout({ children }: LayoutProps) {
   // checkout) wait for auth themselves. Waiting here delayed every page.
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:rounded-md focus:bg-rich-black focus:px-4 focus:py-3 focus:text-ivory focus:outline-none focus:ring-2 focus:ring-primary"
-      >
-        Skip to content
-      </a>
+      {/* The skip link lives at the top of Navbar. */}
       <div
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pointer-events-none transition-transform"
         style={{ transform: `translateY(${pullDistance - 60}px)` }}
