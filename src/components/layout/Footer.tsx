@@ -12,7 +12,6 @@ import {
   Medal,
   Lock,
 } from 'lucide-react';
-import { FoundifCredit } from './FoundifCredit';
 import { useFooterContact } from '@/hooks/useFooterContact';
 
 const collections = [
@@ -251,9 +250,8 @@ export function Footer() {
             <p className="text-ivory/40 text-sm">
               © {new Date().getFullYear()} KRT JEWELLERS. All rights reserved.
             </p>
-            <FoundifCredit />
-            
-                                 {/* Social Links */}
+
+            {/* Social Links */}
             <div className="flex items-center gap-4">
               <a href="https://www.instagram.com/krtjewellers/" target="_blank" rel="noopener noreferrer" aria-label="Visit KRT Jewellers on Instagram" className="text-ivory/40 hover:text-primary transition-colors">
                 <Instagram className="w-5 h-5" />
