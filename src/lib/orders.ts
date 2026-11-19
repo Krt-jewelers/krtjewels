@@ -5,6 +5,8 @@ export interface OrderFunctionError {
   code: string;
   message: string;
   totals?: { subtotal: number; gst: number; total: number };
+  // Sent with VERIFICATION_REQUIRED / VERIFICATION_FAILED: the Turnstile widget to show.
+  site_key?: string;
 }
 
 export interface OrderQuote {
@@ -57,6 +59,8 @@ export interface OrderPayload {
   quote_token?: string | null;
   // One id per checkout attempt, so a retry cannot create a second order.
   checkout_ref?: string;
+  // From the Turnstile widget, when the server has the check switched on.
+  turnstile_token?: string | null;
 }
 
 export function newCheckoutRef(): string {
@@ -82,7 +86,12 @@ export async function callOrderFunction<T>(payload: OrderPayload): Promise<{ dat
       }
       return {
         data: null,
-        error: { code: body.code || 'ERROR', message: body.error, totals: body.totals },
+        error: {
+          code: body.code || 'ERROR',
+          message: body.error,
+          totals: body.totals,
+          site_key: typeof body.site_key === 'string' ? body.site_key : undefined,
+        },
       };
     } catch {
       // fall through to the generic message
@@ -92,6 +101,20 @@ export async function callOrderFunction<T>(payload: OrderPayload): Promise<{ dat
     data: null,
     error: { code: 'NETWORK', message: 'Could not reach our server. Check your connection and try again.' },
   };
+}
+
+// What checkout needs to know before ordering: the Turnstile site key when the
+// server checks orders with Cloudflare Turnstile, otherwise null. Any failure
+// means "not known"; the server then names the widget if it needs one.
+export async function fetchOrderConfig(): Promise<{ turnstileSiteKey: string | null }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('place-order', { body: { mode: 'config' } });
+    if (error || !data) return { turnstileSiteKey: null };
+    const key = (data as { turnstile_site_key?: unknown }).turnstile_site_key;
+    return { turnstileSiteKey: typeof key === 'string' && key ? key : null };
+  } catch {
+    return { turnstileSiteKey: null };
+  }
 }
 
 // Same rules as the server (supabase/functions/_shared/order.ts).

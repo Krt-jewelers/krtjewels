@@ -16,6 +16,11 @@
 //     with a note telling staff what the customer was shown.
 // Cash-on-delivery orders are simply refused when the price or stock changed,
 // because the customer can look at the new total and try again.
+//
+// When Cloudflare Turnstile is on (see turnstile.ts), every order must pass
+// its check. For UPI the check happens with the quote, before the customer
+// pays; the quote is tied to that one checkout, so the paid order that follows
+// needs no second check and one check can never produce more than one order.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -33,6 +38,7 @@ import {
   type PricingVariation,
 } from "./pricing.ts";
 import { jsonResponse } from "./cors.ts";
+import { type TurnstileConfig, turnstileConfig, verifyTurnstile } from "./turnstile.ts";
 
 const MAX_LINES = 30;
 const MAX_QUANTITY = 20;
@@ -53,7 +59,8 @@ export interface OrderRequestItem {
 }
 
 export interface OrderRequest {
-  mode?: "quote" | "place";
+  // "config" returns what the checkout page needs before ordering.
+  mode?: "quote" | "place" | "config";
   items: OrderRequestItem[];
   shipping_address?: Record<string, unknown>;
   payment_method?: string;
@@ -64,6 +71,8 @@ export interface OrderRequest {
   quote_token?: string | null;
   // One id per checkout attempt; a repeat returns the order already saved.
   checkout_ref?: string | null;
+  // From the checkout page's Turnstile widget (single use).
+  turnstile_token?: string | null;
 }
 
 // Set only by create-guest-order, for browsers still running old storefront code.
@@ -322,6 +331,8 @@ interface QuotePayload {
   exp: number;
   order: OrderSums;
   rows: ItemRow[];
+  // The checkout the quote was made for; it is honoured only for that one.
+  ref?: string | null;
 }
 
 function toItemRows(priced: PricedOrder): ItemRow[] {
@@ -576,11 +587,33 @@ function afterPayment(error: OrderError): OrderError {
   );
 }
 
+const checkoutRefOf = (body: OrderRequest): string | null =>
+  typeof body.checkout_ref === "string" && CHECKOUT_REF_RE.test(body.checkout_ref) ? body.checkout_ref : null;
+
+// Turnstile: throws when the token is missing or fails. Returns a note for
+// staff when the token could not be checked (Cloudflare unreachable, wrong
+// secret); such orders go ahead.
+async function requireHuman(config: TurnstileConfig, token: unknown): Promise<string | null> {
+  const result = await verifyTurnstile(config, token);
+  if (result.ok) return result.unchecked || null;
+  throw result.reason === "missing"
+    ? new OrderError("VERIFICATION_REQUIRED", "Please complete the security check, then try again.", 403, {
+      site_key: config.siteKey,
+    })
+    : new OrderError("VERIFICATION_FAILED", "The security check did not pass. Please try again.", 403, {
+      site_key: config.siteKey,
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Request handling
 // ---------------------------------------------------------------------------
 
 async function handleQuote(admin: SupabaseClient, body: OrderRequest, cors: Record<string, string>) {
+  // A quote lets the paid order skip the check, so the quote needs it.
+  const turnstile = turnstileConfig();
+  if (turnstile) await requireHuman(turnstile, body.turnstile_token);
+
   const priced = await priceOrder(admin, body.items);
   const sums = toOrderSums(priced);
   if (totalDiffers(body.expected_total, sums.total_amount)) throw priceChanged(sums);
@@ -592,7 +625,7 @@ async function handleQuote(admin: SupabaseClient, body: OrderRequest, cors: Reco
   }
 
   const expiresAt = Date.now() + QUOTE_TTL_MS;
-  const quoteToken = await signQuote({ v: 1, exp: expiresAt, order: sums, rows: toItemRows(priced) });
+  const quoteToken = await signQuote({ v: 1, exp: expiresAt, order: sums, rows: toItemRows(priced), ref: checkoutRefOf(body) });
   return jsonResponse(
     { quote: sums, quote_token: quoteToken, expires_at: new Date(expiresAt).toISOString() },
     200,
@@ -612,9 +645,7 @@ async function handlePlace(
   const isUpi = payment.method === "upi";
   const notes = text(body.notes, 500) || null;
 
-  const clientRef = typeof body.checkout_ref === "string" && CHECKOUT_REF_RE.test(body.checkout_ref)
-    ? body.checkout_ref
-    : null;
+  const clientRef = checkoutRefOf(body);
 
   // A repeat of a checkout that was already saved gets that order back,
   // before any price, stock or order-limit check can turn it away.
@@ -623,8 +654,13 @@ async function handlePlace(
   const replay = await savedOrder();
   if (replay) return replay;
 
+  // A quote counts only for the checkout it was made for: that checkout can
+  // be saved once, so a quote never produces more than one order.
+  const quote = isUpi ? await verifyQuote(body.quote_token) : null;
+  const quoted = quote && clientRef && quote.ref === clientRef ? quote : null;
+
   try {
-    return await saveNewOrder(req, admin, body, cors, { address, payment, isUpi, notes, clientRef, savedOrder }, legacy);
+    return await saveNewOrder(req, admin, body, cors, { address, payment, isUpi, notes, clientRef, savedOrder, quoted }, legacy);
   } catch (refusal) {
     // Two copies of one checkout can overlap (a retry sent while the first is
     // still running). The first may save the order, and take the last piece,
@@ -644,6 +680,7 @@ interface PlaceContext {
   notes: string | null;
   clientRef: string | null;
   savedOrder: () => Promise<Response | null>;
+  quoted: QuotePayload | null;
 }
 
 async function saveNewOrder(
@@ -651,16 +688,19 @@ async function saveNewOrder(
   admin: SupabaseClient,
   body: OrderRequest,
   cors: Record<string, string>,
-  { address, payment, isUpi, notes, clientRef, savedOrder }: PlaceContext,
+  { address, payment, isUpi, notes, clientRef, savedOrder, quoted }: PlaceContext,
   legacy?: LegacyOptions,
 ): Promise<Response> {
+  // Turnstile, unless a quote made for this checkout already passed it.
+  const turnstile = turnstileConfig();
+  const unchecked = turnstile && !quoted ? await requireHuman(turnstile, body.turnstile_token) : null;
+
   let sums: OrderSums;
   let rows: ItemRow[];
   let staffAlert: string | null = null;
   let notice: string | null = null;
   let orderLimit = RECENT_ORDER_LIMIT;
 
-  const quoted = isUpi ? await verifyQuote(body.quote_token) : null;
   if (quoted) {
     // The customer was shown this total with the QR code and has paid it.
     sums = quoted.order;
@@ -678,6 +718,11 @@ async function saveNewOrder(
       notice = `The price changed while you were paying. Your order is saved at today's price of ` +
         `${rupees(sums.total_amount)}; you were shown ${rupees(body.expected_total)}. We will contact you about the difference.`;
     }
+  }
+
+  if (unchecked) {
+    staffAlert = [staffAlert, `The security check could not be run (${unchecked}). Make sure this order is genuine before confirming.`]
+      .filter(Boolean).join(" ");
   }
 
   await checkRecentOrders(admin, address.phone, orderLimit);
@@ -757,6 +802,10 @@ export async function handleOrderRequest(
 ): Promise<Response> {
   const paidFirst = body.mode !== "quote" && body.payment_method === "upi";
   try {
+    if (body.mode === "config") {
+      // The site key is public; it is sent only when orders are checked.
+      return jsonResponse({ turnstile_site_key: turnstileConfig()?.siteKey ?? null }, 200, cors);
+    }
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     if (body.mode === "quote") return await handleQuote(admin, body, cors);
     return await handlePlace(req, admin, body, cors, legacy);

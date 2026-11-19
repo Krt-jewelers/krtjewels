@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/types';
 import { INDIAN_STATES, matchIndianState } from '@/lib/pricing';
 import {
   callOrderFunction,
+  fetchOrderConfig,
   isValidPincode,
   newCheckoutRef,
   normalizeIndianPhone,
@@ -26,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { useTurnstile } from '@/hooks/useTurnstile';
 import { ShoppingBag, MapPin, CreditCard, Truck, Shield, Loader2, QrCode } from 'lucide-react';
 import { UpiPaymentModal } from '@/components/checkout/UpiPaymentModal';
 
@@ -67,6 +69,12 @@ export default function CheckoutPage() {
   // One id for this checkout: if a reply is lost and the customer tries again,
   // the server returns the order it already saved.
   const checkoutRef = useRef(newCheckoutRef());
+  // Cloudflare Turnstile, when the server has it switched on. If the server
+  // asks for it although the config said it was off, its answer names the widget.
+  const { data: orderConfig } = useQuery({ queryKey: ['order-config'], queryFn: fetchOrderConfig, staleTime: 10 * 60 * 1000 });
+  const [siteKeyFromServer, setSiteKeyFromServer] = useState<string | null>(null);
+  const turnstileSiteKey = siteKeyFromServer || orderConfig?.turnstileSiteKey || null;
+  const turnstile = useTurnstile(turnstileSiteKey);
   const [upiSettings, setUpiSettings] = useState<UpiSettings | null>(null);
   const [address, setAddress] = useState<AddressForm>({
     full_name: '',
@@ -161,6 +169,9 @@ export default function CheckoutPage() {
     if (error.code === 'CHECKOUT_REUSED') {
       checkoutRef.current = newCheckoutRef();
     }
+    if ((error.code === 'VERIFICATION_REQUIRED' || error.code === 'VERIFICATION_FAILED') && error.site_key) {
+      setSiteKeyFromServer(error.site_key);
+    }
     toast({
       title: error.code === 'PRICE_CHANGED' ? 'Prices updated' : 'Could not place order',
       description: error.message,
@@ -183,7 +194,27 @@ export default function CheckoutPage() {
     return true;
   };
 
-  const placeOrder = async (method: 'cod' | 'upi', payment?: OrderPayload['payment']) => {
+  // The Turnstile token for the next request: null when the check is off,
+  // undefined when it did not finish (the customer is told what to do).
+  const securityToken = async (): Promise<string | null | undefined> => {
+    if (!turnstileSiteKey) return null;
+    const token = await turnstile.getToken();
+    if (token) return token;
+    const state = turnstile.currentState();
+    toast({
+      title: 'Security check not finished',
+      description:
+        state === 'interactive'
+          ? 'Please tick the box above the order button, then try again.'
+          : state === 'unavailable'
+          ? 'The security check could not load. Check your connection and refresh the page, or call us on +91 98430 10986.'
+          : 'Please try again in a moment, or call us on +91 98430 10986.',
+      variant: 'destructive',
+    });
+    return undefined;
+  };
+
+  const placeOrder = async (method: 'cod' | 'upi', payment?: OrderPayload['payment'], turnstileToken: string | null = null) => {
     const { data, error } = await callOrderFunction<PlacedOrder>({
       mode: 'place',
       items: orderItems(),
@@ -194,6 +225,7 @@ export default function CheckoutPage() {
       expected_total: method === 'upi' ? upiAmount : total,
       quote_token: method === 'upi' ? quoteToken : null,
       checkout_ref: checkoutRef.current,
+      turnstile_token: turnstileToken,
     });
     if (error || !data) {
       handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
@@ -208,7 +240,10 @@ export default function CheckoutPage() {
   const handleUpiSubmit = async (data: { utr: string; screenshotUrl: string | null; upiPhone: string; upiProvider: string }) => {
     setIsSubmitting(true);
     try {
-      const order = await placeOrder('upi', { utr: data.utr, upi_phone: data.upiPhone, upi_provider: data.upiProvider });
+      // The quote already passed the security check; a token is needed only
+      // if the quote has run out, so don't wait long for one.
+      const token = turnstileSiteKey ? await turnstile.getToken(8000) : null;
+      const order = await placeOrder('upi', { utr: data.utr, upi_phone: data.upiPhone, upi_provider: data.upiProvider }, token);
       if (!order) return;
       setShowUpiModal(false);
       toast({ title: 'Order placed', description: 'We will verify your payment and confirm your order.' });
@@ -243,13 +278,17 @@ export default function CheckoutPage() {
       setIsSubmitting(true);
       try {
         // The server checks the address, stock and total now, before any money
-        // moves, and holds this price while the customer pays.
+        // moves, and holds this price for this checkout while the customer pays.
+        const token = await securityToken();
+        if (token === undefined) return;
         const { data, error } = await callOrderFunction<QuoteResponse>({
           mode: 'quote',
           items: orderItems(),
           shipping_address: shippingAddress(),
           payment_method: 'upi',
           expected_total: total,
+          checkout_ref: checkoutRef.current,
+          turnstile_token: token,
         });
         if (error || !data) {
           handleOrderError(error || { code: 'ERROR', message: 'Something went wrong' });
@@ -266,7 +305,9 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
-      const order = await placeOrder('cod');
+      const token = await securityToken();
+      if (token === undefined) return;
+      const order = await placeOrder('cod', undefined, token);
       if (!order) return;
       toast({ title: 'Order placed', description: `Your order #${order.order_number} has been received.` });
       navigate(`/order-success?order=${order.order_number}`, { state: { order } });
@@ -444,15 +485,34 @@ export default function CheckoutPage() {
                       Some items in your cart need to be added again. <Link to="/cart" className="underline">Review cart</Link>
                     </p>
                   )}
-                  <Button type="submit" className="w-full btn-premium py-6 text-lg" disabled={!canSubmit}>
-                    {isSubmitting ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
-                    ) : paymentMethod === 'upi' ? (
-                      'Pay with UPI'
-                    ) : (
-                      'Place Order'
+                  <div className="space-y-3">
+                    {turnstileSiteKey && (
+                      <>
+                        {/* Cloudflare Turnstile: shows a box only when it needs the customer to tick it. */}
+                        <div ref={turnstile.containerRef} className="flex justify-center" />
+                        {turnstile.state === 'interactive' && (
+                          <p className="text-sm text-muted-foreground text-center" role="status">
+                            Please tick the box above to confirm you are not a robot.
+                          </p>
+                        )}
+                        {turnstile.state === 'unavailable' && (
+                          <p className="text-sm text-destructive" role="alert">
+                            The security check could not load. Check your connection and refresh the page, or call us on{' '}
+                            <a href="tel:+919843010986" className="underline">+91 98430 10986</a>.
+                          </p>
+                        )}
+                      </>
                     )}
-                  </Button>
+                    <Button type="submit" className="w-full btn-premium py-6 text-lg" disabled={!canSubmit}>
+                      {isSubmitting ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</>
+                      ) : paymentMethod === 'upi' ? (
+                        'Pay with UPI'
+                      ) : (
+                        'Place Order'
+                      )}
+                    </Button>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-2 text-center pt-4 border-t">
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">

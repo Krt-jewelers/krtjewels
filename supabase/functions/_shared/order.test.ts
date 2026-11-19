@@ -6,7 +6,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { beforeNextRead, calls, clearHooks, db, setRpcResult, useOrderFunction, whileOrderFunctionWaits } from './testing/fakeSupabase';
 import { calculateProductPrice } from './pricing';
 
@@ -95,13 +95,14 @@ it("COD: a total the customer did not see is refused", async () => {
 
 it("UPI: the gold rate changes while the customer pays - order saved at the quoted price", async () => {
   reset();
-  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", expected_total: listing().total });
+  const ref = "upi-checkout-0001";
+  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", expected_total: listing().total, checkout_ref: ref });
   expect(quote.status, JSON.stringify(quote.body)).toEqual(200);
   const quotedTotal = quote.body.quote.total_amount;
   db.gold_rates = [{ rate_22k: 9500, rate_24k: 10300, rate_18k: 7700, is_current: true }];   // rate goes up
   db.products[0].stock_quantity = 0;                                                          // and the piece sells out
   const placed = await call({ mode: "place", items, shipping_address: address, payment_method: "upi",
-    payment: { utr: "432118765432" }, expected_total: quotedTotal, quote_token: quote.body.quote_token });
+    payment: { utr: "432118765432" }, expected_total: quotedTotal, quote_token: quote.body.quote_token, checkout_ref: ref });
   expect(placed.status, JSON.stringify(placed.body)).toEqual(200);
   const { args } = calls.rpc[0];
   expect(args.p_order.total_amount).toEqual(quotedTotal);
@@ -112,11 +113,24 @@ it("UPI: the gold rate changes while the customer pays - order saved at the quot
   expect(placed.body.notice).toEqual(null);
 });
 
+it("UPI: a quote counts only for the checkout it was made for", async () => {
+  reset();
+  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", checkout_ref: "upi-checkout-0001" });
+  const quotedTotal = quote.body.quote.total_amount;
+  db.gold_rates = [{ rate_22k: 9500, rate_24k: 10300, rate_18k: 7700, is_current: true }];
+  const other = await call({ mode: "place", items, shipping_address: address, payment_method: "upi",
+    payment: { utr: "432118765432" }, expected_total: quotedTotal, quote_token: quote.body.quote_token, checkout_ref: "upi-checkout-0002" });
+  expect(other.status, JSON.stringify(other.body)).toEqual(200);
+  // Saved at today's price, with a note, as if there were no quote.
+  expect(calls.rpc[0].args.p_order.total_amount).not.toEqual(quotedTotal);
+  expect(calls.rpc[0].args.p_order.staff_alert).toContain("Price changed while the customer was paying");
+});
+
 it("UPI: stock ran out while paying - order saved and the customer is told", async () => {
   reset();
-  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi" });
+  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", checkout_ref: "upi-checkout-0001" });
   setRpcResult({ data: { id: "o2", order_number: "KRT261100000002", created_at: "2026-11-18T10:00:00Z", existing: false, short: ["Ring"] }, error: null });
-  const placed = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" }, quote_token: quote.body.quote_token });
+  const placed = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" }, quote_token: quote.body.quote_token, checkout_ref: "upi-checkout-0001" });
   expect(placed.status).toEqual(200);
   expect(placed.body.notice).toContain("no longer available");
   expect(placed.body.notice).toContain("Ring");
@@ -181,10 +195,10 @@ it("quote for UPI checks the address and order limit before a QR code is shown",
 
 it("order limit: a quoted UPI order still goes through; unquoted orders are limited", async () => {
   reset();
-  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi" });
+  const quote = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", checkout_ref: "upi-checkout-0001" });
   const now = new Date().toISOString();
   db.orders = [1, 2, 3].map((i) => ({ id: `o${i}`, created_at: now, shipping_address: { phone: "9843010986" } }));
-  const paid = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" }, quote_token: quote.body.quote_token });
+  const paid = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" }, quote_token: quote.body.quote_token, checkout_ref: "upi-checkout-0001" });
   expect(paid.status).toEqual(200);
   const cod = await call({ mode: "place", items, shipping_address: address, payment_method: "cod" });
   expect(cod.status).toEqual(429);
@@ -456,5 +470,158 @@ describe("repeated checkouts", () => {
     // Old order numbers are short, so a guessed one must not reveal an order.
     const guess = await call({ ...body, shipping_address: { ...address, phone: "9000000001" } }, undefined, legacy);
     expect(guess.body.code).toEqual("CHECKOUT_REUSED");
+  });
+});
+
+describe("Cloudflare Turnstile", () => {
+  const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+  let checks: { url: string; body: any }[] = [];
+  // Cloudflare's answer to each check.
+  function cloudflare(answer: (body: any) => any) {
+    checks = [];
+    vi.stubGlobal("fetch", async (url: string, init: any) => {
+      const body = JSON.parse(init.body);
+      checks.push({ url, body });
+      const result = answer(body);
+      if (result instanceof Error) throw result;
+      return new Response(JSON.stringify(result), { status: 200, headers: { "Content-Type": "application/json" } });
+    });
+  }
+  const passes = (body: any) => (body.response === "good-token" ? { success: true, action: "checkout" } : { success: false, "error-codes": ["invalid-input-response"] });
+  function turnOn() {
+    env.TURNSTILE_SITE_KEY = "site-key";
+    env.TURNSTILE_SECRET_KEY = "secret-key";
+  }
+  afterEach(() => {
+    delete env.TURNSTILE_SITE_KEY;
+    delete env.TURNSTILE_SECRET_KEY;
+    vi.unstubAllGlobals();
+  });
+  const cod = (extra: Record<string, unknown> = {}) => ({ mode: "place", items, shipping_address: address, payment_method: "cod", checkout_ref: "cod-checkout-0001", ...extra });
+
+  it("is off until both keys are set", async () => {
+    reset();
+    cloudflare(passes);
+    expect((await call({ mode: "config" })).body).toEqual({ turnstile_site_key: null });
+    env.TURNSTILE_SECRET_KEY = "secret-key";   // only one key
+    expect((await call({ mode: "config" })).body).toEqual({ turnstile_site_key: null });
+    const r = await call(cod());
+    expect(r.status, JSON.stringify(r.body)).toEqual(200);
+    expect(checks.length).toEqual(0);
+  });
+
+  it("sends the site key to the checkout page when it is on", async () => {
+    turnOn();
+    const r = await call({ mode: "config" });
+    expect(r.status).toEqual(200);
+    expect(r.body).toEqual({ turnstile_site_key: "site-key" });
+  });
+
+  it("refuses an order without a token and tells the page which widget to show", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    const r = await call(cod());
+    expect(r.status).toEqual(403);
+    expect(r.body.code).toEqual("VERIFICATION_REQUIRED");
+    expect(r.body.site_key).toEqual("site-key");
+    expect(calls.rpc.length).toEqual(0);
+    expect(checks.length, "nothing to send to Cloudflare").toEqual(0);
+  });
+
+  it("saves an order whose token passes, checking it with the secret key", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    const r = await call(cod({ turnstile_token: "good-token" }));
+    expect(r.status, JSON.stringify(r.body)).toEqual(200);
+    expect(checks).toEqual([{ url: SITEVERIFY, body: { secret: "secret-key", response: "good-token" } }]);
+    expect(calls.rpc[0].args.p_order.staff_alert).toEqual(null);
+  });
+
+  it("refuses an order whose token fails, or was made for another form", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    let r = await call(cod({ turnstile_token: "bad-token" }));
+    expect(r.status).toEqual(403);
+    expect(r.body.code).toEqual("VERIFICATION_FAILED");
+    cloudflare(() => ({ success: true, action: "login" }));
+    r = await call(cod({ turnstile_token: "good-token" }));
+    expect(r.body.code).toEqual("VERIFICATION_FAILED");
+    expect(calls.rpc.length).toEqual(0);
+  });
+
+  it("does not turn customers away when the check cannot run; staff get a note", async () => {
+    reset();
+    turnOn();
+    cloudflare(() => new Error("connect timeout"));
+    let r = await call(cod({ turnstile_token: "good-token" }));
+    expect(r.status, JSON.stringify(r.body)).toEqual(200);
+    expect(calls.rpc[0].args.p_order.staff_alert).toContain("security check could not be run (Cloudflare could not be reached)");
+    cloudflare(() => ({ success: false, "error-codes": ["invalid-input-secret"] }));
+    r = await call(cod({ turnstile_token: "good-token", checkout_ref: "cod-checkout-0002" }));
+    expect(r.status, JSON.stringify(r.body)).toEqual(200);
+    expect(calls.rpc[1].args.p_order.staff_alert).toContain("the Turnstile secret key is wrong");
+  });
+
+  it("UPI: the quote needs the check; the paid order with that quote does not", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    const ref = "upi-checkout-0001";
+    const upiQuote = { mode: "quote", items, shipping_address: address, payment_method: "upi", checkout_ref: ref };
+    let q = await call(upiQuote);
+    expect(q.status).toEqual(403);
+    expect(q.body.code).toEqual("VERIFICATION_REQUIRED");
+    q = await call({ ...upiQuote, turnstile_token: "good-token" });
+    expect(q.status, JSON.stringify(q.body)).toEqual(200);
+    const paid = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" },
+      expected_total: q.body.quote.total_amount, quote_token: q.body.quote_token, checkout_ref: ref });
+    expect(paid.status, JSON.stringify(paid.body)).toEqual(200);
+    expect(checks.length, "only the quote was checked").toEqual(1);
+  });
+
+  it("UPI: one check cannot be stretched to a second order", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    useOrderFunction();
+    db.products[0].stock_quantity = 10;
+    const q = await call({ mode: "quote", items, shipping_address: address, payment_method: "upi", checkout_ref: "upi-checkout-0001", turnstile_token: "good-token" });
+    const order = (ref: string, phone: string) => call({ mode: "place", items, shipping_address: { ...address, phone }, payment_method: "upi",
+      payment: { utr: "432118765432" }, expected_total: q.body.quote.total_amount, quote_token: q.body.quote_token, checkout_ref: ref });
+    expect((await order("upi-checkout-0001", "9843010986")).status).toEqual(200);
+    // The same quote with another checkout id must pass the check itself.
+    const second = await order("upi-checkout-0002", "9000000001");
+    expect(second.status).toEqual(403);
+    expect(second.body.code).toEqual("VERIFICATION_REQUIRED");
+    expect(second.body.error).toContain("your money is safe");
+    // And with the same checkout id it only finds the first order (another phone is refused).
+    expect((await order("upi-checkout-0001", "9000000001")).body.code).toEqual("CHECKOUT_REUSED");
+    expect(db.orders.length).toEqual(1);
+  });
+
+  it("answers a repeat of a saved checkout without a new check", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    useOrderFunction();
+    const first = await call(cod({ turnstile_token: "good-token" }));
+    expect(first.status).toEqual(200);
+    const again = await call(cod());
+    expect(again.status, JSON.stringify(again.body)).toEqual(200);
+    expect(again.body.already_placed).toEqual(true);
+    expect(db.orders.length).toEqual(1);
+  });
+
+  it("refuses orders from browsers still running the old checkout code", async () => {
+    reset();
+    turnOn();
+    cloudflare(passes);
+    const legacy = { allowMissingUtr: true, requestedOrderNumber: "KRT26110042" };
+    const r = await call({ mode: "place", items, shipping_address: address, payment_method: "cod", checkout_ref: "legacy:KRT26110042" }, undefined, legacy);
+    expect(r.status).toEqual(403);
+    expect(calls.rpc.length).toEqual(0);
   });
 });
