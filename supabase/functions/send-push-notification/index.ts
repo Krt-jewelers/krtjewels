@@ -1,9 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { requireAdmin } from '../_shared/admin-auth.ts'
+import { corsHeadersFor } from '../_shared/cors.ts'
 
 interface PushPayload {
   title: string
@@ -15,6 +12,7 @@ interface PushPayload {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req)
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -24,13 +22,13 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Verify admin or service call
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader && !req.headers.get('x-service-key')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Only admins (or a server call with the service role key) may send.
+    // Before, any Authorization header at all was accepted.
+    const authHeader = req.headers.get('Authorization') || ''
+    const isServiceCall = authHeader === `Bearer ${supabaseServiceKey}`
+    if (!isServiceCall) {
+      const denied = await requireAdmin(req, corsHeaders)
+      if (denied) return denied
     }
 
     const payload: PushPayload = await req.json()

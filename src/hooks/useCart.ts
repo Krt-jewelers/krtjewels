@@ -1,14 +1,29 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useGoldRate } from './useGoldRate';
-import { calculateProductPrice } from './useProducts';
+import { useMetalTypes } from './useMetalTypes';
+import {
+  calculateProductPrice,
+  priceCartLine,
+  sumLines,
+  type PricedLine,
+  type PricingVariation,
+} from '@/lib/pricing';
 import type { CartItem, Product, ProductWithPrice } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useGstSettings } from './useSiteSettings';
 
-interface CartItemWithProduct extends CartItem {
+export interface CartItemWithProduct extends CartItem {
   product: ProductWithPrice;
+  // Priced with the same function the place-order edge function uses.
+  line: PricedLine;
+}
+
+interface CartData {
+  items: CartItemWithProductRaw[];
+  variations: PricingVariation[];
 }
 
 interface CartItemWithProductRaw extends CartItem {
@@ -47,19 +62,25 @@ const writeGuestCart = (items: GuestCartItem[]) => {
 
 export function useCart() {
   const { user, authReady } = useAuth();
-  const { data: goldRate } = useGoldRate();
+  const { data: goldRate, isFetched: rateFetched } = useGoldRate();
   const { data: gstSettings } = useGstSettings();
   const gstRate = gstSettings?.rate ?? 3;
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const supabaseAny = supabase as any;
 
+  const { data: metalTypes } = useMetalTypes();
+
+  // Fetch the cart's items, products and their options. Pricing is applied
+  // below, so a new gold rate re-prices the cart without refetching it.
   const cartQuery = useQuery({
-    queryKey: ['cart', user?.id ?? 'guest', gstRate],
-    queryFn: async (): Promise<CartItemWithProduct[]> => {
+    queryKey: ['cart', user?.id ?? 'guest'],
+    queryFn: async (): Promise<CartData> => {
+      let rawItems: CartItemWithProductRaw[] = [];
+
       if (!user) {
         const guestItems = readGuestCart();
-        if (guestItems.length === 0) return [];
+        if (guestItems.length === 0) return { items: [], variations: [] };
 
         const productIds = Array.from(new Set(guestItems.map((item) => item.product_id)));
         const { data: products, error } = await supabaseAny
@@ -72,51 +93,76 @@ export function useCart() {
           throw error;
         }
 
-        const typedProducts = (products || []) as Product[];
-        const productMap = new Map(typedProducts.map((product) => [product.id, product]));
-
-        return guestItems
+        const productMap = new Map(((products || []) as Product[]).map((product) => [product.id, product]));
+        rawItems = guestItems
           .map((item) => {
             const product = productMap.get(item.product_id);
             if (!product) return null;
-
-            return {
-              ...item,
-              user_id: 'guest',
-              product: {
-                ...product,
-                calculated_price: calculateProductPrice(product, goldRate || null, undefined, gstRate),
-              },
-            };
+            return { ...item, user_id: 'guest', product };
           })
-          .filter(Boolean) as CartItemWithProduct[];
+          .filter(Boolean) as CartItemWithProductRaw[];
+      } else {
+        const { data, error } = await supabaseAny
+          .from('cart_items')
+          .select(`
+            *,
+            product:products(*)
+          `)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error fetching cart:', error);
+          throw error;
+        }
+        // Items whose product was removed or hidden come back without one.
+        rawItems = ((data || []) as CartItemWithProductRaw[]).filter((item) => !!item.product);
       }
 
-      const { data, error } = await supabaseAny
-        .from('cart_items')
-        .select(`
-          *,
-          product:products(*)
-        `)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error fetching cart:', error);
-        throw error;
+      const productIds = Array.from(new Set(rawItems.map((item) => item.product_id)));
+      let variations: PricingVariation[] = [];
+      if (productIds.length > 0) {
+        const { data: variationRows, error: variationError } = await supabaseAny
+          .from('product_variations')
+          .select('*')
+          .in('product_id', productIds);
+        if (variationError) {
+          console.error('Error fetching cart product options:', variationError);
+          throw variationError;
+        }
+        variations = (variationRows || []) as PricingVariation[];
       }
 
-      // Calculate prices for each product
-      const typedData = (data || []) as CartItemWithProductRaw[];
-      return typedData.map((item) => ({
-        ...item,
-        product: {
-          ...item.product,
-          calculated_price: calculateProductPrice(item.product, goldRate || null, undefined, gstRate),
-        },
-      }));
+      return { items: rawItems, variations };
     },
-    enabled: authReady && !!goldRate,
+    enabled: authReady,
   });
+
+  const cartItems: CartItemWithProduct[] = useMemo(() => {
+    const data = cartQuery.data;
+    if (!data) return [];
+    const byProduct = new Map<string, PricingVariation[]>();
+    for (const variation of data.variations) {
+      const list = byProduct.get(variation.product_id as string) || [];
+      list.push(variation);
+      byProduct.set(variation.product_id as string, list);
+    }
+    return data.items.map((item) => ({
+      ...item,
+      product: {
+        ...item.product,
+        calculated_price: calculateProductPrice(item.product, goldRate || null, undefined, gstRate, metalTypes || []),
+      },
+      line: priceCartLine({
+        product: item.product,
+        variations: byProduct.get(item.product_id) || [],
+        metalTypes: metalTypes || [],
+        goldRate: goldRate || null,
+        gstRate,
+        selection: item.selected_variations,
+        quantity: item.quantity,
+      }),
+    }));
+  }, [cartQuery.data, goldRate, gstRate, metalTypes]);
 
   const addToCartMutation = useMutation({
     mutationFn: async ({
@@ -336,24 +382,13 @@ export function useCart() {
     },
   });
 
-  // Calculate totals
-  const cartItems = cartQuery.data || [];
-  const subtotal = cartItems.reduce(
-    (sum, item) =>
-      sum +
-      ((item.product.calculated_price.subtotal + (item.variation_price_adjustment || 0)) *
-        item.quantity),
-    0
-  );
-  const gstTotal = cartItems.reduce(
-    (sum, item) =>
-      sum +
-      ((item.product.calculated_price.gst + (item.variation_price_adjustment || 0) * (gstRate / 100)) *
-        item.quantity),
-    0
-  );
-  const total = subtotal + gstTotal;
+  // Totals add up the priced lines, exactly as the server does.
+  const totals = sumLines(cartItems.map((item) => item.line));
+  const subtotal = totals.subtotal;
+  const gstTotal = totals.gst;
+  const total = totals.total;
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const hasPricingIssue = cartItems.some((item) => item.line.error && item.line.error !== 'NO_RATE');
 
   return {
     items: cartItems,
@@ -361,7 +396,15 @@ export function useCart() {
     subtotal,
     gstTotal,
     total,
-    isLoading: cartQuery.isLoading,
+    // Until we know who is signed in we do not know which cart to show, so
+    // that counts as loading too (otherwise the cart looks empty for a moment).
+    isLoading: !authReady || cartQuery.isLoading,
+    // Prices need the current gold rate; until it loads every price is 0.
+    isPricing: !goldRate,
+    // The rate was looked up and there is none (not just still loading).
+    rateUnavailable: rateFetched && !goldRate,
+    hasPricingIssue,
+    refetch: cartQuery.refetch,
     addToCart: addToCartMutation.mutate,
     updateQuantity: updateQuantityMutation.mutate,
     removeFromCart: removeFromCartMutation.mutate,

@@ -26,7 +26,7 @@ export function MegamenuPanel({ category, preview = false }: MegamenuPanelProps)
           id: product.id,
           title: product.product_title,
           image: product.product_image_url,
-          href: `/product/${product.id}`,
+          href: `/product/${product.product_id || product.id}`,
         }))
       : fallbackItemProducts.map((product) => ({
           id: product.id,
@@ -91,7 +91,7 @@ export function MegamenuPanel({ category, preview = false }: MegamenuPanelProps)
                             }`}
                           >
                             {item.icon_emoji ? (
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-[11px] leading-none">
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-xs leading-none">
                                 {item.icon_emoji}
                               </span>
                             ) : (

@@ -12,7 +12,24 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function WishlistPage() {
   const { items, isLoading, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+
+  // While we are still finding out who is signed in, show the loading state,
+  // not "please sign in".
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-12">
+          <h1 className="font-serif text-3xl mb-8">My Wishlist</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-80 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -101,7 +118,7 @@ export default function WishlistPage() {
                     <ShoppingBag className="w-4 h-4" />
                     Add to Cart
                   </Button>
-                  <Button
+                  <Button aria-label="Remove from wishlist"
                     variant="outline"
                     size="icon"
                     className="text-destructive hover:bg-destructive hover:text-destructive-foreground"

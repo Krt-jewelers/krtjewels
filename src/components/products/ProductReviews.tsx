@@ -170,7 +170,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                 <label className="block text-sm font-medium mb-2">Your Rating</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button
+                    <button aria-label={`${star} star${star > 1 ? 's' : ''}`}
                       key={star}
                       type="button"
                       onClick={() => setFormData((p) => ({ ...p, rating: star }))}

@@ -13,19 +13,8 @@ import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { categoryFromSlug, collectionPath } from '@/lib/categories';
 
-const categoryRouteMap: Record<string, ProductCategory> = {
-  'necklaces': 'necklaces',
-  'earrings': 'earrings',
-  'rings': 'rings',
-  'bangles': 'bangles',
-  'bracelets': 'bracelets',
-  'chains': 'chains',
-  'pendants': 'pendants',
-  'wedding-bridal': 'wedding_sets',
-  'diamond-jewellery': 'diamond_jewellery',
-  'mens-jewellery': 'mens_jewellery',
-};
 
 const defaultBannerMap: Record<string, string> = {
   necklaces: '/collection-banners/necklaces.jpg',
@@ -42,7 +31,7 @@ const defaultBannerMap: Record<string, string> = {
 
 export default function CollectionPage() {
   const { category: categorySlug } = useParams<{ category: string }>();
-  const category = categorySlug ? categoryRouteMap[categorySlug] : undefined;
+  const category = categoryFromSlug(categorySlug);
 
   const [weightRange, setWeightRange] = useState<[number, number]>([0, 200]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
@@ -94,7 +83,8 @@ export default function CollectionPage() {
   });
 
   const categoryName = category ? CATEGORY_NAMES[category] : 'All Jewellery';
-  const categoryPath = categorySlug ? `/collection/${categorySlug}` : '/shop';
+  // Canonical URL: the route is /collections/ (plural); aliases point at the main slug.
+  const categoryPath = category ? collectionPath(category) : '/shop';
   const categoryTitle = category 
     ? `${categoryName} Collection – Handcrafted Gold Jewellery | KRT Jewellers` 
     : 'Fine Jewellery Collections | KRT Jewellers';
@@ -272,7 +262,7 @@ export default function CollectionPage() {
               {metalFilter !== 'all' && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   {metalFilter.replace('_', ' ').toUpperCase()}
-                  <button onClick={() => setMetalFilter('all')}>
+                  <button aria-label="Clear metal filter" onClick={() => setMetalFilter('all')}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -280,7 +270,7 @@ export default function CollectionPage() {
               {(weightRange[0] > 0 || weightRange[1] < 200) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   Weight: {weightRange[0]}g - {weightRange[1]}g
-                  <button onClick={() => setWeightRange([0, 200])}>
+                  <button aria-label="Clear weight filter" onClick={() => setWeightRange([0, 200])}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -288,7 +278,7 @@ export default function CollectionPage() {
               {(priceRange[0] > 0 || priceRange[1] < 1000000) && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary text-sm">
                   Price: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
-                  <button onClick={() => setPriceRange([0, 1000000])}>
+                  <button aria-label="Clear price filter" onClick={() => setPriceRange([0, 1000000])}>
                     <X className="w-3 h-3" />
                   </button>
                 </span>

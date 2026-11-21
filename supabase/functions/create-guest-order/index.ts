@@ -1,113 +1,53 @@
-/// <reference path="../deno.d.ts" />
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Kept for browsers still running the old storefront code. It used to save
+// whatever prices and status the browser sent; it now goes through the same
+// server-side pricing as place-order and ignores the browser's totals and
+// status. New code calls place-order directly.
+//
+// The old code collected a UPI payment before calling this function and did
+// not send the reference, so UPI orders are accepted without one and are never
+// turned away over a price difference (staff get a note instead).
+import { corsHeadersFor, jsonResponse } from "../_shared/cors.ts";
+import { handleOrderRequest } from "../_shared/order.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(async (req: Request) => {
+  const cors = corsHeadersFor(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  if (req.method !== "POST") return jsonResponse({ error: "Method not allowed" }, 405, cors);
 
-type GuestOrderItem = {
-  product_id: string;
-  product_name: string;
-  product_image?: string | null;
-  quantity: number;
-  weight_grams: number;
-  gold_rate_applied: number;
-  making_charges: number;
-  diamond_cost: number;
-  stone_cost: number;
-  unit_price: number;
-  total_price: number;
-  selected_variations?: Record<string, unknown> | null;
-  variation_price_adjustment?: number;
-  variation_weight_adjustment?: number;
-};
-
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  let legacy: Record<string, unknown>;
   try {
-    const {
-      order_number,
-      subtotal,
-      gst_amount,
-      total_amount,
-      gold_rate_at_order,
-      shipping_address,
-      notes,
-      payment_method,
-      payment_id,
-      items,
-    } = await req.json();
-
-    if (!order_number || !total_amount || !gold_rate_at_order || !shipping_address || !Array.isArray(items)) {
-      throw new Error("Missing required order data");
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Supabase service credentials not configured");
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert([
-        {
-          user_id: null,
-          order_number,
-          status: payment_id ? "confirmed" : "pending",
-          subtotal,
-          gst_amount,
-          total_amount,
-          gold_rate_at_order,
-          shipping_address,
-          payment_method,
-          payment_id: payment_id || null,
-          notes: notes || null,
-        },
-      ])
-      .select()
-      .single();
-
-    if (orderError) throw orderError;
-
-    const orderItems = (items as GuestOrderItem[]).map((item) => ({
-      order_id: order.id,
-      product_id: item.product_id,
-      product_name: item.product_name,
-      product_image: item.product_image || null,
-      quantity: item.quantity,
-      weight_grams: item.weight_grams,
-      gold_rate_applied: item.gold_rate_applied,
-      making_charges: item.making_charges,
-      diamond_cost: item.diamond_cost,
-      stone_cost: item.stone_cost,
-      unit_price: item.unit_price,
-      total_price: item.total_price,
-      selected_variations: item.selected_variations || {},
-      variation_price_adjustment: item.variation_price_adjustment || 0,
-      variation_weight_adjustment: item.variation_weight_adjustment || 0,
-    }));
-
-    const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-    if (itemsError) throw itemsError;
-
-    return new Response(
-      JSON.stringify({ success: true, order_id: order.id, order_number: order.order_number }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error: unknown) {
-    console.error("Error creating guest order:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    legacy = await req.json();
+  } catch {
+    return jsonResponse({ error: "Invalid request", code: "BAD_REQUEST" }, 400, cors);
   }
+
+  const items = Array.isArray(legacy.items)
+    ? (legacy.items as Record<string, unknown>[]).map((item) => ({
+        product_id: String(item?.product_id ?? ""),
+        quantity: Number(item?.quantity),
+        selected_variations: item?.selected_variations ?? {},
+      }))
+    : [];
+
+  const orderNumber = typeof legacy.order_number === "string" && /^KRT[0-9]{8}$/.test(legacy.order_number)
+    ? legacy.order_number
+    : null;
+
+  return handleOrderRequest(
+    req,
+    {
+      mode: "place",
+      items,
+      shipping_address: (legacy.shipping_address || {}) as Record<string, unknown>,
+      payment_method: legacy.payment_method === "upi" ? "upi" : "cod",
+      payment: { utr: typeof legacy.payment_utr === "string" ? legacy.payment_utr : undefined },
+      notes: typeof legacy.notes === "string" ? legacy.notes : null,
+      expected_total: typeof legacy.total_amount === "number" ? legacy.total_amount : null,
+      // The old code makes one order number per attempt, so it doubles as the
+      // id that stops a retry creating a second order.
+      checkout_ref: orderNumber ? `legacy:${orderNumber}` : null,
+    },
+    cors,
+    { allowMissingUtr: true, requestedOrderNumber: orderNumber },
+  );
 });

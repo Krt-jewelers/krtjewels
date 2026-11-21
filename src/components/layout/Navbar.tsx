@@ -106,16 +106,18 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
           <div className="flex items-center justify-between h-16">
             {/* Left – Phone */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-[200px]">
-              <Phone className="w-4 h-4" />
-<a href="tel:+919843710987" className="hover:text-primary transition-colors">+91 98437 10987</a>
-
+              <a href="tel:+919843710987" className="inline-flex items-center gap-2 min-h-11 hover:text-primary transition-colors">
+                <Phone className="w-4 h-4" aria-hidden="true" />
+                <span>+91 98437 10987</span>
+              </a>
             </div>
 
                       {/* Center – Logo */}
-<Link to="/" className="absolute left-1/2 -translate-x-1/2">
-  <h1 className="font-serif text-2xl md:text-3xl font-medium tracking-[0.15em] text-black whitespace-nowrap hover:opacity-90 transition-opacity">
+<Link to="/" className="absolute left-1/2 -translate-x-1/2" aria-label="KRT Jewellers home">
+  {/* Not a heading: each page has its own single h1. */}
+  <span className="block font-serif text-2xl md:text-3xl font-medium tracking-[0.15em] text-black whitespace-nowrap hover:opacity-90 transition-opacity">
     KRT JEWELLERS
-  </h1>
+  </span>
 </Link>
 
 
@@ -191,7 +193,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
               >
                 <ShoppingBag className="w-5 h-5" />
                 {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] badge-luxury">
+                  <Badge className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1 py-0 text-xs leading-none badge-luxury">
                     {itemCount}
                   </Badge>
                 )}
@@ -205,6 +207,14 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
           aria-label="Main navigation"
           className="border-t border-border bg-background relative"
           onMouseLeave={() => setHoveredCategory(null)}
+          // Keyboard: the panel opens when a category gets focus, stays open
+          // while focus is inside it, and Escape closes it.
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHoveredCategory(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setHoveredCategory(null);
+          }}
         >
           <div className="container mx-auto px-4">
             <div className="overflow-x-auto [scrollbar-width:none]">
@@ -217,6 +227,10 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
                 >
                   <Link
                     to={getCategoryHref(category.category_slug)}
+                    onFocus={() => setHoveredCategory(category.category_slug)}
+                    {...((category.megamenu_sections?.length || category.featured_products?.length)
+                      ? { 'aria-haspopup': true, 'aria-expanded': hoveredCategory === category.category_slug }
+                      : {})}
                     className={cn(
                       "text-xs font-semibold tracking-wider uppercase transition-colors h-12 flex items-center",
                       hoveredCategory === category.category_slug
@@ -265,10 +279,10 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
             >
               <Menu className="w-5 h-5" />
             </Button>
-                        <Link to="/">
-  <h1 className="font-serif text-lg font-medium tracking-[0.15em] text-black whitespace-nowrap">
+                        <Link to="/" aria-label="KRT Jewellers home" className="inline-flex items-center min-h-11">
+  <span className="block font-serif text-lg font-medium tracking-[0.15em] text-black whitespace-nowrap">
     KRT JEWELLERS
-  </h1>
+  </span>
 </Link>
 
           </div>
@@ -296,7 +310,7 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
             >
               <ShoppingBag className="w-5 h-5" />
               {itemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] badge-luxury">
+                <Badge className="absolute -top-1 -right-1 h-4 min-w-4 flex items-center justify-center px-1 py-0 text-xs leading-none badge-luxury">
                   {itemCount}
                 </Badge>
               )}

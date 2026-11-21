@@ -53,7 +53,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <Link to="/" onClick={onClose} className="font-serif text-lg font-medium tracking-[0.15em] text-foreground whitespace-nowrap">
             KRT JEWELLERS
           </Link>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button aria-label="Close menu" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>

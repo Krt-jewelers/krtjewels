@@ -113,7 +113,7 @@ export function ProductActions({ product, variationState, calculatedPrice }: Pro
 
         {/* Angara-style: Wishlist + Price + ADD TO BAG inline */}
         <div className="hidden md:flex items-center gap-2">
-          <Button
+          <Button aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             variant="outline"
             size="icon"
             onClick={handleToggleWishlist}
@@ -164,7 +164,7 @@ export function ProductActions({ product, variationState, calculatedPrice }: Pro
         {/* Mobile sticky action bar */}
         <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-foreground text-background border-t border-border px-3 py-2">
           <div className="flex items-center gap-2">
-            <Button
+            <Button aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
               variant="outline"
               size="icon"
               onClick={handleToggleWishlist}
@@ -210,7 +210,7 @@ export function ProductActions({ product, variationState, calculatedPrice }: Pro
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">Qty:</span>
           <div className="flex items-center border border-border rounded-lg">
-            <Button
+            <Button aria-label="Decrease quantity"
               variant="ghost"
               size="icon"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -220,7 +220,7 @@ export function ProductActions({ product, variationState, calculatedPrice }: Pro
               <Minus className="w-3 h-3" />
             </Button>
             <span className="w-8 text-center text-sm font-medium">{quantity}</span>
-            <Button
+            <Button aria-label="Increase quantity"
               variant="ghost"
               size="icon"
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}

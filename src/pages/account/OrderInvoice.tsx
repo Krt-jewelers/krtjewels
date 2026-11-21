@@ -4,9 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { describeSelections } from '@/lib/selections';
+import { splitGst } from '@/lib/pricing';
 import { formatPrice, ORDER_STATUS_NAMES, type OrderStatus } from '@/lib/types';
 import { useGstSettings } from '@/hooks/useSiteSettings';
 import { ArrowLeft, Printer, Download } from 'lucide-react';
+
+// Krt Jewellers' registered GSTIN (Tamil Nadu). Admin > Tax Settings overrides it.
+const SHOP_GSTIN = '33AACFK0768M1Z7';
 
 interface OrderItem {
   id: string;
@@ -200,6 +205,10 @@ export default function OrderInvoice() {
   }
 
   const address = order.shipping_address;
+  // CGST + SGST when the buyer is in the seller's state, otherwise IGST.
+  const taxSplit = splitGst(Number(order.gst_amount) || 0, address?.state, gstSettings?.seller_state || 'Tamil Nadu');
+  const formatMoney = (amount: number) =>
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
   const itemsToRender = order.order_items;
 
   return (
@@ -238,7 +247,8 @@ export default function OrderInvoice() {
             <div>
               <h1 className="font-serif text-3xl font-bold text-primary">Krt Jewellers</h1>
               <p className="text-sm text-muted-foreground mt-1">BIS Hallmarked 916 Gold Jewellery</p>
-              <p className="text-sm font-medium text-foreground mt-0.5">GSTIN: 33AACFK0768M1Z7</p>
+              {/* The GSTIN entered in Admin > Tax Settings, else the shop's registered one. */}
+              <p className="text-sm font-medium text-foreground mt-0.5">GSTIN: {gstSettings?.gstin || SHOP_GSTIN}</p>
             </div>
             <div className="text-right mt-4 sm:mt-0">
               <h2 className="text-xl font-semibold">TAX INVOICE</h2>
@@ -293,6 +303,14 @@ export default function OrderInvoice() {
                 <span className="text-muted-foreground">Status:</span>
                 <span className="font-medium sm:ml-2">{ORDER_STATUS_NAMES[order.status]}</span>
               </div>
+              <div className="flex justify-between sm:block">
+                <span className="text-muted-foreground">HSN:</span>
+                <span className="font-medium sm:ml-2">7113 (jewellery)</span>
+              </div>
+              <div className="flex justify-between sm:block">
+                <span className="text-muted-foreground">Place of supply:</span>
+                <span className="font-medium sm:ml-2">{address.state || '—'}</span>
+              </div>
             </div>
           </div>
 
@@ -306,7 +324,7 @@ export default function OrderInvoice() {
                   <th className="text-right py-3 font-semibold">Qty</th>
                   <th className="text-right py-3 font-semibold">Rate</th>
                   <th className="text-right py-3 font-semibold">Making</th>
-                  <th className="text-right py-3 font-semibold">Amount</th>
+                  <th className="text-right py-3 font-semibold">Amount (incl. GST)</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,12 +332,12 @@ export default function OrderInvoice() {
                   <tr key={item.id} className="border-b">
                     <td className="py-3">
                       <div className="font-medium">{item.product_name}</div>
-                      {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
+                      {describeSelections(item.selected_variations).length > 0 && (
                         <div className="mt-1 text-xs text-muted-foreground space-y-0.5">
-                          {Object.entries(item.selected_variations).map(([key, value]) => (
+                          {describeSelections(item.selected_variations).map(({ key, label, value }) => (
                             <div key={key} className="flex gap-1">
-                              <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
-                              <span>{formatSelectedValue(value)}</span>
+                              <span className="font-medium">{label}:</span>
+                              <span>{value}</span>
                             </div>
                           ))}
                         </div>
@@ -342,12 +360,12 @@ export default function OrderInvoice() {
             {itemsToRender.map((item) => (
               <div key={item.id} className="border rounded-lg p-3 space-y-2">
                 <p className="font-medium text-sm">{item.product_name}</p>
-                {item.selected_variations && Object.keys(item.selected_variations).length > 0 && (
-                  <div className="text-[11px] text-muted-foreground space-y-0.5">
-                    {Object.entries(item.selected_variations).map(([key, value]) => (
+                {describeSelections(item.selected_variations).length > 0 && (
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {describeSelections(item.selected_variations).map(({ key, label, value }) => (
                       <div key={key} className="flex gap-1">
-                        <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span>
-                        <span>{formatSelectedValue(value)}</span>
+                        <span className="font-medium">{label}:</span>
+                        <span>{value}</span>
                       </div>
                     ))}
                   </div>
@@ -382,13 +400,26 @@ export default function OrderInvoice() {
           <div className="flex justify-end">
             <div className="w-full sm:w-64 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">Taxable value</span>
                 <span>{formatPrice(order.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">GST ({gstRate}%)</span>
-                <span>{formatPrice(order.gst_amount)}</span>
-              </div>
+              {taxSplit.intraState ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">CGST ({gstRate / 2}%)</span>
+                    <span>{formatMoney(taxSplit.cgst)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">SGST ({gstRate / 2}%)</span>
+                    <span>{formatMoney(taxSplit.sgst)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">IGST ({gstRate}%)</span>
+                  <span>{formatMoney(taxSplit.igst)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-lg pt-2 border-t">
                 <span>Total</span>
                 <span className="text-primary">{formatPrice(order.total_amount)}</span>

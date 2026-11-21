@@ -52,6 +52,8 @@ interface Order {
   shipping_address: any;
   payment_method: string;
   notes: string;
+  // Set by the order function when staff must check something before confirming.
+  staff_alert?: string | null;
   created_at: string;
 }
 
@@ -401,6 +403,14 @@ export default function AdminOrders() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Something to check before confirming (set by the order function) */}
+                {selectedOrder.staff_alert && (
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-lg" role="alert">
+                    <p className="text-sm font-medium mb-1 text-red-800">Check before confirming</p>
+                    <p className="text-sm text-red-900">{selectedOrder.staff_alert}</p>
+                  </div>
+                )}
 
                 {/* Notes */}
                 {selectedOrder.notes && (

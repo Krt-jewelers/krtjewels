@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -13,12 +13,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { SizeGuideDialog } from '@/components/product/SizeGuideDialog';
-import { 
-  METAL_TYPE_NAMES, 
-  CATEGORY_SIZE_OPTIONS,
-  type MetalType, 
-  type ProductCategory,
-} from '@/lib/types';
+import type { ProductCategory } from '@/lib/types';
+import {
+  buildVariantOptions,
+  computeVariationState,
+  type SelectedOptions,
+  type VariationState,
+} from '@/lib/pricing';
 import { useProductVariations } from '@/hooks/useProductVariations';
 import { useSizeChart } from '@/hooks/useSizeCharts';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,44 +36,8 @@ interface ProductVariantSelectorProps {
   baseWeightGrams: number;
   baseRatePerGram?: number;
   specifications: Record<string, any> | Json | null;
-  onVariationChange?: (variation: { 
-    metalType: string; 
-    metalTypeSlug: string;
-    size: string | null;
-    priceAdjustment: number;
-    weightAdjustment: number;
-    imageUrl: string | null;
-    isComplete?: boolean;
-    pricing?: {
-      metalRatePerGram: number;
-      metalWeightGrams: number;
-      diamondRatePerCarat: number;
-      diamondCaratWeight: number;
-      diamondCost: number;
-      extras?: { label: string; amount: number; type: 'attribute' | 'addon' | 'size' | 'metal' }[];
-      extraTotal?: number;
-    };
-    selectedOptions?: {
-      gemstoneQuality?: string | string[] | null;
-      caratWeight?: string | string[] | null;
-      attributes?: string[];
-      addOns?: string[];
-      engraving?: { text: string; font: 'script' | 'block' };
-      metalType: string;
-      metalTypeSlug?: string;
-      size?: string | null;
-    };
-  }) => void;
+  onVariationChange?: (variation: VariationState & { selectedOptions?: SelectedOptions }) => void;
 }
-
-// Metal type options (text only)
-const METAL_OPTIONS: { type: MetalType; label: string }[] = [
-  { type: 'gold_24k', label: '24K Gold' },
-  { type: 'gold_22k', label: '22K Gold' },
-  { type: 'gold_18k', label: '18K Gold' },
-  { type: 'silver', label: 'Silver' },
-  { type: 'platinum', label: 'Platinum' },
-];
 
 export function ProductVariantSelector({
   productId,
@@ -87,51 +52,6 @@ export function ProductVariantSelector({
   const { data: metalTypes = [] } = useMetalTypes();
   const { data: sizeChart } = useSizeChart(category || '');
 
-  // (debug logs moved below after computed options)
-
-  const pricingOptions = (specifications as any)?.pricing_options || {};
-  const specMetals: { slug: string; weightGrams?: number }[] = Array.isArray(pricingOptions.metals)
-    ? pricingOptions.metals
-        .map((m: any) => {
-          if (typeof m === 'string') {
-            return { slug: m };
-          }
-          if (m && typeof m.slug === 'string') {
-            return { slug: m.slug, weightGrams: Number(m.weight_grams) };
-          }
-          if (m && typeof m.metal_type === 'string') {
-            return { slug: m.metal_type, weightGrams: Number(m.weight_grams) };
-          }
-          return null;
-        })
-        .filter((m: any) => m && typeof m.slug === 'string')
-    : [];
-  const specDiamondQualities: { label: string; subtitle: string; rate_per_carat: number; is_default: boolean }[] = Array.isArray(pricingOptions.diamond_qualities)
-    ? pricingOptions.diamond_qualities
-        .filter((q: any) => q && typeof q.label === 'string')
-        .map((q: any) => ({
-          label: q.label,
-          subtitle: typeof q.subtitle === 'string' ? q.subtitle : '',
-          rate_per_carat: Number(q.rate_per_carat) || 0,
-          is_default: !!q.is_default,
-        }))
-    : [];
-  const specCaratWeights: { value: number; is_default: boolean }[] = Array.isArray(pricingOptions.carat_weights)
-    ? pricingOptions.carat_weights
-        .map((w: any) => {
-          if (typeof w === 'number') return { value: w, is_default: false };
-          if (w && typeof w.value === 'number') return { value: Number(w.value) || 0, is_default: !!w.is_default };
-          return null;
-        })
-        .filter((w: any) => w && Number.isFinite(w.value) && w.value > 0)
-    : [];
-  const specAttributes: { label: string; price: number; is_default: boolean }[] = Array.isArray(pricingOptions.attributes)
-    ? pricingOptions.attributes
-        .filter((c: any) => c && typeof c.label === 'string')
-        .map((c: any) => ({ label: c.label, price: Number(c.price) || 0, is_default: !!c.is_default }))
-    : [];
-  const useSpecOptions = specMetals.length > 0 || specDiamondQualities.length > 0 || specCaratWeights.length > 0 || specAttributes.length > 0;
-  
   const [selectedMetal, setSelectedMetal] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedGemstone, setSelectedGemstone] = useState<string>('');
@@ -145,255 +65,30 @@ export function ProductVariantSelector({
   const [engravingText, setEngravingText] = useState('');
   const [engravingFont, setEngravingFont] = useState<'script' | 'block'>('script');
 
-  // Get variations by type
-  const sizeVariations = variations.filter(v => v.variation_type === 'size');
-  const metalVariations = variations.filter(v => v.variation_type === 'metal_type');
-  const gemstoneVariations = variations.filter(v => v.variation_type === 'gemstone_quality');
-  const caratVariations = variations.filter(v => v.variation_type === 'carat_weight');
-  const certificateVariations = variations.filter(v => v.variation_type === 'certificate');
-  const customVariations = variations.filter(v => v.variation_type === 'custom');
-
-  const categoryConfig = CATEGORY_SIZE_OPTIONS[category];
-  const hasSizeVariations = sizeVariations.length > 0;
-  const hasMetalVariations = metalVariations.length > 0;
-  const hasGemstoneVariations = gemstoneVariations.length > 0;
-  const hasCaratVariations = caratVariations.length > 0;
-  const hasCertificateVariations = certificateVariations.length > 0;
-  const hasCustomVariations = customVariations.length > 0;
-
-  // Build set of valid sizes from admin Size Chart (first column = size value)
-  const sizeChartSizes: Set<string> = (() => {
-    const set = new Set<string>();
-    if (sizeChart?.chart_data?.length) {
-      const firstKey = Object.keys(sizeChart.chart_data[0])[0];
-      sizeChart.chart_data.forEach(row => {
-        const v = String(row[firstKey] ?? '').trim();
-        if (v) set.add(v);
-      });
-    }
-    return set;
-  })();
-
-  const rawSizeOptions = hasSizeVariations
-    ? sizeVariations.filter(v => v.is_available).map(v => ({
-        value: v.size_value || '',
-        label: v.size_label || '',
-        priceAdjustment: v.price_adjustment || 0,
-        weightAdjustment: v.weight_adjustment || 0,
-        stock: v.stock_quantity || 0,
-        isDefault: v.is_default,
-        imageUrl: v.image_url || null,
-      }))
-    : categoryConfig?.sizes.map(s => ({
-        value: s,
-        label: categoryConfig.label,
-        priceAdjustment: 0,
-        weightAdjustment: 0,
-        stock: 1,
-        isDefault: false,
-        imageUrl: null,
-      })) || [];
-
-  const sizeVariationMap = new Map(
-    rawSizeOptions.map((option) => [String(option.value).trim(), option])
+  // Options come from the shared pricing module so the server prices the same
+  // options the customer picked. Memoised so the effects below stay stable.
+  const variantOptions = useMemo(
+    () =>
+      buildVariantOptions({
+        category,
+        baseMetalType,
+        baseWeightGrams,
+        specifications,
+        variations,
+        metalTypes,
+        sizeChartRows: sizeChart?.chart_data as Record<string, unknown>[] | undefined,
+      }),
+    [category, baseMetalType, baseWeightGrams, specifications, variations, metalTypes, sizeChart]
   );
-
-  // If a Size Chart exists, it becomes the source of truth for visible sizes.
-  const sizeOptions = sizeChart?.chart_data?.length
-    ? sizeChart.chart_data
-        .map((row) => {
-          const firstKey = Object.keys(row)[0];
-          const sizeValue = String(row[firstKey] ?? '').trim();
-          if (!sizeValue) return null;
-
-          const matchedVariation = sizeVariationMap.get(sizeValue);
-          return {
-            value: sizeValue,
-            label: matchedVariation?.label || categoryConfig?.label || 'Size',
-            priceAdjustment: matchedVariation?.priceAdjustment || 0,
-            weightAdjustment: matchedVariation?.weightAdjustment || 0,
-            stock: matchedVariation ? matchedVariation.stock : 1,
-            isDefault: matchedVariation?.isDefault || false,
-            imageUrl: matchedVariation?.imageUrl || null,
-          };
-        })
-        .filter(Boolean)
-    : rawSizeOptions;
-
-  const defaultSpecMetalSlug = Array.isArray(pricingOptions.metals) && pricingOptions.metals.length > 0
-    ? (typeof pricingOptions.metals[0] === 'string'
-        ? pricingOptions.metals[0]
-        : pricingOptions.metals[0]?.slug || pricingOptions.metals[0]?.metal_type)
-    : null;
-  const defaultSpecMetalWeight = (() => {
-    if (defaultSpecMetalSlug) {
-      const match = specMetals.find(m => m.slug === defaultSpecMetalSlug);
-      if (match && Number.isFinite(match.weightGrams) && (match.weightGrams as number) > 0) {
-        return match.weightGrams as number;
-      }
-    }
-    const anyWeight = specMetals.find(m => Number.isFinite(m.weightGrams) && (m.weightGrams as number) > 0);
-    return anyWeight?.weightGrams ?? baseWeightGrams;
-  })();
-
-  const specMetalOptions = specMetals.map((metal) => {
-    const mt = metalTypes.find(m => m.slug === metal.slug);
-    const label = mt?.name || METAL_TYPE_NAMES[metal.slug as MetalType] || metal.slug;
-    const resolvedWeight = Number.isFinite(metal.weightGrams) && (metal.weightGrams as number) > 0
-      ? (metal.weightGrams as number)
-      : defaultSpecMetalWeight;
-    return {
-      value: metal.slug,
-      label,
-      metalType: metal.slug,
-      priceAdjustment: 0,
-      weightAdjustment: resolvedWeight - baseWeightGrams,
-      isDefault: metal.slug === baseMetalType,
-      imageUrl: null,
-    };
-  });
-
-  const availableMetals = useSpecOptions && specMetals.length > 0
-    ? specMetalOptions
-    : hasMetalVariations
-    ? metalVariations
-        .filter(v => v.is_available)
-        .map(v => ({
-          value: v.id,
-          label:
-            v.metal_label ||
-            (v.metal_type ? METAL_TYPE_NAMES[v.metal_type as MetalType] : null) ||
-            v.size_label ||
-            v.size_value ||
-            'Metal',
-          metalType: v.metal_type || baseMetalType,
-          priceAdjustment: v.price_adjustment || 0,
-          weightAdjustment: v.weight_adjustment || 0,
-          isDefault: v.is_default || false,
-          imageUrl: v.image_url || null,
-        }))
-    : METAL_OPTIONS.map(m => ({
-        value: m.type,
-        label: m.label,
-        metalType: m.type,
-        priceAdjustment: 0,
-        weightAdjustment: 0,
-        isDefault: m.type === baseMetalType,
-        imageUrl: null,
-      }));
-
-  const sizeLabel = categoryConfig?.label || 'Size';
-
-  const isUuidLike = (value?: string | null) =>
-    !!value &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-
-  const looksLikeUrl = (value?: string | null) => !!value && /^https?:\/\//i.test(value);
-
-  const normalizeLabel = (label?: string | null, value?: string | null) => {
-    const trimmedLabel = label?.trim();
-    if (trimmedLabel) return trimmedLabel;
-    if (value && !isUuidLike(value) && !looksLikeUrl(value)) return value;
-    return 'Option';
-  };
-
-  const inferImageUrl = (explicit: string | null, fallbackA?: string | null, fallbackB?: string | null) => {
-    if (explicit) return explicit;
-    if (looksLikeUrl(fallbackA)) return fallbackA as string;
-    if (looksLikeUrl(fallbackB)) return fallbackB as string;
-    return null;
-  };
-
-  const gemstoneOptions = useSpecOptions && specDiamondQualities.length > 0
-    ? specDiamondQualities.map((q) => ({
-        value: q.label,
-        label: q.label,
-        subtitle: q.subtitle,
-        priceAdjustment: q.rate_per_carat,
-        weightAdjustment: 0,
-        isDefault: q.is_default,
-        imageUrl: null,
-        selectionMode: 'single',
-        groupLabel: 'Diamond Quality',
-      }))
-    : hasGemstoneVariations
-    ? gemstoneVariations.filter(v => v.is_available).map(v => ({
-        value: v.size_value || v.size_label || v.id,
-        label: normalizeLabel(v.size_label || v.size_value || v.metal_label || '', v.size_value || v.size_label || v.id),
-        priceAdjustment: v.price_adjustment || 0,
-        weightAdjustment: v.weight_adjustment || 0,
-        isDefault: v.is_default,
-        imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
-        selectionMode: v.selection_mode || 'single',
-        groupLabel: v.variation_group || 'Gemstone Quality',
-      }))
-    : [];
-
-  const caratOptions = useSpecOptions && specCaratWeights.length > 0
-    ? specCaratWeights.map((w) => ({
-        value: String(w.value),
-        label: `${w.value} ct`,
-        priceAdjustment: 0,
-        weightAdjustment: 0,
-        isDefault: w.is_default,
-        imageUrl: null,
-        selectionMode: 'single',
-        groupLabel: 'Total Carat Weight',
-      }))
-    : hasCaratVariations
-    ? caratVariations.filter(v => v.is_available).map(v => ({
-        value: v.size_value || v.size_label || v.id,
-        label: normalizeLabel(v.size_label || v.size_value || '', v.size_value || v.size_label || v.id),
-        priceAdjustment: v.price_adjustment || 0,
-        weightAdjustment: v.weight_adjustment || 0,
-        isDefault: v.is_default,
-        imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
-        selectionMode: v.selection_mode || 'single',
-        groupLabel: v.variation_group || 'Total Carat Weight',
-      }))
-    : [];
-
-  const attributeOptions = useSpecOptions && specAttributes.length > 0
-    ? specAttributes.map((c) => ({
-        value: c.label,
-        label: c.label,
-        priceAdjustment: c.price,
-        imageUrl: null,
-        isDefault: c.is_default,
-        selectionMode: 'single',
-        groupLabel: 'Gold Colour',
-      }))
-    : hasCertificateVariations
-    ? certificateVariations.filter(v => v.is_available).map(v => ({
-        value: v.id,
-        label: normalizeLabel(v.size_label || v.size_value || '', v.id),
-        priceAdjustment: v.price_adjustment || 0,
-        imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
-        isDefault: v.is_default,
-        selectionMode: v.selection_mode || 'single',
-        groupLabel: v.variation_group || 'Gold Colour',
-      }))
-    : [];
-
-  const customOptions = hasCustomVariations
-    ? customVariations.filter(v => v.is_available).map(v => ({
-        value: v.id,
-        label: normalizeLabel(v.size_label || v.size_value || '', v.id),
-        priceAdjustment: v.price_adjustment || 0,
-        imageUrl: inferImageUrl(v.image_url || null, v.size_value, v.size_label),
-        isDefault: v.is_default,
-        selectionMode: v.selection_mode || 'multi',
-        groupLabel: v.variation_group || 'Add Ons',
-      }))
-    : [];
-
-  const parseCaratWeight = (value?: string | null, label?: string | null) => {
-    const candidate = `${value || ''} ${label || ''}`.trim();
-    const match = candidate.match(/([0-9]*\.?[0-9]+)/);
-    if (!match) return 0;
-    const parsed = parseFloat(match[1]);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
+  const {
+    availableMetals,
+    sizeOptions,
+    gemstoneOptions,
+    caratOptions,
+    attributeOptions,
+    customOptions,
+    sizeLabel,
+  } = variantOptions;
 
   // Debug: log variations and computed options to help diagnose issues
   if (process.env.NODE_ENV !== 'production') {
@@ -402,18 +97,15 @@ export function ProductVariantSelector({
   }
 
   // Set default selections only when there's a single option
+  // Pick the default metal, and pick again if the options change under us
+  // (the fallback list shows while variations load, then real options replace it).
+  const selectedMetalIsCurrent = availableMetals.some(m => m.value === selectedMetal);
   useEffect(() => {
-    if (availableMetals.length === 1 && !selectedMetal) {
-      setSelectedMetal(availableMetals[0].value);
-    }
-  }, [availableMetals, selectedMetal]);
-
-  useEffect(() => {
-    if (availableMetals.length > 1 && !selectedMetal) {
+    if (availableMetals.length > 0 && !selectedMetalIsCurrent) {
       const defaultMetal = availableMetals.find(m => m.isDefault) || availableMetals[0];
       if (defaultMetal) setSelectedMetal(defaultMetal.value);
     }
-  }, [availableMetals, selectedMetal]);
+  }, [availableMetals, selectedMetalIsCurrent]);
 
   useEffect(() => {
     if (sizeOptions.length === 1 && !selectedSize) {
@@ -485,157 +177,52 @@ export function ProductVariantSelector({
     }
   }, [customOptions]);
 
+  const variationState = useMemo(
+    () =>
+      computeVariationState({
+        options: variantOptions,
+        selected: {
+          metal: selectedMetal,
+          size: selectedSize,
+          gemstone: selectedGemstone,
+          gemstones: selectedGemstones,
+          carat: selectedCarat,
+          carats: selectedCarats,
+          attributes: selectedAttributes,
+          addOns: selectedCustomAddons,
+          engravingText,
+          engravingFont,
+        },
+        metalTypes,
+        baseMetalType,
+        baseWeightGrams,
+        baseRatePerGram,
+      }),
+    [
+      variantOptions,
+      selectedMetal,
+      selectedSize,
+      selectedGemstone,
+      selectedGemstones,
+      selectedCarat,
+      selectedCarats,
+      selectedAttributes,
+      selectedCustomAddons,
+      engravingText,
+      engravingFont,
+      metalTypes,
+      baseMetalType,
+      baseWeightGrams,
+      baseRatePerGram,
+    ]
+  );
+
+  // Report only real changes; reporting on every render re-rendered the page in a loop.
+  const variationSignature = JSON.stringify(variationState);
   useEffect(() => {
-    const selectedMetalOption = availableMetals.find(m => m.value === selectedMetal);
-    const selectedSizeOption = sizeOptions.find(s => s.value === selectedSize);
-    const gemstoneIsMulti = gemstoneOptions[0]?.selectionMode === 'multi';
-    const caratIsMulti = caratOptions[0]?.selectionMode === 'multi';
-    const selectedGemOption = gemstoneOptions.find(g => g.value === selectedGemstone);
-    const selectedCaratOption = caratOptions.find(c => c.value === selectedCarat);
-    const selectedGemOptions = gemstoneIsMulti
-      ? gemstoneOptions.filter(g => selectedGemstones.includes(g.value))
-      : selectedGemOption
-      ? [selectedGemOption]
-      : [];
-    const selectedCaratOptions = caratIsMulti
-      ? caratOptions.filter(c => selectedCarats.includes(c.value))
-      : selectedCaratOption
-      ? [selectedCaratOption]
-      : [];
-    const selectedCertOptions = attributeOptions.filter(c => selectedAttributes.includes(c.value));
-    const selectedCustomOptions = customOptions.filter(c => selectedCustomAddons.includes(c.value));
-    const engravingOption = customOptions.find(c =>
-      c.label.toLowerCase().includes('engraving') || c.value.toLowerCase().includes('engraving')
-    );
-    const engravingSelected = engravingOption ? selectedCustomAddons.includes(engravingOption.value) : false;
-
-    // Only use metal/size images to swap the main product image.
-    // Gemstone/carat/certificate/add-on images are for swatches only.
-    const imageUrl =
-      selectedMetalOption?.imageUrl ||
-      selectedSizeOption?.imageUrl ||
-      null;
-
-    const gemstoneComplete = gemstoneOptions.length === 0 || (gemstoneIsMulti
-      ? selectedGemstones.length > 0
-      : !!selectedGemstone);
-    const caratComplete = caratOptions.length === 0 || (caratIsMulti
-      ? selectedCarats.length > 0
-      : !!selectedCarat);
-    const metalComplete = availableMetals.length === 0 || !!selectedMetal;
-    const sizeComplete = sizeOptions.length === 0 || !!selectedSize;
-    const isComplete = metalComplete && sizeComplete && gemstoneComplete && caratComplete;
-
-    const getRateBySlug = (slug?: string | null) =>
-      metalTypes.find(mt => mt.slug === slug)?.rate_per_gram ?? null;
-
-    const baseRate = typeof baseRatePerGram === 'number' && baseRatePerGram > 0
-      ? baseRatePerGram
-      : getRateBySlug(baseMetalType) || 0;
-    const selectedRate = getRateBySlug(selectedMetalOption?.metalType || baseMetalType) || baseRate;
-    const metalRateDelta = baseRate > 0 ? (selectedRate - baseRate) * baseWeightGrams : 0;
-    const explicitMetalAdjustment = selectedMetalOption?.priceAdjustment || 0;
-    const metalPriceAdjustment = explicitMetalAdjustment !== 0 ? explicitMetalAdjustment : metalRateDelta;
-
-    const certificatePrice = selectedCertOptions.reduce((sum, cert) => sum + (cert.priceAdjustment || 0), 0);
-    const customPrice = selectedCustomOptions.reduce((sum, opt) => sum + (opt.priceAdjustment || 0), 0);
-    const totalCaratWeight = selectedCaratOptions.reduce(
-      (sum, c) => sum + parseCaratWeight(c.value, c.label),
-      0
-    );
-    const perCaratRate = selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0);
-    const diamondCost = perCaratRate > 0 && totalCaratWeight > 0
-      ? perCaratRate * totalCaratWeight
-      : 0;
-    const gemstoneFallbackPrice = totalCaratWeight <= 0
-      ? selectedGemOptions.reduce((sum, g) => sum + (g.priceAdjustment || 0), 0)
-      : 0;
-    const caratExtraPrice = selectedCaratOptions.reduce((sum, c) => sum + (c.priceAdjustment || 0), 0);
-
-    const gemstoneSelectionLabels = selectedGemOptions.map(g => g.label);
-    const caratSelectionLabels = selectedCaratOptions.map(c => c.label);
-
-    const metalTypeSlug = selectedMetalOption?.metalType || baseMetalType;
-    const metalTypeLabel = selectedMetalOption?.label || METAL_TYPE_NAMES[baseMetalType as MetalType] || selectedMetal;
-    const metalWeightGrams = baseWeightGrams +
-      (selectedMetalOption?.weightAdjustment || 0) +
-      (selectedSizeOption?.weightAdjustment || 0);
-
-    const extras = [
-      ...(selectedCertOptions.map(c => ({ label: c.label, amount: c.priceAdjustment || 0, type: 'attribute' as const }))),
-      ...(selectedCustomOptions.map(o => ({ label: o.label, amount: o.priceAdjustment || 0, type: 'addon' as const }))),
-      ...(selectedSizeOption?.priceAdjustment
-        ? [{ label: `${sizeLabel} Adjustment`, amount: selectedSizeOption.priceAdjustment, type: 'size' as const }]
-        : []),
-      ...(explicitMetalAdjustment !== 0
-        ? [{ label: `${metalTypeLabel} Adjustment`, amount: explicitMetalAdjustment, type: 'metal' as const }]
-        : []),
-    ];
-    const extrasTotal = extras.reduce((sum, e) => sum + (e.amount || 0), 0);
-
-    onVariationChange?.({
-      metalType: metalTypeLabel,
-      metalTypeSlug,
-      size: selectedSize || null,
-      priceAdjustment:
-        metalPriceAdjustment +
-        (selectedSizeOption?.priceAdjustment || 0) +
-        diamondCost +
-        gemstoneFallbackPrice +
-        caratExtraPrice +
-        certificatePrice +
-        customPrice,
-      weightAdjustment: (selectedMetalOption?.weightAdjustment || 0) + (selectedSizeOption?.weightAdjustment || 0),
-      imageUrl,
-      isComplete,
-      pricing: {
-        metalRatePerGram: selectedRate,
-        metalWeightGrams,
-        diamondRatePerCarat: perCaratRate,
-        diamondCaratWeight: totalCaratWeight,
-        diamondCost,
-        extras,
-        extraTotal: extrasTotal,
-      },
-      selectedOptions: {
-        gemstoneQuality: gemstoneIsMulti
-          ? gemstoneSelectionLabels
-          : selectedGemOption?.label || selectedGemOption?.value || null,
-        caratWeight: caratIsMulti
-          ? caratSelectionLabels
-          : selectedCaratOption?.label || selectedCaratOption?.value || null,
-        attributes: selectedCertOptions.map((cert) => cert.label),
-        addOns: selectedCustomOptions.map((opt) => opt.label),
-        engraving: engravingSelected && engravingText.trim()
-          ? { text: engravingText.trim(), font: engravingFont }
-          : undefined,
-        metalType: metalTypeLabel,
-        metalTypeSlug,
-        size: selectedSize || null,
-      },
-    });
-  }, [
-    selectedMetal,
-    selectedSize,
-    selectedGemstone,
-    selectedCarat,
-    selectedAttributes,
-    selectedGemstones,
-    selectedCarats,
-    selectedCustomAddons,
-    engravingText,
-    engravingFont,
-    availableMetals,
-    sizeOptions,
-    gemstoneOptions,
-    caratOptions,
-    attributeOptions,
-    customOptions,
-    baseRatePerGram,
-    baseMetalType,
-    baseWeightGrams,
-    metalTypes,
-  ]);
+    onVariationChange?.(variationState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variationSignature]);
 
   const selectedMetalOption = availableMetals.find(m => m.value === selectedMetal);
 
@@ -705,7 +292,7 @@ export function ProductVariantSelector({
                 <span className="text-xs font-medium">
                   {option.label || option.value || 'Option'}
                 </span>
-                <span className="text-[10px] opacity-80">
+                <span className="text-xs opacity-80">
                   {(option as any).subtitle || ' '}
                 </span>
               </button>
@@ -810,7 +397,7 @@ export function ProductVariantSelector({
               {selectedSize && <span className="text-primary font-semibold ml-1">: {selectedSize}</span>}
             </label>
             <button 
-              className="text-[10px] text-primary hover:underline"
+              className="text-xs text-primary hover:underline"
               onClick={() => setIsSizeGuideOpen(!isSizeGuideOpen)}
             >
               Size Guide
@@ -838,7 +425,7 @@ export function ProductVariantSelector({
                     <div className="w-10 h-10 rounded overflow-hidden">
                       <img src={size.imageUrl} alt={size.value} className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-[10px] font-medium mt-0.5">{size.value}</span>
+                    <span className="text-xs font-medium mt-0.5">{size.value}</span>
                   </div>
                 ) : (
                   <div className="h-10 min-w-[3rem] px-3 flex items-center justify-center">
@@ -846,7 +433,7 @@ export function ProductVariantSelector({
                   </div>
                 )}
                 {size.priceAdjustment !== 0 && (
-                  <span className="text-[8px] opacity-80 block text-center pb-0.5">
+                  <span className="text-xs opacity-80 block text-center pb-0.5">
                     {size.priceAdjustment > 0 ? '+' : ''}₹{Math.abs(size.priceAdjustment)}
                   </span>
                 )}
@@ -905,7 +492,7 @@ export function ProductVariantSelector({
                       <span className="text-xs font-medium">{cert.label}</span>
                   </div>
                   {cert.priceAdjustment !== 0 && (
-                     <span className="text-[10px] opacity-80">
+                     <span className="text-xs opacity-80">
                       +₹{cert.priceAdjustment.toLocaleString('en-IN')}
                     </span>
                   )}
@@ -963,7 +550,7 @@ export function ProductVariantSelector({
                   </div>
                   <div className="flex items-center gap-2">
                     {opt.priceAdjustment === 0 && isEngraving && (
-                      <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] text-primary-foreground">FREE</span>
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">FREE</span>
                     )}
                     {opt.priceAdjustment !== 0 && (
                       <span className="text-xs text-muted-foreground">
@@ -998,7 +585,7 @@ export function ProductVariantSelector({
                   {engravingText.trim() || 'Your Text Here'}
                 </span>
               </div>
-              <div className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-muted-foreground">
+              <div className="absolute bottom-2 left-0 right-0 text-center text-xs text-muted-foreground">
                 Preview
               </div>
             </div>

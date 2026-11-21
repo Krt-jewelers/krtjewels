@@ -10,6 +10,10 @@ interface FreeShippingSettings {
 
 interface GstSettings {
   rate: number;
+  // Printed on tax invoices. Empty until the business enters it in admin.
+  gstin?: string;
+  // State the business is registered in; decides CGST+SGST vs IGST.
+  seller_state?: string;
 }
 
 interface DeliveryPincodeSettings {
@@ -112,9 +116,11 @@ export function useGstSettings() {
         return { rate: 3 } as GstSettings;
       }
 
-      const value = data.value as { rate?: number };
+      const value = data.value as { rate?: number; gstin?: string; seller_state?: string };
       return {
         rate: value.rate ?? 3,
+        gstin: value.gstin ?? '',
+        seller_state: value.seller_state || 'Tamil Nadu',
       } as GstSettings;
     },
   });
@@ -134,6 +140,8 @@ export function useUpdateGstSettings() {
 
       const jsonValue: Json = {
         rate: settings.rate,
+        gstin: (settings.gstin || '').trim().toUpperCase(),
+        seller_state: settings.seller_state || 'Tamil Nadu',
       };
 
       if (existing) {

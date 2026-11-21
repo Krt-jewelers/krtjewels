@@ -1,17 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-success
 
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# Generated live (every page, product and blog post) by the blog-sitemap
+# function; vercel.json serves it at this address.
 Sitemap: https://www.krtjewellers.com/sitemap.xml
-

@@ -73,7 +73,7 @@ export default function ComparePage() {
                 {products.map((product) => (
                   <th key={product.id} className="p-4 bg-secondary/50 min-w-[250px]">
                     <div className="relative">
-                      <button
+                      <button aria-label="Remove from comparison"
                         onClick={() => removeProduct(product.id)}
                         className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90"
                       >

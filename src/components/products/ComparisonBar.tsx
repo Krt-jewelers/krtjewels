@@ -34,7 +34,7 @@ export function ComparisonBar() {
                 <span className="text-sm font-medium max-w-[120px] truncate hidden sm:block">
                   {product.name}
                 </span>
-                <button
+                <button aria-label="Remove from comparison"
                   onClick={() => removeProduct(product.id)}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90"
                 >

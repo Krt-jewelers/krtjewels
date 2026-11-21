@@ -12,7 +12,6 @@ import {
   Medal,
   Lock,
 } from 'lucide-react';
-import { FoundifCredit } from './FoundifCredit';
 import { useFooterContact } from '@/hooks/useFooterContact';
 
 const collections = [
@@ -20,7 +19,7 @@ const collections = [
   { name: 'Earrings', href: '/collections/earrings' },
   { name: 'Rings', href: '/collections/rings' },
   { name: 'Bangles', href: '/collections/bangles' },
-  { name: 'Wedding Sets', href: '/collections/wedding-sets' },
+  { name: 'Wedding Sets', href: '/collections/wedding-bridal' },
   { name: 'Diamond', href: '/collections/diamond-jewellery' },
 ];
 
@@ -65,7 +64,7 @@ export function Footer() {
             >
               <b.icon className="w-5 h-5 text-primary mx-auto mb-1" />
               <p className="text-xs font-medium text-primary">{b.name}</p>
-              <p className="text-[10px] text-ivory/50">{b.desc}</p>
+              <p className="text-xs text-ivory/50">{b.desc}</p>
             </div>
           ))}
 
@@ -251,9 +250,8 @@ export function Footer() {
             <p className="text-ivory/40 text-sm">
               © {new Date().getFullYear()} KRT JEWELLERS. All rights reserved.
             </p>
-            <FoundifCredit />
-            
-                                 {/* Social Links */}
+
+            {/* Social Links */}
             <div className="flex items-center gap-4">
               <a href="https://www.instagram.com/krtjewellers/" target="_blank" rel="noopener noreferrer" aria-label="Visit KRT Jewellers on Instagram" className="text-ivory/40 hover:text-primary transition-colors">
                 <Instagram className="w-5 h-5" />

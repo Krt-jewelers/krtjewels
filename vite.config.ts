@@ -3,6 +3,24 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { copyFileSync, existsSync } from "fs";
+
+// Vercel serves dist/404.html with a real 404 status for addresses that match
+// no route (see vercel.json); it is the app itself, so it shows the 404 page.
+const spaNotFoundPage = () => {
+  let outDir = path.resolve(__dirname, "dist");
+  return {
+    name: "spa-404-page",
+    apply: "build" as const,
+    configResolved(config: { root: string; build: { outDir: string } }) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const index = path.join(outDir, "index.html");
+      if (existsSync(index)) copyFileSync(index, path.join(outDir, "404.html"));
+    },
+  };
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -10,6 +28,12 @@ export default defineConfig(({ mode }) => ({
   // Changes every build, letting the app detect stale cached bundles.
   define: {
     __APP_BUILD_ID__: JSON.stringify(new Date().toISOString()),
+  },
+  // Drop console.log/debug/info calls from production bundles (warnings and
+  // errors stay). Source maps are not generated for production builds.
+  esbuild: mode === "production" ? { pure: ["console.log", "console.debug", "console.info"] } : undefined,
+  build: {
+    sourcemap: false,
   },
   server: {
     host: "::",
@@ -21,6 +45,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    spaNotFoundPage(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [

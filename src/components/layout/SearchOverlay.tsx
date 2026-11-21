@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPrice, CATEGORY_NAMES, ProductCategory } from '@/lib/types';
 import { logSearch } from '@/hooks/useAnalyticsTracker';
+import { collectionPath } from '@/lib/categories';
 
 interface SearchOverlayProps {
   isOpen: boolean;
@@ -74,7 +75,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             onKeyDown={(e) => e.key === 'Enter' && handleSearch(query)}
             className="flex-1 border-0 text-lg focus-visible:ring-0 bg-transparent"
           />
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button aria-label="Close search" variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -130,7 +131,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   {Object.entries(CATEGORY_NAMES).map(([key, name]) => (
                     <button
                       key={key}
-                      onClick={() => navigate(`/collections/${key.replace('_', '-')}`)}
+                      onClick={() => navigate(collectionPath(key))}
                       className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary text-left transition-colors"
                     >
                       <span className="text-sm font-medium">{name}</span>

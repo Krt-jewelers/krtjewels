@@ -1,5 +1,7 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
+import { SEO } from '@/components/layout/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,7 +44,9 @@ const statusColors: Record<OrderStatus, string> = {
 };
 
 export default function TrackOrder() {
-  const [orderNumber, setOrderNumber] = useState('');
+  const [searchParams] = useSearchParams();
+  const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '');
+  const [phone, setPhone] = useState('');
   const [order, setOrder] = useState<OrderWithItems | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -52,75 +56,48 @@ export default function TrackOrder() {
     e.preventDefault();
     if (!orderNumber.trim()) return;
 
+    const cleanedOrderNumber = orderNumber.trim().toUpperCase().replace(/\s/g, '');
+    const withPrefix = cleanedOrderNumber.startsWith('KRT') ? cleanedOrderNumber : `KRT${cleanedOrderNumber.replace(/[^0-9]/g, '')}`;
+    if (phone.replace(/\D/g, '').length < 10) {
+      toast({
+        title: 'Enter your phone number',
+        description: 'Use the mobile number you gave at checkout.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     setSearched(true);
-    
-    // Clean and normalize the order number
-    const cleanedOrderNumber = orderNumber.trim().toUpperCase();
-    
-    // Also extract just the numeric part if user enters like "26014071" or "KRT26014071"
-    const numericPart = cleanedOrderNumber.replace(/[^0-9]/g, '');
-
     try {
-      // Try exact match first
-      let { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_number', cleanedOrderNumber)
-        .maybeSingle();
-      
-      // If no exact match, try with KRT prefix
-      if (!orderData && !orderError && numericPart) {
-        const withPrefix = `KRT${numericPart}`;
-        const { data: prefixMatch, error: prefixError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('order_number', withPrefix)
-          .maybeSingle();
-        
-        if (!prefixError) {
-          orderData = prefixMatch;
-        }
-      }
-      
-      // If still no match, try partial/contains search
-      if (!orderData && !orderError) {
-        const searchTerm = numericPart || cleanedOrderNumber;
-        const { data: partialMatch, error: partialError } = await supabase
-          .from('orders')
-          .select('*')
-          .ilike('order_number', `%${searchTerm}%`)
-          .limit(1)
-          .maybeSingle();
-        
-        if (!partialError) {
-          orderData = partialMatch;
-        }
-      }
+      // Matches the order number and the phone number on the order, so only
+      // the customer can see it (works for guest orders too).
+      // Cast: lookup_order is added by a migration, so it is not in the
+      // generated database types until they are regenerated.
+      const { data, error } = await (supabase as any).rpc('lookup_order', {
+        p_order_number: withPrefix,
+        p_phone: phone,
+      });
+      if (error) throw error;
 
-      if (orderError) throw orderError;
-
-      if (!orderData) {
+      const found = data as Omit<OrderWithItems, 'id'> | null;
+      if (!found) {
         setOrder(null);
         toast({
           title: 'Order not found',
-          description: 'Please check your order number and try again. Try entering the full order number like KRT26014071.',
+          description: 'Check the order number (for example KRT261112345678) and the phone number used at checkout.',
           variant: 'destructive',
         });
         return;
       }
 
-      const { data: items, error: itemsError } = await supabase
-        .from('order_items')
-        .select('product_name, product_image, quantity, total_price')
-        .eq('order_id', orderData.id);
-
-      if (itemsError) throw itemsError;
-
       setOrder({
-        ...orderData,
-        status: orderData.status as OrderStatus,
-        items: items || [],
+        id: found.order_number,
+        order_number: found.order_number,
+        status: found.status as OrderStatus,
+        total_amount: found.total_amount,
+        created_at: found.created_at,
+        items: found.items || [],
       });
     } catch (error: any) {
       toast({
@@ -140,6 +117,11 @@ export default function TrackOrder() {
 
   return (
     <Layout>
+      <SEO
+        title="Track Your Order"
+        description="Check the status of your KRT Jewellers order with your order number and the phone number used at checkout."
+        path="/track-order"
+      />
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="max-w-2xl mx-auto text-center mb-12">
@@ -147,23 +129,34 @@ export default function TrackOrder() {
             Track Your Order
           </h1>
           <p className="text-muted-foreground">
-            Enter your order number to check the current status of your order.
+            Enter your order number and the phone number you used at checkout.
           </p>
         </div>
 
         {/* Search Form */}
         <Card className="max-w-lg mx-auto mb-12">
           <CardContent className="p-6">
-            <form onSubmit={handleSearch} className="flex gap-3">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
                 <Input
-                  placeholder="Enter Order Number (e.g., KRT-XXXXX)"
+                  aria-label="Order number"
+                  placeholder="Order number, e.g. KRT261112345678"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   className="pl-10 h-12"
                 />
               </div>
+              <Input
+                aria-label="Phone number used at checkout"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="h-12 sm:w-44"
+              />
               <Button type="submit" className="btn-premium h-12 px-6" disabled={isLoading}>
                 {isLoading ? (
                   <span className="animate-pulse">Searching...</span>

@@ -99,13 +99,13 @@ export function ProductCardSlider({ images, productName }: ProductCardSliderProp
       {/* Navigation arrows */}
       {hasMultipleImages && isHovering && (
         <>
-          <button
+          <button aria-label="Previous image"
             onClick={goToPrevious}
             className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors z-10"
           >
             <ChevronLeft className="w-4 h-4 text-foreground" />
           </button>
-          <button
+          <button aria-label="Next image"
             onClick={goToNext}
             className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center hover:bg-white transition-colors z-10"
           >
@@ -134,7 +134,7 @@ export function ProductCardSlider({ images, productName }: ProductCardSliderProp
             />
           ))}
           {images.length > 5 && (
-            <span className="text-white text-[10px] leading-none">+{images.length - 5}</span>
+            <span className="text-white text-xs leading-none">+{images.length - 5}</span>
           )}
         </div>
       )}

@@ -121,7 +121,7 @@ export function ImageLightbox({ images, initialIndex, isOpen, onClose }: ImageLi
   return (
     <div className="fixed inset-0 z-50 bg-rich-black/95 backdrop-blur-sm">
       {/* Close button */}
-      <Button
+      <Button aria-label="Close"
         variant="ghost"
         size="icon"
         className="absolute top-4 right-4 z-50 text-white hover:bg-white/10"
@@ -143,7 +143,7 @@ export function ImageLightbox({ images, initialIndex, isOpen, onClose }: ImageLi
       {/* Navigation buttons */}
       {images.length > 1 && (
         <>
-          <Button
+          <Button aria-label="Previous image"
             variant="ghost"
             size="icon"
             className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/10 w-12 h-12"
@@ -151,7 +151,7 @@ export function ImageLightbox({ images, initialIndex, isOpen, onClose }: ImageLi
           >
             <ChevronLeft className="w-8 h-8" />
           </Button>
-          <Button
+          <Button aria-label="Next image"
             variant="ghost"
             size="icon"
             className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/10 w-12 h-12"
@@ -205,7 +205,7 @@ export function ImageLightbox({ images, initialIndex, isOpen, onClose }: ImageLi
       {images.length > 1 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
           {images.map((image, index) => (
-            <button
+            <button aria-label={`Show image ${index + 1}`}
               key={index}
               onClick={() => { setCurrentIndex(index); setIsZoomed(false); }}
               className={cn(

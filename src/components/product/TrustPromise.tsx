@@ -23,7 +23,7 @@ export function TrustPromise() {
                 <p.icon className="w-5 h-5 text-primary" />
               </div>
               <h4 className="font-semibold text-xs mb-0.5">{p.title}</h4>
-              <p className="text-[10px] text-muted-foreground">{p.description}</p>
+              <p className="text-xs text-muted-foreground">{p.description}</p>
             </div>
           ))}
         </div>

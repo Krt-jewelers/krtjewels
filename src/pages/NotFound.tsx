@@ -1,11 +1,30 @@
 import { SEO } from '@/components/layout/SEO';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Compass, Home, Sparkles, Phone } from 'lucide-react';
+import { Compass, Home, Sparkles, Phone, Search } from 'lucide-react';
+import { collectionPath } from '@/lib/categories';
+
+const POPULAR = [
+  { name: 'Necklaces', category: 'necklaces' },
+  { name: 'Rings', category: 'rings' },
+  { name: 'Earrings', category: 'earrings' },
+  { name: 'Bangles', category: 'bangles' },
+  { name: 'Wedding Sets', category: 'wedding_sets' },
+];
 
 
 export default function NotFound() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/shop?q=${encodeURIComponent(q)}` : '/shop');
+  };
+
   return (
     <Layout>
       <SEO title="404 – Page Not Found" noindex={true} />
@@ -28,6 +47,33 @@ export default function NotFound() {
               The page or exquisite jewel you are looking for may have been moved, renamed, or is currently being curated.
             </p>
           </div>
+
+          <form onSubmit={handleSearch} role="search" className="flex gap-2 max-w-md mx-auto pt-2">
+            <label htmlFor="notfound-search" className="sr-only">Search jewellery</label>
+            <input
+              id="notfound-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search rings, chains, bangles…"
+              className="flex-1 h-12 rounded-md bg-white/10 border border-white/20 px-4 text-ivory placeholder:text-ivory/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            />
+            <Button type="submit" className="btn-luxury h-12 px-4" aria-label="Search">
+              <Search className="w-4 h-4" aria-hidden="true" />
+            </Button>
+          </form>
+
+          <nav aria-label="Popular collections" className="flex flex-wrap justify-center gap-2">
+            {POPULAR.map((c) => (
+              <Link
+                key={c.category}
+                to={collectionPath(c.category)}
+                className="inline-flex items-center min-h-11 px-4 rounded-full border border-white/20 text-sm text-ivory/80 hover:border-primary hover:text-primary transition-colors"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </nav>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
             <Button asChild className="btn-luxury w-full sm:w-auto h-12 px-6">

@@ -36,7 +36,7 @@ export function BridalBanner() {
             is handcrafted to celebrate the beginning of your beautiful journey.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link to="/collections/wedding-sets">
+            <Link to="/collections/wedding-bridal">
               <Button className="btn-premium text-base md:text-lg px-8 md:px-10 py-6 md:py-7 rounded-full shadow-xl">
                 Explore Bridal Sets
               </Button>
