@@ -236,9 +236,9 @@ export default function OrderInvoice() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b">
             <div>
-              <h1 className="font-serif text-3xl font-bold text-primary">KRT Jewels</h1>
+              <h1 className="font-serif text-3xl font-bold text-primary">Krt Jewellers</h1>
               <p className="text-sm text-muted-foreground mt-1">BIS Hallmarked 916 Gold Jewellery</p>
-              <p className="text-sm text-muted-foreground">GSTIN: 33AXXXX1234X1ZX</p>
+              <p className="text-sm font-medium text-foreground mt-0.5">GSTIN: 33AACFK0768M1Z7</p>
             </div>
             <div className="text-right mt-4 sm:mt-0">
               <h2 className="text-xl font-semibold">TAX INVOICE</h2>
@@ -257,11 +257,12 @@ export default function OrderInvoice() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
             <div>
               <h3 className="font-semibold text-sm text-muted-foreground mb-2">FROM</h3>
-              <p className="font-medium">KRT Jewels</p>
+              <p className="font-medium">Krt Jewellers</p>
               <p className="text-sm text-muted-foreground">1154, Big Bazaar St, Prakasam</p>
               <p className="text-sm text-muted-foreground">Town Hall, Coimbatore</p>
               <p className="text-sm text-muted-foreground">Tamil Nadu - 641001</p>
-              <p className="text-sm text-muted-foreground mt-1">Phone: +91 98430 10986</p>
+              <p className="text-sm text-muted-foreground mt-1">Phone: +91 98437 10987</p>
+              <p className="text-sm text-muted-foreground">Email: sudharsansatish@gmail.com</p>
             </div>
             <div>
               <h3 className="font-semibold text-sm text-muted-foreground mb-2">SHIP TO</h3>
@@ -397,8 +398,8 @@ export default function OrderInvoice() {
 
           {/* Footer */}
           <div className="mt-12 pt-6 border-t text-center text-sm text-muted-foreground">
-            <p>Thank you for shopping with KRT Jewels!</p>
-             <p className="mt-1">For queries, contact us at krtjewellers1990@gmail.com or +91 98430 10986</p>
+            <p className="font-medium text-foreground">Thank you for shopping with Krt Jewellers!</p>
+            <p className="mt-1">For queries, contact us at sudharsansatish@gmail.com or +91 98437 10987</p>
             <p className="mt-4 text-xs">This is a computer-generated invoice and does not require a signature.</p>
           </div>
         </div>
