@@ -102,8 +102,8 @@ export default function ContactPage() {
   return (
     <Layout>
       <SEO
-        title="Contact Us – KRT Jewellers Showroom & Customer Care"
-        description="Get in touch with KRT Jewellers. Visit our showroom in Coimbatore, call our jewellery specialists, or send an enquiry for bridal jewellery and bespoke orders."
+        title="Contact Us – Krt Jewellers Showroom & Customer Care"
+        description="Get in touch with Krt Jewellers. Visit our showroom in Coimbatore, call our jewellery specialists at +91 98437 10987, or send an enquiry."
         path="/contact"
       />
 
@@ -134,8 +134,8 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="tel:+919843010986" className="text-lg hover:text-primary transition-colors">
-                    +91 98430 10986
+                  <a href="tel:+919843710987" className="text-lg hover:text-primary transition-colors">
+                    +91 98437 10987
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">Mon-Sun, 10AM-9PM</p>
                 </CardContent>
@@ -149,8 +149,8 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="mailto:krtjewellers1990@gmail.com" className="text-lg hover:text-primary transition-colors">
-                    krtjewellers1990@gmail.com
+                  <a href="mailto:sudharsansatish@gmail.com" className="text-lg hover:text-primary transition-colors">
+                    sudharsansatish@gmail.com
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
                 </CardContent>
@@ -189,7 +189,7 @@ export default function ContactPage() {
 
               {/* WhatsApp CTA */}
               <Button
-                onClick={() => window.open('https://wa.me/919843010986', '_blank')}
+                onClick={() => window.open('https://wa.me/919843710987', '_blank')}
                 className="w-full py-6 gap-2 bg-[#25D366] hover:bg-[#20BD5A] text-white"
               >
                 <MessageCircle className="w-5 h-5" />
@@ -241,7 +241,7 @@ export default function ContactPage() {
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           required
                           className="input-luxury"
-                          placeholder="+91 98765 43210"
+                          placeholder="+91 98437 10987"
                         />
                       </div>
                       <div className="space-y-2">
