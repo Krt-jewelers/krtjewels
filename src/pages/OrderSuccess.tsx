@@ -158,7 +158,7 @@ export default function OrderSuccess() {
 
   const handleWhatsApp = () => {
     if (!whatsappMessage) return;
-    const phone = '919843010986';
+    const phone = '919843710987';
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappMessage)}`;
     window.open(url, '_blank');
   };

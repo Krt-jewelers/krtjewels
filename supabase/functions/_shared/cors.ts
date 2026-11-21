@@ -56,3 +56,8 @@ export function jsonResponse(body: unknown, status: number, cors: Record<string,
     headers: { ...cors, "Content-Type": "application/json" },
   });
 }
+
+// The name main used for this before the two branches were merged. Same
+// rules as corsHeadersFor (only the site's own origins and this project's
+// previews, not every *.vercel.app or *.lovable.app site).
+export const getCorsHeaders = corsHeadersFor;

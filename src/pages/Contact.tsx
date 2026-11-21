@@ -124,8 +124,9 @@ export default function ContactPage() {
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Contact Info */}
+            {/* Contact Info Cards */}
             <div className="space-y-6">
+              {/* Call Us */}
               <Card className="card-luxury">
                 <CardHeader className="pb-2">
                   <CardTitle className="font-serif flex items-center gap-2">
@@ -134,13 +135,17 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="tel:+919843710987" className="text-lg hover:text-primary transition-colors">
+                  <a 
+                    href="tel:+919843710987" 
+                    className="text-lg font-medium hover:text-primary transition-colors block"
+                  >
                     +91 98437 10987
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">Mon-Sun, 10AM-9PM</p>
                 </CardContent>
               </Card>
 
+              {/* Email Us (Both emails cleanly listed) */}
               <Card className="card-luxury">
                 <CardHeader className="pb-2">
                   <CardTitle className="font-serif flex items-center gap-2">
@@ -148,14 +153,28 @@ export default function ContactPage() {
                     Email Us
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <a href="mailto:sudharsansatish@gmail.com" className="text-lg hover:text-primary transition-colors">
-                    sudharsansatish@gmail.com
-                  </a>
-                  <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
+                <CardContent className="space-y-2">
+                  <div>
+                    <a 
+                      href="mailto:sudharsansatish@gmail.com" 
+                      className="text-base font-medium hover:text-primary transition-colors block break-all"
+                    >
+                      sudharsansatish@gmail.com
+                    </a>
+                  </div>
+                  <div>
+                    <a 
+                      href="mailto:krtjewellers1990@gmail.com" 
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors block break-all"
+                    >
+                      krtjewellers1990@gmail.com
+                    </a>
+                  </div>
+                  <p className="text-xs text-muted-foreground pt-1">We reply within 24 hours</p>
                 </CardContent>
               </Card>
 
+              {/* Visit Us */}
               <Card className="card-luxury">
                 <CardHeader className="pb-2">
                   <CardTitle className="font-serif flex items-center gap-2">
@@ -172,6 +191,7 @@ export default function ContactPage() {
                 </CardContent>
               </Card>
 
+              {/* Store Hours */}
               <Card className="card-luxury">
                 <CardHeader className="pb-2">
                   <CardTitle className="font-serif flex items-center gap-2">

@@ -106,9 +106,9 @@ export function Navbar({ isCartOpen, onCartOpenChange }: NavbarProps) {
           <div className="flex items-center justify-between h-16">
             {/* Left – Phone */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-[200px]">
-              <a href="tel:+919843010986" className="inline-flex items-center gap-2 min-h-11 hover:text-primary transition-colors">
+              <a href="tel:+919843710987" className="inline-flex items-center gap-2 min-h-11 hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" aria-hidden="true" />
-                <span>+91 98430 10986</span>
+                <span>+91 98437 10987</span>
               </a>
             </div>
 
