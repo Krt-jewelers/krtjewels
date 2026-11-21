@@ -6,8 +6,8 @@ interface WhatsAppButtonProps {
   message?: string;
 }
 
-export function WhatsAppButton({ 
-  phoneNumber = '919843010986',
+export function WhatsAppButton({
+  phoneNumber = '919843710987',
   message = 'Hello KRT Jewels! I would like to inquire about your jewellery collection.'
 }: WhatsAppButtonProps) {
   const handleClick = () => {
