@@ -8,11 +8,11 @@ export function FloatingContactMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const contactInfo = {
-    phone: '+91 98430 10986',
-    phoneRaw: '919843010986',
-    whatsapp: '919843010986',
-    email: 'krtjewellers1990@gmail.com',
-    address: 'https://share.google/SzB0gACMFW5J7HZel',
+    phone: '+91 98437 10987',
+    phoneRaw: '919843710987',
+    whatsapp: '919843710987',
+    email: 'sudharsansatish@gmail.com',
+    address: 'https://share.google/JX7VmoorksTO98o9m',
     website: 'https://krtjewellers.com',
   };
 
@@ -43,16 +43,16 @@ export function FloatingContactMenu() {
     {
       id: 'whatsapp',
       icon: () => (
-  <img
-    src="/images/WhatsApp_icon.png"
-    alt="WhatsApp"
-    className="w-5 h-5 object-contain"
-  />
-),
+        <img
+          src="/images/WhatsApp_icon.png"
+          alt="WhatsApp"
+          className="w-5 h-5 object-contain"
+        />
+      ),
       label: 'WhatsApp',
       color: 'bg-[#25D366] hover:bg-[#20BD5A]',
       onClick: () => {
-        const message = encodeURIComponent('Hello KRT Jewels! I would like to inquire about your jewellery collection.');
+        const message = encodeURIComponent('Hello Krt Jewellers! I would like to inquire about your jewellery collection.');
         window.open(`https://wa.me/${contactInfo.whatsapp}?text=${message}`, '_blank');
         setIsOpen(false);
       },
@@ -135,13 +135,13 @@ export function FloatingContactMenu() {
             <X className="w-7 h-7" />
           ) : (
             <img
-  src="/images/icon-livechat.webp"
-  alt="Live chat"
-  className="w-[30px] h-[30px] object-contain"
-  loading="lazy"
-  decoding="async"
-  referrerPolicy="no-referrer"
-/>
+              src="/images/icon-livechat.webp"
+              alt="Live chat"
+              className="w-[30px] h-[30px] object-contain"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
           )}
         </Button>
       </div>
@@ -194,8 +194,8 @@ export function FloatingContactMenu() {
                 onClick={() => {
                   if (navigator.share) {
                     navigator.share({
-                      title: 'KRT Jewels',
-                      text: 'Check out KRT Jewels - Trusted Since 30+ Years',
+                      title: 'Krt Jewellers',
+                      text: 'Check out Krt Jewellers - Trusted Since 1990',
                       url: contactInfo.website,
                     });
                   } else {
