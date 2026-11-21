@@ -91,7 +91,8 @@ export function ProductActions({ product, variationState, calculatedPrice }: Pro
   const handleWhatsAppEnquiry = () => {
     const effectivePrice = calculatedPrice?.total ?? product.calculated_price.total;
     const message = `Hi KRT Jewels! I'm interested in the ${product.name} (${formatPrice(effectivePrice)}). Can you please provide more details?`;
-    window.open(`https://wa.me/919843010986?text=${encodeURIComponent(message)}`, '_blank');
+    window.open(`https://wa.me/919843710987?text=${encodeURIComponent(message)}`, '_blank');
+
   };
 
   return (
