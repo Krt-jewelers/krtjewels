@@ -149,7 +149,9 @@ export default function ContactPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <a href="mailto:sudharsansatish@gmail.com" className="text-lg hover:text-primary transition-colors">
+                  <a href="mailto:krtjewellers1990@gmail.com" className="text-lg hover:text-primary transition-colors">
+                    krtjewellers1990@gmail.com
+                    <a href="mailto:sudharsansatish@gmail.com" className="text-lg hover:text-primary transition-colors">
                     sudharsansatish@gmail.com
                   </a>
                   <p className="text-sm text-muted-foreground mt-1">We reply within 24 hours</p>
