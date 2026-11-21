@@ -178,7 +178,7 @@ export function SizeGuideDialog({ open, onOpenChange, category, selectedSize, on
 
             {/* Contact Info */}
             <p className="text-xs text-center text-muted-foreground">
-              If in need of assistance? Please contact Customer Service at +919843010986
+              If in need of assistance? Please contact Customer Service at +919843710987
             </p>
           </div>
         )}

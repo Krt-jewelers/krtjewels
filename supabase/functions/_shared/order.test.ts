@@ -176,7 +176,7 @@ it("UPI: if a paid order still cannot be saved, the customer is told what to do"
   const placed = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "432118765432" } });
   expect(placed.status).toEqual(409);
   expect(placed.body.error).toContain("your money is safe");
-  expect(placed.body.error).toContain("98430 10986");
+  expect(placed.body.error).toContain("98437 10987");
   reset();
   const bad = await call({ mode: "place", items, shipping_address: address, payment_method: "upi", payment: { utr: "" } });
   expect(bad.body.code).toEqual("INVALID_UTR");

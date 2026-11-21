@@ -50,7 +50,7 @@ const RECENT_ORDER_LIMIT = 3;
 const QUOTE_TTL_MS = 20 * 60 * 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CHECKOUT_REF_RE = /^[A-Za-z0-9:_-]{8,80}$/;
-const STORE_PHONE = "+91 98430 10986";
+const STORE_PHONE = "+91 98437 10987";
 
 export interface OrderRequestItem {
   product_id: string;

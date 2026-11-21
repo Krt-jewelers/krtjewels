@@ -256,7 +256,7 @@ export default function ChitFundLookup() {
                   <AlertCircle className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
                   <p>
                     For privacy, a phone number search shows a summary only. Enter the scheme ID from your
-                    scheme card to see your gold balance and payment history, or call us on +91 98430 10986.
+                    scheme card to see your gold balance and payment history, or call us on +91 98437 10987.
                   </p>
                 </CardContent>
               </Card>

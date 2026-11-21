@@ -69,7 +69,7 @@ export function newCheckoutRef(): string {
 }
 
 const ORDERING_UNAVAILABLE =
-  'Online ordering is not available right now. Please try again in a few minutes or call us on +91 98430 10986.';
+  'Online ordering is not available right now. Please try again in a few minutes or call us on +91 98437 10987.';
 
 // Calls the place-order edge function, which prices the cart on the server.
 export async function callOrderFunction<T>(payload: OrderPayload): Promise<{ data: T | null; error: OrderFunctionError | null }> {

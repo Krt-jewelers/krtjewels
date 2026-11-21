@@ -207,8 +207,8 @@ export default function CheckoutPage() {
         state === 'interactive'
           ? 'Please tick the box above the order button, then try again.'
           : state === 'unavailable'
-          ? 'The security check could not load. Check your connection and refresh the page, or call us on +91 98430 10986.'
-          : 'Please try again in a moment, or call us on +91 98430 10986.',
+          ? 'The security check could not load. Check your connection and refresh the page, or call us on +91 98437 10987.'
+          : 'Please try again in a moment, or call us on +91 98437 10987.',
       variant: 'destructive',
     });
     return undefined;
@@ -256,7 +256,7 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rateUnavailable) {
-      toast({ title: "Today's gold rate is not available", description: 'Please try again shortly or call us on +91 98430 10986.', variant: 'destructive' });
+      toast({ title: "Today's gold rate is not available", description: 'Please try again shortly or call us on +91 98437 10987.', variant: 'destructive' });
       return;
     }
     if (isPricing) {
@@ -473,7 +473,7 @@ export default function CheckoutPage() {
                   {rateUnavailable ? (
                     <p className="text-sm text-destructive" role="alert">
                       Today's gold rate is not available yet, so we cannot confirm your total. Please try again
-                      shortly or call us on <a href="tel:+919843010986" className="underline">+91 98430 10986</a>.
+                      shortly or call us on <a href="tel:+919843710987" className="underline">+91 98437 10987</a>.
                     </p>
                   ) : isPricing ? (
                     <p className="text-sm text-muted-foreground" role="status">
@@ -498,7 +498,7 @@ export default function CheckoutPage() {
                         {turnstile.state === 'unavailable' && (
                           <p className="text-sm text-destructive" role="alert">
                             The security check could not load. Check your connection and refresh the page, or call us on{' '}
-                            <a href="tel:+919843010986" className="underline">+91 98430 10986</a>.
+                            <a href="tel:+919843710987" className="underline">+91 98437 10987</a>.
                           </p>
                         )}
                       </>
